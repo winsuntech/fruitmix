@@ -1,5 +1,7 @@
 ### How to make this FruitMix
 
+***
+
 ##### precondition:
 
 * Debian 8.3 64bit
@@ -54,3 +56,14 @@
 
 ##### Let's cook
 
++ Install essential libs<p>
+ - Method 1: Don't use package.json<p>
+ 
+        npm install --save bcrypt body-parser debug nodemon  express jwt-simple mongoose morgan node-uuid passport passport-http passport-jwt serve-favicon validator
+        
+        npm install --save-dev mocha chai sinon supertest
+
+ - Method 2: use package.json<p>
+ `npm install`<p>
+
+##### Enjoy!
