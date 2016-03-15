@@ -56,14 +56,21 @@
 
 ##### Let's cook
 
++ Enter the project<p>
+`cd fruitmix`<p>
+
 + Install essential libs<p>
  - Method 1: Don't use package.json<p>
- 
-        npm install --save bcrypt body-parser debug nodemon  express jwt-simple mongoose morgan node-uuid passport passport-http passport-jwt serve-favicon validator
-        
-        npm install --save-dev mocha chai sinon supertest
-
+ `npm install --save bcrypt body-parser debug nodemon  express jwt-simple mongoose morgan node-uuid passport passport-http passport-jwt serve-favicon validator`<p>
+ `npm install --save-dev mocha chai sinon supertest`<p>
  - Method 2: use package.json<p>
  `npm install`<p>
+
++ Run server<p>
+`npm run start`<p>
+`npm run test-server`<p>
+`npm run unit`<p>
+`npm run agent`<p>
+`npm run production`<p>
 
 ##### Enjoy!
