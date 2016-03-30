@@ -31,6 +31,10 @@ function MTOattribute(){
     this.getname=function() {
         return this.name;
     };
+
+    this.setname=function(_value) {
+        this.name=_value;
+    };
 }
 
 module.exports = MTOattribute;

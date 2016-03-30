@@ -64,8 +64,16 @@ function MTObj(){
         return this.parent;
     };
 
-    this.getname=function(_key) {
+    this.setparent=function(value) {
+        this.parent=value;
+    };
+
+    this.getname=function() {
         return this.attribute.getname();
+    };
+
+    this.setname=function(value) {
+        return this.attribute.setname(value);
     };
 
     this.getreadlist=function() {
