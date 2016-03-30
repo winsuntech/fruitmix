@@ -79,6 +79,7 @@ app.use('/authtest', require('./routes/authtest'));
 //   });
 // });
 
+
 var io = require("socket.io").listen(6969);
 dmap = new Map();
 mtree = new MTObj();
@@ -116,10 +117,8 @@ io.sockets.on('connection', function(socket){
   });
 });
 
-console.log('111');
 var spawn = require('child_process').spawn;
 spawn('node', ['/trynode/scanner.js']);
-console.log('222');
 // fmap = new Map();
 
 // var newlist = globby.sync(['/mnt/**']);
