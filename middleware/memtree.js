@@ -60,6 +60,10 @@ function MTObj(){
         return this.children;
     };
 
+    this.setchildren=function(value) {
+        this.children=value;
+    };
+
     this.getparent=function() {
         return this.parent;
     };

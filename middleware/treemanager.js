@@ -1,10 +1,8 @@
-var visit = require('middleware/visit');
+var visitor = require('middleware/visit');
 var tools = require('middleware/tools');
-
 
 function Memtree() {  
     this.root=''; 
-    this.pathmap = new Map();
     this.elements = new Map();  
 
     this.size = function(){
@@ -27,9 +25,9 @@ function Memtree() {
         memt.remove(_key);
     };
 
-    this.deletefilebypath = function(_key){
-        this.parentremove(this.pathmap.get(_key));
-        visit(this.pathmap.get(_key),this.deletefilebyuuid);
+    this.deletefile = function(uuid){
+        this.parentremove(uuid);
+        visitor(uuid,this.deletefilebyuuid);
     };
 
     this.parentremove = function(_key){
@@ -39,7 +37,6 @@ function Memtree() {
 
     this.add = function(_key,_obj) {
         this.elements.set( _key, _obj);
-        this.pathmap.set(_obj.getpath(),_key);
     };  
   
     this.remove = function(_key) {  
@@ -66,7 +63,7 @@ function Memtree() {
         var realpath='';
         this.getpathobj(_key).forEach(function(f){
             realpath='/'+f.getname()+realpath;
-        }
+        });
         return '/mnt'+realpath;
     };
 
@@ -78,18 +75,35 @@ function Memtree() {
         this.get(_target).addchild(_values);
     };
 
+    this.getchildren = function(uuid){
+        return this.get(uuid).getchildren();
+    };
+
+    this.getchildren = function(uuid,value){
+        this.get(uuid).setchildren(value);
+    };
+
+    this.getrawchildrenlist = function(uuid){
+        var tmplist=this.get(uuid).getchildren();
+        var tmparray=[];
+        tmplist.forEach(function(f){
+            tmparray.push(f.getuuid());
+        })
+        return tmparray;
+    };
+
     this.getparent = function(key){
         return this.get(key).getparent();
     };
 
-    this.canread = function(key,value){
-        var tmplist=this.get(key).getreadlist();
-        return tools.contains(tmplist,value);
+    this.canread = function(uuid,useruuid){
+        var tmplist=this.get(uuid).getreadlist();
+        return tools.contains(tmplist,useruuid);
     };
 
-    this.canwrite = function(key,value){
-        var tmplist=this.get(key).getwritelist();
-        return tools.contains(tmplist,value);
+    this.canwrite = function(uuid,useruuid){
+        var tmplist=this.get(uuid).getwritelist();
+        return tools.contains(tmplist,useruuid);
     };
 
     this.getowner = function(key){
@@ -113,13 +127,9 @@ function Memtree() {
         }
     }
 
-    this.isowner = function(_key,value){
-        if(this.get(_key).getowner()===value){
-            return true;
-        }
-        else{
-            return false;
-        }
+    this.isowner = function(key,value){
+        var tmplist=this.getowner(key);
+        return tools.contains(tmplist,value);
     }
 
     this.moveto = function(_key,target){
@@ -134,13 +144,11 @@ function Memtree() {
 }  
 
 function createpathobj(key,array){
-    if(key!==this.root){
-        array.push(this.get(key));
-        createpathobj(this.getparent(key),array);
+    if(key!==memt.getroot()){
+        array.push(memt.get(key));
+        createpathobj(memt.getparent(key),array);
     }
-    else{
-        return array
-    }
+    return array
 }
 
 module.exports = Memtree;

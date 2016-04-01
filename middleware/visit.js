@@ -1,7 +1,6 @@
-function Visit(node,callback){  
+function Visitor(node,callback){  
     if (memt.has(node)){
     	var obj=memt.get(node);
-        console.log(obj.getpath());
     	var tmpchildren=obj.getchildren();
 		tmpchildren.forEach(function(f){
             Visit(f.getuuid(), callback);
@@ -10,4 +9,4 @@ function Visit(node,callback){
 	}
  }
 
-module.exports = Visit;
+module.exports = Visitor;
