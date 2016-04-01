@@ -9,6 +9,9 @@ var MTObj = require('middleware/memtree');
 var xattr = require('fs-xattr');
 var spawn = require('child_process').spawn;
 var socket = require('socket.io-client')('http://localhost:10086');
+var Checker = require('middleware/permissioncheck');
+
+
 
 function mtojson(){
   this.uid='';
@@ -25,13 +28,13 @@ function mtojson(){
   this.parent='';
 }
 
-
 router.get('/*',auth.jwt(), (req, res) => {
     var pathname = url.parse(req.url).pathname;
     var fuuid = pathname.substr(1);
     if (req.query.type==='media'&&memt.has(fuuid)){
       var realpath = memt.getpath(fuuid);
-      fstat=fs.statSync(realPath);
+      console.log(realpath);
+      fstat=fs.statSync(realpath);
       fs.exists(realpath, function (exists) {
         if (!exists) {
           res.writeHead(404, {'Content-Type': 'text/plain'});
@@ -40,7 +43,7 @@ router.get('/*',auth.jwt(), (req, res) => {
         } 
         else {
           if (!fstat.isDirectory()){
-          fs.readFile(realpath, "binary", function(err, file) {
+            fs.readFile(realpath, "binary", function(err, file) {
               if (err) {
                   res.writeHead(500, {'Content-Type': 'text/plain'});
                   res.end(err);
@@ -114,7 +117,7 @@ router.get('/*',auth.jwt(), (req, res) => {
   //   }
 });
 
-router.post('/*',auth.jwt(), (req, res) => {
+router.post('/*',auth.jwt(),(req, res) => {
   if (req.body.type==='copy'){
     var pathname = url.parse(req.url).pathname;
     var fuuid = pathname.substr(1);
@@ -122,31 +125,107 @@ router.post('/*',auth.jwt(), (req, res) => {
       return res.status(404).json('invalid uuid');
     }
     else{
-      var realpath = memt.getpath(fuuid);
-      var targetpath = memt.getpath(req.body.target);
-      spawn('cp', ['-r',realpath,targetpath]);
-      var newlist = globby.sync([targetpath+'/'+memt.getname(fuuid)]);
-      newlist.forEach(function(f){
-        fstat=fs.statSync(f);
-        console.log(f);
-      });
-      return res.status(200).json('success');
+        if (Checker.owner(fuuid,req.user.uuid)||Checker.write(fuuid,req.user.uuid)){
+          var realpath = memt.getpath(fuuid);
+          var targetpath = memt.getpath(req.body.target);
+          spawn('cp', ['-r',realpath,targetpath]);
+          var newlist = globby.sync([targetpath+'/'+memt.getname(fuuid)]);
+          newlist.forEach(function(f){
+            socket.emit('checkpath',f);
+          });
+          return res.status(200).json('success');
+        }
+        else{
+          return res.status(403).json('Permission denied');
+        }
     }
   }
-    else{
-      return res.status(200).json(null);
+  else{
+    var pathname = url.parse(req.url).pathname;
+    var fuuid = pathname.substr(1);
+    if(!memt.has(fuuid)){
+      return res.status(404).json('invalid uuid');
+    }
+    if(memt.isfile(fuuid)){
+      return res.status(400).json('target is a file');
+    }
+    if(!Checker.write(fuuid,req.user.uuid)&&!Checker.owner(fuuid,req.user.uuid)){
+      return res.status(403).json('Permission denied');
+    }
+    if(!req.files){
+      return res.status(400).json('file missing');
+    }
+    var tmp_path = req.files.thumbnail.path;
+    return res.status(200).json(null);
   }
 });
 
-router.move('/*',auth.jwt(), (req, res) => {
+router.patch('/*',auth.jwt(), (req, res) => {
   var pathname = url.parse(req.url).pathname;
   var fuuid = pathname.substr(1);
-  if (!memt.has(fuuid)||!memt.has(req.body.target)){
+  if (!memt.has(fuuid)){
     return res.status(404).json('invalid uuid');
   }
   else{
-    var realpath = memt.getpath(fuuid);
-    var targetpath = memt.getpath(req.body.target);
+    if (Checker.write(fuuid,req.user.uuid)){
+      if(req.body.filename&&!req.body.target){
+        var nowpath = memt.getpath(fuuid);
+        var targetpath = nowpath.substr(0,nowpath.lastIndexOf('/'))+'/'+req.body.filename
+        try{
+          spawn('mv', [nowpath,targetpath]);
+        }
+        catch(e){
+          return res.status(500).json('failed to move file');
+        }
+        memt.setname(fuuid,req.body.filename);
+        return res.status(200).json('change name success');
+      }
+      else if(req.body.target&&!req.body.filename&&memt.has(req.body.target)){
+        if(memt.isfile(req.body.target)){
+          return res.status(400).json('can not move into a file');
+        }
+        else{
+          if(!Checker.write(req.body.target,req.user.uuid)){return res.status(403).json('Permission denied!');}
+          var targetpath = memt.getpath(req.body.target);
+          var nowpath = memt.getpath(fuuid);
+          try{
+            spawn('mv', [nowpath,targetpath]);
+          }
+          catch(e){
+            return res.status(500).json('failed to move file');
+          }
+          memt.moveto(fuuid,req.body.target);
+          return res.status(200).json('move file success');
+        }
+      }
+      else if(req.body.target&&req.body.filename&&memt.has(req.body.target)){
+        if(memt.isfile(req.body.target)){
+          return res.status(400).json('can not move into a file!');
+        }
+        else{
+          if(!Checker.write(req.body.target,req.user.uuid)){return res.status(403).json('Permission denied!');}
+          var nowpath = memt.getpath(fuuid);
+          var targetpath = memt.getpath(req.body.target)+"/"+req.body.filename;
+          console.log(targetpath)
+          console.log(nowpath)
+          try{
+            spawn('mv', [nowpath,targetpath]);
+          }
+          catch(e){
+            return res.status(500).json('failed to move file');
+          }
+          memt.setname(fuuid,req.body.filename);
+          memt.moveto(fuuid,req.body.target);
+          return res.status(200).json('move file success!');
+        }
+      }
+      else{
+        return res.status(404).json('target folder is not exist');
+      }
+    }
+    else{
+      return res.status(403).json('Permission denied');
+    }
   }
 });
 
@@ -158,23 +237,16 @@ router.delete('/*',auth.jwt(), (req, res) => {
       return res.status(404).json('invalid uuid');
     }
     else{
-      var realpath = memt.getpath(fuuid);
-      spawn('rm', ['-rf',realpath]);
-      mto.path = realpath;
-      socket.emit('deletefolderorfile',mto);
-      return res.status(200).json('success');
-    }
-});
-
-router.put('/*',auth.jwt(), (req, res) => {
-    var pathname = url.parse(req.url).pathname;
-    var fuuid = pathname.substr(1);
-    if (!memt.has(fuuid)){
-      return res.status(404).json('invalid uuid');
-    }
-    else{
-      var realpath = memt.getpath(fuuid);
-
+      if (Checker.owner(fuuid,req.user.uuid)||Checker.write(fuuid,req.user.uuid)){
+        var realpath = memt.getpath(fuuid);
+        mto.uuid = xattr.getSync(realpath,'user.uuid').toString('utf-8');
+        spawn('rm', ['-rf',realpath]);
+        socket.emit('deletefolderorfile',mto);
+        return res.status(200).json('success');
+      }
+      else{
+        return res.status(403).json('Permission denied');
+      }
     }
 });
 
