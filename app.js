@@ -9,6 +9,10 @@ const globby = require('globby');
 var xattr = require('fs-xattr');
 var MTObj = require('middleware/memtree');
 const uuid = require('node-uuid');
+var schedule = require('node-schedule');
+var busboy = require('connect-busboy');
+
+
 /** Express **/
 var app = express();
 var fs = require("fs");
@@ -34,13 +38,13 @@ var User = require('./models/user');
 var auth = require('./middleware/auth');
 const Memtree = require('./middleware/treemanager');
 memt = new Memtree();
+
 // uncomment after placing your favicon in /public
 //app.use(favicon(path.join(__dirname, 'public', 'favicon.ico')));
 app.use(logger('dev'));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(auth.init());
-
 /** Routeing Begins **/
 app.use(express.static(path.join(__dirname, 'public')));
 app.use('/', require('./routes/index'));
@@ -51,6 +55,7 @@ app.use('/users', require('./routes/users'));
 app.use('/files',require('./routes/files'));
 app.use('/authtest', require('./routes/authtest'));
 /** Routing Ends **/
+app.use(busboy());
 
 // app.use(auth.jwt(),function(req, res){
 //   var pathname = url.parse(req.url).pathname;
@@ -80,17 +85,18 @@ app.use('/authtest', require('./routes/authtest'));
 // });
 
 
-var io = require("socket.io").listen(6969);
+var io = require("socket.io").listen(10086);
 dmap = new Map();
 mtree = new MTObj();
 
 io.sockets.on('connection', function(socket){
-  console.log("Scanner Connected!");
   socket.on('addfoldernode', function(msg){
     var memobj = new MTObj();
     if(!memt.has(msg.uid)){
       memobj.create(msg.uid,msg.type,msg.parent,[],msg.path,msg.readlist,msg.writelist,msg.owner,msg.createtime,msg.changetime,msg.modifytime,msg.accesstime,msg.size);
       memt.add(msg.uid,memobj);
+      console.log(msg.uid);
+      console.log(msg.path);
       dmap.set(msg.path,msg.uid);
     }
   });
@@ -100,6 +106,8 @@ io.sockets.on('connection', function(socket){
       var memobj = new MTObj();
       memobj.create(msg.uid,msg.type,msg.parent,[],msg.path,msg.readlist,msg.writelist,msg.owner,msg.createtime,msg.changetime,msg.modifytime,msg.accesstime,msg.size);
       memt.add(msg.uid,memobj);
+      console.log(msg.uid);
+      console.log(msg.path);
     }
   });
 
@@ -112,13 +120,15 @@ io.sockets.on('connection', function(socket){
   });
 
   socket.on('deletefolderorfile', function(msg){
-    console.log('yes,we can');
-    memt.deletefilebypath(msg.path);
+    memt.deletefile(msg.uuid);
   });
 });
 
-var spawn = require('child_process').spawn;
-spawn('node', ['/trynode/scanner.js']);
+// var spawn = require('child_process').spawn;
+// spawn('node', ['/trynode/scanner.js']);
+
+
+
 // fmap = new Map();
 
 // var newlist = globby.sync(['/mnt/**']);
@@ -182,6 +192,18 @@ spawn('node', ['/trynode/scanner.js']);
 //       memt.add(tuuid,memobj);
 //     }
 // });
+
+var builder = require('./middleware/treebuilder');
+builder('/mnt/**');
+
+var rule = new schedule.RecurrenceRule();
+// rule.dayOfWeek = [0, new schedule.Range(1, 6)];
+// rule.hour = 6;
+// rule.minute =0;
+rule.second = 0;
+schedule.scheduleJob(rule, function(){
+  builder('/mnt/**');
+});
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {
