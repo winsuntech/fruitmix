@@ -21,6 +21,14 @@ function Memtree() {
         this.root = _value;
     };
 
+    this.getdetail = function(uuid){
+        return this.get(uuid).getdetail();
+    };
+
+    this.setdetail = function(uuid,value){
+        return this.get(uuid).setdetail(value);
+    };
+
     this.deletefilebyuuid=function(_key){
         memt.remove(_key);
     };
@@ -79,8 +87,16 @@ function Memtree() {
         return this.get(uuid).getchildren();
     };
 
-    this.getchildren = function(uuid,value){
+    this.setchildren = function(uuid,value){
         this.get(uuid).setchildren(value);
+    };
+
+    this.gethash = function(uuid){
+        return this.get(uuid).gethash();
+    };
+
+    this.sethash = function(uuid,value){
+        return this.get(uuid).sethash(value);
     };
 
     this.getrawchildrenlist = function(uuid){
@@ -141,6 +157,8 @@ function Memtree() {
     this.getpathobj = function(key){
         return createpathobj(key,[]);
     };
+
+    
 }  
 
 function createpathobj(key,array){

@@ -3,7 +3,9 @@ const globby = require('globby');
 var fs = require('fs');
 var xattr = require('fs-xattr');
 var socket = require('socket.io-client')('http://localhost:10086');
-var dmap = new Map();
+var dmap1 = new Map();
+var helper = require('middleware/tools');
+
 
 function mtojson(){
   this.uid='';
@@ -18,6 +20,7 @@ function mtojson(){
   this.size='';
   this.path='';
   this.parent='';
+  this.hash = '';
 }
 
 // io.sockets.on('connection', function(socket1){
@@ -31,24 +34,7 @@ function mtojson(){
 // });
 
 function commoncheck(f){
-  fstat=fs.statSync(f);
-  try{
-    xattr.getSync(f,'user.uuid');
-  }
-  catch(e)
-  {
-    xattr.setSync(f,'user.uuid',uuid.v4());
-    xattr.setSync(f,'user.readlist','');
-    xattr.setSync(f,'user.writelist','');
-    xattr.setSync(f,'user.owner','');
-    if (fstat&&fstat.isDirectory()){ 
-      xattr.setSync(f,'user.type','folder');
-    }
-    else if(fstat&&!fstat.isDirectory()){
-      xattr.setSync(f,'user.type','file');
-    }
-  }
-
+  helper.tattoo(f);
   var uid = xattr.getSync(f,'user.uuid').toString('utf-8');
   var readlist = xattr.getSync(f,'user.readlist').toString('utf-8').split(',');
   var writelist = xattr.getSync(f,'user.writelist').toString('utf-8').split(',');
@@ -72,21 +58,22 @@ function commoncheck(f){
   mtobj.size=size;
   mtobj.path=f;
 
-  if(dmap.has(f.substr(0,f.lastIndexOf('/')))){
-    var parent = dmap.get(f.substr(0,f.lastIndexOf('/')));
+  if(dmap1.has(f.substr(0,f.lastIndexOf('/')))){
+    var parent = dmap1.get(f.substr(0,f.lastIndexOf('/')));
     mtobj.parent=parent;
   }
 
   if (fstat&&fstat.isDirectory()){ 
     socket.emit('addfoldernode',mtobj);
-    dmap.set(f,uid);
+    dmap1.set(f,uid);
   }
   else{
+    mtobj.hash=xattr.getSync(f,'user.hash').toString('utf-8');
     //console.log(xattr.getSync(f,'user.uuid').toString('utf-8'));
     socket.emit('addfilenode',mtobj);
   }
 
-  if(dmap.has(f.substr(0,f.lastIndexOf('/')))){
+  if(dmap1.has(f.substr(0,f.lastIndexOf('/')))){
     socket.emit('addchild',mtobj);
   }
   else{
@@ -99,7 +86,7 @@ function cronjob(tpath){
   newlist.forEach(function(f){
    commoncheck(f);
   });
-  console.log('done');
+  //console.log('done');
 }
 
 
@@ -107,4 +94,6 @@ function cronjob(tpath){
 
 socket.on('connect', function () { console.log("socket connected"); });
 
-module.exports = cronjob;
+exports.checkall = cronjob;
+
+exports.docheck = commoncheck;

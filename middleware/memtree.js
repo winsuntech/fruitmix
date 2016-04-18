@@ -3,13 +3,14 @@ var MTOattribute = require('middleware/mtoattribute');
 
 function MTObj(){
 
-    this.create = function(_uuid,_type,_parent,_children,_path,_readlist,_writelist,_owner,_createtime,_changetime,_modifytime,_accesstime,_size){
+    this.create = function(_uuid,_type,_parent,_children,_path,_readlist,_writelist,_owner,_createtime,_changetime,_modifytime,_accesstime,_size,_hash){
         var mpobj = new MTOpermission();
         var maobj = new MTOattribute();
 
         mpobj.create(_readlist,_writelist,_owner);
         maobj.create(_createtime,_changetime,_modifytime,_accesstime,_size,_path.substr(_path.lastIndexOf('/')+1));
 
+        this.hash = _hash;
         this.uuid = _uuid;
         this.type = _type;
         this.parent = _parent;
@@ -17,10 +18,27 @@ function MTObj(){
         this.permission = mpobj;
         this.attribute = maobj;
         this.path = _path;
+        this.detail = '';
     }
 
     this.getuuid=function() {
         return this.uuid;
+    };
+
+    this.gethash=function() {
+        return this.hash;
+    };
+
+    this.getdetail=function() {
+        return this.detail;
+    };
+
+    this.setdetail=function(value) {
+        this.detail=value;
+    };
+
+    this.sethash=function(value) {
+        this.hash=value;
     };
 
     this.ischild=function(_value){
@@ -102,6 +120,10 @@ function MTObj(){
 
     this.getcreatetime=function() {
         return this.attribute.getcreatetime();
+    };
+
+    this.getchangetime=function() {
+        return this.attribute.getchangetime();
     };
 
     this.getmodifytime=function() {
