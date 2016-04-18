@@ -32,7 +32,12 @@ Download Path: [Download v5.10.1](https://nodejs.org/dist/v5.10.1/node-v5.10.1-x
 
 ##### Deploy MongoDB
 
-
+* Download<p>
+Offical Website: [Click](https://www.mongodb.org/)<p>
+Download Path: [Download Page](https://www.mongodb.org/downloads#production)<p>
+Download Path: [Download mongodb-win32-x86_64-3.2.5-signed.msi](https://fastdl.mongodb.org/win32/mongodb-win32-x86_64-3.2.5-signed.msi?_ga=1.28698047.200223928.1460971256)<p>
+* Install<p>
+`Use default setting, consecutive press "next" button until you see the "finish" button.`<p>
 
 ##### Let's cook
 
