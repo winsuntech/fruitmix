@@ -30,32 +30,9 @@ Download Path: [Download v5.10.1](https://nodejs.org/dist/v5.10.1/node-v5.10.1-x
 * Install<p>
 `Use default setting, consecutive press "next" button until you see the "finish" button.`<p>
 
-* Untar<p>
-`tar -zxvf node-v5.8.0.tar.gz -C ./`<p>
-
-* Enter the folder<p>
-`cd node-v5.8.0/`<p>
-
-* make & install Node.js to your system<p>
-
-        ./configure
-        make
-        (sudo) make install
-        
-
 ##### Deploy MongoDB
 
-* Import the public key used by the package management system<p>
-`sudo apt-key adv --keyserver 'keyserver.ubuntu.com' --recv '7F0CEB10'`<p>
 
-* Create a /etc/apt/sources.list.d/mongodb-enterprise.list file for MongoDB<p>
-`echo 'deb http://repo.mongodb.org/apt/debian wheezy/mongodb-org/3.2 main' | sudo tee '/etc/apt/sources.list.d/mongodb-org-3.2.list'`<p>
-
-* Reload local package database<p>
-`sudo apt-get update`<p>
-
-* Install the MongoDB packages<p>
-`sudo apt-get install -y mongodb-org`<p>
 
 ##### Let's cook
 
