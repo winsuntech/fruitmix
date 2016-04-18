@@ -108,7 +108,7 @@ var cronjob = function(tpath){
 }
 
 
-cronjob('/mnt/**');
+//cronjob('/mnt/**');
 
 socket.on('connect', function () { console.log("socket connected"); });
 
@@ -121,4 +121,5 @@ rule.second = 0;
 schedule.scheduleJob(rule, function(){
   cronjob('/mnt/**');
 });
+
 
