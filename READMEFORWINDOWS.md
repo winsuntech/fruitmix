@@ -16,15 +16,19 @@
 
 ##### Deploy Git
 
-* Install<p>
+* Download<p>
 Offical Website: [Click](https://git-for-windows.github.io/)<p>
 Download Path: [Download Git-2.8.1-64-bit.exe](https://github.com/git-for-windows/git/releases/download/v2.8.1.windows.1/Git-2.8.1-64-bit.exe)<p>
-`Use default setting, and press "next" button until you see the "finished" button.`<p>
+* Install<p>
+`Use default setting, consecutive press "next" button until you see the "finish" button.`<p>
 
 ##### Deploy Node.js
 
-* Download nodejs v5.8.0 source code<p>
-`curl https://nodejs.org/dist/v5.8.0/node-v5.8.0.tar.gz -o node-v5.8.0.tar.gz`<p>
+* Download<p>
+Offical Website: [Click](https://nodejs.org/en/)<p>
+Download Path: [Download v5.10.1](https://nodejs.org/dist/v5.10.1/node-v5.10.1-x64.msi)<p>
+* Install<p>
+`Use default setting, consecutive press "next" button until you see the "finish" button.`<p>
 
 * Untar<p>
 `tar -zxvf node-v5.8.0.tar.gz -C ./`<p>
