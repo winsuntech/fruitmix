@@ -8,10 +8,13 @@ var fs = require('fs');
 var MTObj = require('middleware/memtree');
 var xattr = require('fs-xattr');
 var spawn = require('child_process').spawn;
+var spawnSync = require('child_process').spawnSync;
 var socket = require('socket.io-client')('http://localhost:10086');
 var Checker = require('middleware/permissioncheck');
-
-
+var multer  = require('multer')
+var upload = multer({ dest: '/mnt/uploads/' })
+var helper = require('middleware/tools');
+var mime = require('middleware/mime').types;
 
 function mtojson(){
   this.uid='';
@@ -26,6 +29,7 @@ function mtojson(){
   this.size='';
   this.path='';
   this.parent='';
+  this.hash = '';
 }
 
 router.get('/*',auth.jwt(), (req, res) => {
@@ -48,6 +52,9 @@ router.get('/*',auth.jwt(), (req, res) => {
                   res.writeHead(500, {'Content-Type': 'text/plain'});
                   res.end(err);
               } else {
+                  var ext = path.extname(realpath);
+                  ext = ext ? ext.slice(1) : 'unknown';
+                  var contentType = mime[ext] || "text/plain";
                   res.writeHead(200, {'Content-Type': 'text/html'});
                   res.write(file, "binary");
                   res.end();
@@ -66,11 +73,11 @@ router.get('/*',auth.jwt(), (req, res) => {
     }
     else{
       if (pathname==='/'){
-        return res.status(200).json(memt.get(memt.getroot()));
+        return res.status(200).json(helper.getfilelist(memt.getroot(),req.user.uuid,[]));
         //return res.status(200).json(mtree);
       }
       else{
-        return res.status(200).json(memt.get(fuuid));
+        return res.status(200).json(helper.getfiledetail(fuuid));
       }
     }
   // var pathname = url.parse(req.url).pathname;
@@ -117,7 +124,7 @@ router.get('/*',auth.jwt(), (req, res) => {
   //   }
 });
 
-router.post('/*',auth.jwt(),(req, res) => {
+router.post('/*',auth.jwt(),upload.single('avatar'),(req, res) => {
   if (req.body.type==='copy'){
     var pathname = url.parse(req.url).pathname;
     var fuuid = pathname.substr(1);
@@ -128,10 +135,17 @@ router.post('/*',auth.jwt(),(req, res) => {
         if (Checker.owner(fuuid,req.user.uuid)||Checker.write(fuuid,req.user.uuid)){
           var realpath = memt.getpath(fuuid);
           var targetpath = memt.getpath(req.body.target);
-          spawn('cp', ['-r',realpath,targetpath]);
+          try{
+            spawnSync('cp', ['-r',realpath,targetpath]);
+          }
+          catch(e){
+            return res.status(500).json('failed to copy files');
+          }
           var newlist = globby.sync([targetpath+'/'+memt.getname(fuuid)]);
           newlist.forEach(function(f){
-            socket.emit('checkpath',f);
+            var mto =new mtojson();
+            mto.path = f;
+            socket.emit('checkpath',mto);
           });
           return res.status(200).json('success');
         }
@@ -147,15 +161,27 @@ router.post('/*',auth.jwt(),(req, res) => {
       return res.status(404).json('invalid uuid');
     }
     if(memt.isfile(fuuid)){
+      console.log('1');
       return res.status(400).json('target is a file');
     }
     if(!Checker.write(fuuid,req.user.uuid)&&!Checker.owner(fuuid,req.user.uuid)){
       return res.status(403).json('Permission denied');
     }
-    if(!req.files){
+    if(!req.file){
+      console.log('2');
       return res.status(400).json('file missing');
     }
-    var tmp_path = req.files.thumbnail.path;
+    var tmp_path = req.file.path;
+    helper.tattoo(tmp_path);
+    try{
+      spawnSync('mv',[tmp_path,memt.getpath(fuuid)+'/'+req.file.originalname]);
+    }
+    catch(e){
+      return res.status(500).json('failed to upload file');
+    }
+    builder.checkall(memt.getpath(fuuid)+req.file.originalname);
+    //spawn('rm',['-rf',tmp_path]);
+    console.log(tmp_path);
     return res.status(200).json(null);
   }
 });
@@ -239,7 +265,7 @@ router.delete('/*',auth.jwt(), (req, res) => {
     else{
       if (Checker.owner(fuuid,req.user.uuid)||Checker.write(fuuid,req.user.uuid)){
         var realpath = memt.getpath(fuuid);
-        mto.uuid = xattr.getSync(realpath,'user.uuid').toString('utf-8');
+        mto.uid = xattr.getSync(realpath,'user.uuid').toString('utf-8');
         spawn('rm', ['-rf',realpath]);
         socket.emit('deletefolderorfile',mto);
         return res.status(200).json('success');
