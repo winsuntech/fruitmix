@@ -52,12 +52,12 @@ function getfilehelperbyhash(user) {
 function getfilehelper(uuid,user,tmpobjlist) {
 	if (memt.has(uuid)){
     	var tmpobj = clone({},memt.get(uuid));
-    	tmpobj.setchildren(memt.getrawchildrenlist(uuid));
+    	tmpobj.children=memt.getrawchildrenlist(uuid);
     	tmpobjlist.push(tmpobj);
     	var tmpchildren=memt.getchildren(uuid);
 		tmpchildren.forEach(function(f){
-			if(Checker.read(f.getuuid(),user)||Checker.owner(f.getuuid(),user)){
-				getfilehelper(f.getuuid(),user,tmpobjlist);
+			if(Checker.read(f.uuid,user)||Checker.owner(f.uuid,user)){
+				getfilehelper(f.uuid,user,tmpobjlist);
 			}
         });
         return tmpobjlist;
@@ -67,7 +67,7 @@ function getfilehelper(uuid,user,tmpobjlist) {
 function fileformatedetail(uuid){
 	if (memt.has(uuid)){
     	var tmpobj = clone({},memt.get(uuid));
-    	tmpobj.setchildren(memt.getrawchildrenlist(uuid));
+    	tmpobj.children=memt.getrawchildrenlist(uuid);
         return tmpobj;
 	}
 }
