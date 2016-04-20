@@ -2,7 +2,7 @@
 
 ***
 
-##### precondition:
+##### Precondition:
 
 * Windows 7 Ultimate Service Pack 1 64bit
 
@@ -32,7 +32,6 @@ Download Path: [Download Python 2.7.11](https://www.python.org/ftp/python/2.7.11
 * Install<p>
 `Use default setting (select "Add python.exe to path" button on "Customize Python 2.7.11" page), consecutive press "next" button until you see the "finish" button.`<p>
 
-
 ##### Deploy Node.js
 
 * Download<p>
@@ -50,11 +49,11 @@ Download Path: [Download mongodb-win32-x86_64-3.2.5-signed.msi](https://fastdl.m
 * Install<p>
 `Use default setting, consecutive press "next" button until you see the "finish" button.`<p>
 
-##### Deploy Microsoft Windows SDK for Windows 7 and .NET Framework 3.5
+##### Deploy Express 2013 for Desktop
 
 * Download<p>
-Offical Website: [Click](http://www.microsoft.com/en-us/download/details.aspx?id=8279)<p>
-Download Path: [Download winsdk_web.exe](https://download.microsoft.com/download/A/6/A/A6AC035D-DA3F-4F0C-ADA4-37C8E5D34E3D/winsdk_web.exe)<p>
+Offical Website: [Click](https://www.visualstudio.com/en-us/downloads/download-visual-studio-vs.aspx)<p>
+Download Path: [Download vs2013.5_dskexp_ENU.iso](https://go.microsoft.com/fwlink/?LinkId=532499&type=ISO&clcid=0x409)<p>
 * Install<p>
 `Use default setting, consecutive press "next" button until you see the "finish" button.`<p>
 
