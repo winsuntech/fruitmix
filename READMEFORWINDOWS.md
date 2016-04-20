@@ -89,6 +89,8 @@ Download Path: [Download vs2013.5_dskexp_ENU.iso](https://go.microsoft.com/fwlin
  - Method 2: use package.json<p>
  `npm install`<p>
 
+ *PS: Install "fs-xattr" module failed, because of windows dosen't support extended attributes on its filesystems at all *<p>
+
 + Run server<p>
 `npm run start`<p>
 `npm run test-server`<p>
