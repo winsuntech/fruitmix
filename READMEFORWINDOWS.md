@@ -59,6 +59,15 @@ Download Path: [Download vs2013.5_dskexp_ENU.iso](https://go.microsoft.com/fwlin
 
 ##### Let's cook
 
++ Launch cmd tools under "Windows 7"<p>
+`"Start" -> "Visual Studio 2013" -> "Visual Studio Tools" -> "Developer Command Prompt for VS2013"`<p>
+
++ Go into specified directory<p>
+`cd c:\path\you\point`<p>
+
++ Download the project<p>
+`git clone https://github.com/winsuntech/fruitmix.git`<p>
+
 + Enter the project<p>
 `cd fruitmix`<p>
 
