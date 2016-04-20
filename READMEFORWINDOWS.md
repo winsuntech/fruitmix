@@ -80,7 +80,7 @@ Download Path: [Download vs2013.5_dskexp_ENU.iso](https://go.microsoft.com/fwlin
  - bcrypt<p>
  `npm install bcrypt --msvs_version=2013`<p>
 
-##### Other packages
+ ##### Other packages
 
  - Method 1: Don't use package.json<p>
  `npm install --save body-parser debug nodemon  express jwt-simple mongoose morgan node-uuid passport passport-http passport-jwt serve-favicon validator`<p>
