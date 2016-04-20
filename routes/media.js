@@ -23,7 +23,11 @@ router.get('/*',auth.jwt(), (req, res) => {
     }
     else{
       if (pathname==='/'){
-        return res.status(200).json(helper.formatformedia(helper.getfilelistbyhash(req.user.uuid)));
+        var tmparray=[];
+        helper.getfilelistbyhash(req.user.uuid).forEach(function(f){
+          tmparray.push(helper.formatformedia(f));
+        });
+        return res.status(200).json(tmparray);
       }
       else{
         var bln =false;

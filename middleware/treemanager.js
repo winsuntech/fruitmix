@@ -1,9 +1,68 @@
-var visitor = require('middleware/visit');
+var visitor = require('middleware/visitor');
 var tools = require('middleware/tools');
 
 function Memtree() {  
     this.root=''; 
     this.elements = new Map();  
+   
+    this.getroot = function(){
+        return this.root;
+    };
+
+    this.setroot = function(value){
+        this.root = value;
+    };
+
+    this.getuuid = function(key) {  
+        return this.get(key).uuid;  
+    };  
+
+    this.gettype = function(key) { 
+        return this.get(key).type;
+    };
+    // this.getdetail = function(uuid){
+    //     return this.get(uuid).getdetail();
+    // };
+
+    // this.setdetail = function(uuid,value){
+    //     return this.get(uuid).setdetail(value);
+    // };
+
+    this.getchildren = function(uuid){
+        return this.get(uuid).children;
+    };
+
+    this.setchildren = function(uuid,value){
+        this.get(uuid).children=value;
+    };
+
+    this.gethash = function(uuid){
+        return this.get(uuid).hash;
+    };
+
+    this.sethash = function(uuid,value){
+        this.get(uuid).hash=value;
+    };
+
+    this.getparent = function(key){
+        return this.get(key).parent;
+    };
+
+    this.getowner = function(key){
+        return this.get(key).permission.owner;
+    };
+
+    this.getname = function(key) { 
+        return this.get(key).attribute.name;
+    };
+
+    this.setname = function(key,name) { 
+        this.get(key).attribute.name=name;
+    };
+
+    this.getpathobj = function(key){
+        return createpathobj(key,[]);
+    };
 
     this.size = function(){
         return this.elements.size;
@@ -12,130 +71,100 @@ function Memtree() {
     this.clear = function() {  
         this.elements.clear();  
     };  
-   
-    this.getroot = function(){
-        return this.root;
+
+    this.deletefilebyuuid=function(key){
+        memt.remove(key);
     };
 
-    this.setroot = function(_value){
-        this.root = _value;
-    };
-
-    this.getdetail = function(uuid){
-        return this.get(uuid).getdetail();
-    };
-
-    this.setdetail = function(uuid,value){
-        return this.get(uuid).setdetail(value);
-    };
-
-    this.deletefilebyuuid=function(_key){
-        memt.remove(_key);
-    };
-
-    this.deletefile = function(uuid){
-        this.parentremove(uuid);
-        visitor(uuid,this.deletefilebyuuid);
-    };
-
-    this.parentremove = function(_key){
-        var tmpparent=this.get(_key).getparent();
-        this.get(tmpparent).removechild(_key);
-    };
-
-    this.add = function(_key,_obj) {
-        this.elements.set( _key, _obj);
+    this.add = function(key,obj) {
+        this.elements.set( key, obj);
     };  
   
-    this.remove = function(_key) {  
-        this.elements.delete(_key);
+    this.remove = function(key) {  
+        this.elements.delete(key);
     };  
 
-    this.get = function(_key) { 
-        return this.elements.get(_key);
+    this.get = function(key) { 
+        return this.elements.get(key);
     };  
 
-    this.has = function(_key) {  
-        return this.elements.has(_key);  
+    this.has = function(key) {  
+        return this.elements.has(key);  
     };  
 
     this.mtobjs = function() {  
         return this.elements;  
     };  
 
-    this.getuuid = function(_key) {  
-        return this.get(_key).getuuid();  
-    };  
 
-    this.getpath = function(_key) {
+    this.deletefile = function(uuid){
+        this.parentremove(uuid);
+        visitor(uuid,this.deletefilebyuuid);
+    };
+
+    this.parentremove = function(key){
+        var tmpparent=this.get(key).parent;
+        this.removechild(tmpparent,key);
+    };
+
+    this.getpath = function(key) {
         var realpath='';
-        this.getpathobj(_key).forEach(function(f){
-            realpath='/'+f.getname()+realpath;
+        this.getpathobj(key).forEach(function(f){
+            realpath='/'+f.attribute.name+realpath;
         });
         return '/mnt'+realpath;
     };
 
-    this.gettype = function(_key) { 
-        return this.get(_key).gettype();
+    this.addchild = function(target,value){
+        if(!ischild(target,value)||this.get(target).children.length===0){
+            this.get(target).children.push(value);
+        }
     };
 
-    this.addchild = function(_target,_values){
-        this.get(_target).addchild(_values);
-    };
+//this.addchild=function(_value) {
+//         //console.log(_value);
+//         //console.log('------------------');
+//         if(!this.ischild(_value)||this.children.length===0){
+//             this.children.push(_value);
+//         }
+//     };
 
-    this.getchildren = function(uuid){
-        return this.get(uuid).getchildren();
-    };
-
-    this.setchildren = function(uuid,value){
-        this.get(uuid).setchildren(value);
-    };
-
-    this.gethash = function(uuid){
-        return this.get(uuid).gethash();
-    };
-
-    this.sethash = function(uuid,value){
-        return this.get(uuid).sethash(value);
-    };
+    this.removechild=function(uuid,key) {
+        var bln = false;
+        try {
+            for (i = 0; i < this.get(uuid).children.length; i++) {
+                if (this.get(uuid).children[i].uuid === key) {
+                    this.get(uuid).children.splice(i, 1);
+                    return true;
+                }
+            }
+        } catch (e) {
+            bln = false;
+        }
+        return bln;
+    }
 
     this.getrawchildrenlist = function(uuid){
-        var tmplist=this.get(uuid).getchildren();
+        var tmplist=this.get(uuid).children;
         var tmparray=[];
         tmplist.forEach(function(f){
-            tmparray.push(f.getuuid());
+            tmparray.push(f.uuid);
         })
         return tmparray;
     };
 
-    this.getparent = function(key){
-        return this.get(key).getparent();
-    };
-
     this.canread = function(uuid,useruuid){
-        var tmplist=this.get(uuid).getreadlist();
+        var tmplist=this.get(uuid).permission.readlist;
         return tools.contains(tmplist,useruuid);
     };
 
     this.canwrite = function(uuid,useruuid){
-        var tmplist=this.get(uuid).getwritelist();
+        var tmplist=this.get(uuid).permission.writelist;
         return tools.contains(tmplist,useruuid);
     };
 
-    this.getowner = function(key){
-        return this.get(key).getowner();
-    };
-
-    this.getname = function(_key) { 
-        return this.get(_key).getname();
-    };
-
-    this.setname = function(_key,name) { 
-        return this.get(_key).setname(name);
-    };
-
-    this.isfile = function(_key){
-        if (this.gettype(_key) ==='file'){
+    this.isfile = function(key){
+        if (this.gettype(key) ==='file'){
             return true;
         }
         else{
@@ -151,15 +180,19 @@ function Memtree() {
     this.moveto = function(_key,target){
         this.parentremove(_key);
         this.addchild(target,this.get(_key));
-        this.get(_key).setparent(target);
+        this.get(_key).parent=target;
     };
-
-    this.getpathobj = function(key){
-        return createpathobj(key,[]);
-    };
-
-    
 }  
+
+function ischild(key,value){
+    var ist = false;
+    memt.get(key).children.forEach(function(f){
+        if (f===value){
+            ist=true;
+        } 
+    });
+    return ist;
+}
 
 function createpathobj(key,array){
     if(key!==memt.getroot()){

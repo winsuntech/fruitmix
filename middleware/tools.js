@@ -52,12 +52,12 @@ function getfilehelperbyhash(user) {
 function getfilehelper(uuid,user,tmpobjlist) {
 	if (memt.has(uuid)){
     	var tmpobj = clone({},memt.get(uuid));
-    	tmpobj.setchildren(memt.getrawchildrenlist(uuid));
+    	tmpobj.children=memt.getrawchildrenlist(uuid);
     	tmpobjlist.push(tmpobj);
     	var tmpchildren=memt.getchildren(uuid);
 		tmpchildren.forEach(function(f){
-			if(Checker.read(f.getuuid(),user)||Checker.owner(f.getuuid(),user)){
-				getfilehelper(f.getuuid(),user,tmpobjlist);
+			if(Checker.read(f.uuid,user)||Checker.owner(f.uuid,user)){
+				getfilehelper(f.uuid,user,tmpobjlist);
 			}
         });
         return tmpobjlist;
@@ -67,7 +67,7 @@ function getfilehelper(uuid,user,tmpobjlist) {
 function fileformatedetail(uuid){
 	if (memt.has(uuid)){
     	var tmpobj = clone({},memt.get(uuid));
-    	tmpobj.setchildren(memt.getrawchildrenlist(uuid));
+    	tmpobj.children=memt.getrawchildrenlist(uuid);
         return tmpobj;
 	}
 }
@@ -142,17 +142,19 @@ function formatformedia(obj){
 		this.accesstime='';
 		this.size='';
 		this.hash = '';
+		this.name = '';
 		this.detail='';
 	}
-
+	console.log(obj)
 	var tmpobj = new mediajson();
-	tmpobj.createtime=obj.getcreatetime();
-	tmpobj.changetime=obj.getchangetime();
-	tmpobj.modifytime=obj.getmodifytime();
-	tmpobj.accesstime=obj.getaccesstime();
-	tmpobj.size=obj.getsize();
-	tmpobj.hash = obj.gethash();
-	tmpobj.detail=obj.getdetail();
+	tmpobj.createtime=obj.attribute.createtime;
+	tmpobj.changetime=obj.attribute.changetime;
+	tmpobj.modifytime=obj.attribute.modifytime;
+	tmpobj.accesstime=obj.attribute.accesstime;
+	tmpobj.size=obj.attribute.size;
+	tmpobj.name = obj.attribute.name;
+	tmpobj.hash = obj.hash;
+	//tmpobj.detail=obj.getdetail();
 
 	return tmpobj;
 }

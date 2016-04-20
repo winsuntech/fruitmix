@@ -74,7 +74,7 @@ describe("test files", function() {
       .get('/files/d03232a4-9b35-439f-b91b-ff20f6de6dc6?type=media')
       .set('Accept', 'application/json')
       .set('Authorization', 'JWT eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1dWlkIjoiYzMxYTJlOTktOTg3ZC00ZjY1LTk1NTktMjJlMjJmZjYwM2RhIn0.C7j5pmnGXSr2ZB2NTHJHMNw2HGDrZlmgXbNa-TtSUoU')
-      .expect('Content-Type','text/html')
+      .expect('Content-Type','text/plain')
       .expect(200, done);
   });
 
