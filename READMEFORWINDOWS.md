@@ -4,19 +4,19 @@
 
 ##### Precondition:
 
-* Windows 7 Ultimate Service Pack 1 64bit
+* Windows 7 Ultimate Service Pack 1 64bit<p>
 
 ##### Ingrediants:
 
-* Git 2.8
-* Python 2.7
-* Node.js 5.10
-* MongoDB 3.2
-* Visual Studio 2013 - Express 2013 for Desktop
+* Git 2.8<p>
+* Python 2.7<p>
+* Node.js 5.10<p>
+* MongoDB 3.2<p>
+* Visual Studio 2013 - Express 2013 for Desktop<p>
 
 ***
 
-##### Deploy Git
+##### Deploy Git:
 
 * Download<p>
 Offical Website: [Click](https://git-for-windows.github.io/)<p>
@@ -24,7 +24,7 @@ Download Path: [Download Git-2.8.1-64-bit.exe](https://github.com/git-for-window
 * Install<p>
 `Use default setting, consecutive press "next" button until you see the "finish" button.`<p>
 
-##### Deploy Python
+##### Deploy Python:
 
 * Download<p>
 Offical Website: [Click](https://www.python.org/)<p>
@@ -32,7 +32,7 @@ Download Path: [Download Python 2.7.11](https://www.python.org/ftp/python/2.7.11
 * Install<p>
 `Use default setting (select "Add python.exe to path" button on "Customize Python 2.7.11" page), consecutive press "next" button until you see the "finish" button.`<p>
 
-##### Deploy Node.js
+##### Deploy Node.js:
 
 * Download<p>
 Offical Website: [Click](https://nodejs.org/en/)<p>
@@ -40,7 +40,7 @@ Download Path: [Download v5.10.1](https://nodejs.org/dist/v5.10.1/node-v5.10.1-x
 * Install<p>
 `Use default setting, consecutive press "next" button until you see the "finish" button.`<p>
 
-##### Deploy MongoDB
+##### Deploy MongoDB:
 
 * Download<p>
 Offical Website: [Click](https://www.mongodb.org/)<p>
@@ -49,7 +49,7 @@ Download Path: [Download mongodb-win32-x86_64-3.2.5-signed.msi](https://fastdl.m
 * Install<p>
 `Use default setting, consecutive press "next" button until you see the "finish" button.`<p>
 
-##### Deploy Express 2013 for Desktop
+##### Deploy Express 2013 for Desktop:
 
 * Download<p>
 Offical Website: [Click](https://www.visualstudio.com/en-us/downloads/download-visual-studio-vs.aspx)<p>
@@ -57,7 +57,9 @@ Download Path: [Download vs2013.5_dskexp_ENU.iso](https://go.microsoft.com/fwlin
 * Install<p>
 `Use default setting, consecutive press "next" button until you see the "finish" button.`<p>
 
-##### Let's cook
+***
+
+##### Let's cook:
 
 + Launch cmd tools under "Windows 7"<p>
 `"Start" -> "Visual Studio 2013" -> "Visual Studio Tools" -> "Developer Command Prompt for VS2013"`<p>
@@ -72,6 +74,9 @@ Download Path: [Download vs2013.5_dskexp_ENU.iso](https://go.microsoft.com/fwlin
 `cd fruitmix`<p>
 
 + Install essential libs<p>
+ - node-gyp<p>
+ `npm install -g node-gyp`<p>
+
  - Method 1: Don't use package.json<p>
  `npm install --save bcrypt body-parser debug nodemon  express jwt-simple mongoose morgan node-uuid passport passport-http passport-jwt serve-favicon validator`<p>
  `npm install --save-dev mocha chai sinon supertest`<p>
