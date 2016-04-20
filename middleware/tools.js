@@ -142,17 +142,19 @@ function formatformedia(obj){
 		this.accesstime='';
 		this.size='';
 		this.hash = '';
+		this.name = '';
 		this.detail='';
 	}
-
+	console.log(obj)
 	var tmpobj = new mediajson();
-	tmpobj.createtime=obj.getcreatetime();
-	tmpobj.changetime=obj.getchangetime();
-	tmpobj.modifytime=obj.getmodifytime();
-	tmpobj.accesstime=obj.getaccesstime();
-	tmpobj.size=obj.getsize();
-	tmpobj.hash = obj.gethash();
-	tmpobj.detail=obj.getdetail();
+	tmpobj.createtime=obj.attribute.createtime;
+	tmpobj.changetime=obj.attribute.changetime;
+	tmpobj.modifytime=obj.attribute.modifytime;
+	tmpobj.accesstime=obj.attribute.accesstime;
+	tmpobj.size=obj.attribute.size;
+	tmpobj.name = obj.attribute.name;
+	tmpobj.hash = obj.hash;
+	//tmpobj.detail=obj.getdetail();
 
 	return tmpobj;
 }

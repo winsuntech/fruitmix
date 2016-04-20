@@ -106,9 +106,6 @@ io.sockets.on('connection', function(socket){
       var mtoa= new MTOattribute(msg.createtime,msg.changetime,msg.modifytime,msg.accesstime,msg.size,msg.path.substr(msg.path.lastIndexOf('/')+1));
       var memobj = new MTObj(msg.uid,msg.type,msg.parent,[],msg.path,mtop,mtoa,msg.hash);
       memt.add(msg.uid,memobj);
-      console.log("==============");
-      console.log(memt.get(msg.uid));
-      console.log("==============");
       console.log(msg.uid);
       //console.log(msg.path);
       dmap.set(msg.path,msg.uid);

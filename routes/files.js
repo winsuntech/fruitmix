@@ -15,6 +15,7 @@ var multer  = require('multer')
 var upload = multer({ dest: '/mnt/uploads/' })
 var helper = require('middleware/tools');
 var mime = require('middleware/mime').types;
+var path = require('path');
 
 function mtojson(){
   this.uid='';
@@ -55,7 +56,7 @@ router.get('/*',auth.jwt(), (req, res) => {
                   var ext = path.extname(realpath);
                   ext = ext ? ext.slice(1) : 'unknown';
                   var contentType = mime[ext] || "text/plain";
-                  res.writeHead(200, {'Content-Type': 'text/html'});
+                  res.writeHead(200, {'Content-Type': contentType});
                   res.write(file, "binary");
                   res.end();
               }
