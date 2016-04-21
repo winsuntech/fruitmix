@@ -1,4 +1,3 @@
-var Checker = require('middleware/permissioncheck');
 var fs = require('fs');
 var xattr = require('fs-xattr');
 const uuid = require('node-uuid');
@@ -23,9 +22,9 @@ function contains(array, value) {
 
 function getfilehelperbyhash(user) {
 	var tmpobjlist =[];
-	hashmap.forEach((value, key) => {
+	memt.gethashmap().forEach((value, key) => {
 		value.forEach(function(f){
-			if(Checker.read(f,user)||Checker.owner(f,user)){
+			if(memt.checkreadpermission(f,user)||memt.checkownerpermission(f,user)){
 				tmpobjlist.push(fileformatedetail(f));
 			}
 		});
@@ -56,7 +55,7 @@ function getfilehelper(uuid,user,tmpobjlist) {
     	tmpobjlist.push(tmpobj);
     	var tmpchildren=memt.getchildren(uuid);
 		tmpchildren.forEach(function(f){
-			if(Checker.read(f.uuid,user)||Checker.owner(f.uuid,user)){
+			if(memt.checkreadpermission(f.uuid,user)||memt.checkownerpermission(f.uuid,user)){
 				getfilehelper(f.uuid,user,tmpobjlist);
 			}
         });

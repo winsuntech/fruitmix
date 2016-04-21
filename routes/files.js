@@ -10,7 +10,6 @@ var xattr = require('fs-xattr');
 var spawn = require('child_process').spawn;
 var spawnSync = require('child_process').spawnSync;
 var socket = require('socket.io-client')('http://localhost:10086');
-var Checker = require('middleware/permissioncheck');
 var multer  = require('multer')
 var upload = multer({ dest: '/mnt/uploads/' })
 var helper = require('middleware/tools');
@@ -133,7 +132,7 @@ router.post('/*',auth.jwt(),upload.single('avatar'),(req, res) => {
       return res.status(404).json('invalid uuid');
     }
     else{
-        if (Checker.owner(fuuid,req.user.uuid)||Checker.write(fuuid,req.user.uuid)){
+        if (memt.checkownerpermission(fuuid,req.user.uuid)||memt.checkwritepermission(fuuid,req.user.uuid)){
           var realpath = memt.getpath(fuuid);
           var targetpath = memt.getpath(req.body.target);
           try{
@@ -165,7 +164,7 @@ router.post('/*',auth.jwt(),upload.single('avatar'),(req, res) => {
       console.log('1');
       return res.status(400).json('target is a file');
     }
-    if(!Checker.write(fuuid,req.user.uuid)&&!Checker.owner(fuuid,req.user.uuid)){
+    if(!memt.checkwritepermission(fuuid,req.user.uuid)&&!memt.checkownerpermission(fuuid,req.user.uuid)){
       return res.status(403).json('Permission denied');
     }
     if(!req.file){
@@ -194,7 +193,7 @@ router.patch('/*',auth.jwt(), (req, res) => {
     return res.status(404).json('invalid uuid');
   }
   else{
-    if (Checker.write(fuuid,req.user.uuid)){
+    if (memt.checkwritepermission(fuuid,req.user.uuid)){
       if(req.body.filename&&!req.body.target){
         var nowpath = memt.getpath(fuuid);
         var targetpath = nowpath.substr(0,nowpath.lastIndexOf('/'))+'/'+req.body.filename
@@ -212,7 +211,7 @@ router.patch('/*',auth.jwt(), (req, res) => {
           return res.status(400).json('can not move into a file');
         }
         else{
-          if(!Checker.write(req.body.target,req.user.uuid)){return res.status(403).json('Permission denied!');}
+          if(!memt.checkwritepermission(req.body.target,req.user.uuid)){return res.status(403).json('Permission denied!');}
           var targetpath = memt.getpath(req.body.target);
           var nowpath = memt.getpath(fuuid);
           try{
@@ -230,7 +229,7 @@ router.patch('/*',auth.jwt(), (req, res) => {
           return res.status(400).json('can not move into a file!');
         }
         else{
-          if(!Checker.write(req.body.target,req.user.uuid)){return res.status(403).json('Permission denied!');}
+          if(!memt.checkwritepermission(req.body.target,req.user.uuid)){return res.status(403).json('Permission denied!');}
           var nowpath = memt.getpath(fuuid);
           var targetpath = memt.getpath(req.body.target)+"/"+req.body.filename;
           console.log(targetpath)
@@ -264,7 +263,7 @@ router.delete('/*',auth.jwt(), (req, res) => {
       return res.status(404).json('invalid uuid');
     }
     else{
-      if (Checker.owner(fuuid,req.user.uuid)||Checker.write(fuuid,req.user.uuid)){
+      if (memt.checkownerpermission(fuuid,req.user.uuid)||memt.checkwritepermission(fuuid,req.user.uuid)){
         var realpath = memt.getpath(fuuid);
         mto.uid = xattr.getSync(realpath,'user.uuid').toString('utf-8');
         spawn('rm', ['-rf',realpath]);

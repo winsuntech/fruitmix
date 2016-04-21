@@ -10,7 +10,6 @@ var xattr = require('fs-xattr');
 var spawn = require('child_process').spawn;
 var spawnSync = require('child_process').spawnSync;
 var socket = require('socket.io-client')('http://localhost:10086');
-var Checker = require('middleware/permissioncheck');
 var multer  = require('multer')
 var upload = multer({ dest: '/mnt/uploads/' })
 var helper = require('middleware/tools');
@@ -18,7 +17,7 @@ var helper = require('middleware/tools');
 router.get('/*',auth.jwt(), (req, res) => {
     var pathname = url.parse(req.url).pathname;
     var hashvalue = pathname.substr(1);
-    if(!hashmap.has(hashvalue)&&pathname!=='/'){
+    if(!memt.hashash(hashvalue)&&pathname!=='/'){
       return res.status(404).json('invalid hash');
     }
     else{
@@ -31,11 +30,11 @@ router.get('/*',auth.jwt(), (req, res) => {
       }
       else{
         var bln =false;
-        var objs=hashmap.get(hashvalue);
+        var objs=memt.getbyhash(hashvalue);
         console.log(objs);
         objs.forEach(function(f){
           console.log(f);
-          if(Checker.read(f,req.user.uuid)||Checker.owner(f,req.user.uuid)){
+          if(memt.checkreadpermission(f,req.user.uuid)||memt.checkownerpermission(f,req.user.uuid)){
             bln=true;
           }
         });

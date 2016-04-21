@@ -35,8 +35,8 @@ var User = require('./models/user');
 
 /** Authentication **/
 var auth = require('./middleware/auth');
-const Memtree = require('./middleware/treemanager');
-memt = new Memtree();
+memt = require('./middleware/treemanager');
+//memt = new Memtree();
 
 // uncomment after placing your favicon in /public
 //app.use(favicon(path.join(__dirname, 'public', 'favicon.ico')));
@@ -94,10 +94,8 @@ app.use(multer({
 
 var io = require("socket.io").listen(10086);
 dmap = new Map();
-hashmap = new Map();
 var MTOpermission = require('middleware/mtopermission');
 var MTOattribute = require('middleware/mtoattribute');
-
 
 io.sockets.on('connection', function(socket){
   socket.on('addfoldernode', function(msg){
@@ -107,7 +105,7 @@ io.sockets.on('connection', function(socket){
       var memobj = new MTObj(msg.uid,msg.type,msg.parent,[],msg.path,mtop,mtoa,msg.hash);
       memt.add(msg.uid,memobj);
       console.log(msg.uid);
-      //console.log(msg.path);
+      console.log(msg.path);
       dmap.set(msg.path,msg.uid);
     }
   });
@@ -119,14 +117,16 @@ io.sockets.on('connection', function(socket){
       var mtoa= new MTOattribute(msg.createtime,msg.changetime,msg.modifytime,msg.accesstime,msg.size,msg.path.substr(msg.path.lastIndexOf('/')+1));
       var memobj = new MTObj(msg.uid,msg.type,msg.parent,[],msg.path,mtop,mtoa,msg.hash);
       memt.add(msg.uid,memobj);
-      if(hashmap.has(msg.hash)){
-        var tmplist=hashmap.get(msg.hash);
+      console.log(msg.uid);
+      console.log(msg.path);
+      if(memt.hashash(msg.hash)){
+        var tmplist=memt.getbyhash(msg.hash);
         tmplist.push(msg.uid);
       }
       else{
         var tmplist = [];
         tmplist.push(msg.uid);
-        hashmap.set(msg.hash,tmplist);
+        memt.setbyhash(msg.hash,tmplist);
       }
     }
   });

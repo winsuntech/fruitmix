@@ -27,9 +27,11 @@ describe("unit testing middleware/tools.js", function() {
     sinon.stub(memt, 'has', function(f) {
       return true;
     });
+
     sinon.stub(memt, 'getrawchildrenlist', function(f) {
       return [444];
     });
+    
     sinon.stub(memt, 'get', function(f) {
       return new MTObj;
     });
