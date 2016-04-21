@@ -1,17 +1,15 @@
-##### precondition:
+### precondition:
 
 * Debian 8.3 64bit
 * Ubuntu 14.04 64bit
 
-##### Ingrediants:
+### Ingrediants:
 
 * Node.js
 * Git
 * MongoDB
 
-***
-
-##### Deploy Node.js
+### Deploy Node.js
 
 * Download nodejs v5.8.0 source code<p>
 `curl https://nodejs.org/dist/v5.8.0/node-v5.8.0.tar.gz -o node-v5.8.0.tar.gz`<p>
@@ -28,7 +26,7 @@
         make
         (sudo) make install
         
-##### Deploy Git
+### Deploy Git
 
 * Install<p>
 `(sudo) apt-get install git`<p>
@@ -36,7 +34,7 @@
 * Clone this recipes to your own system<p>
 `git clone git@github.com:winsuntech/fruitmix.git`<p>
 
-##### Deploy MongoDB
+### Deploy MongoDB
 
 * Import the public key used by the package management system<p>
 `sudo apt-key adv --keyserver 'keyserver.ubuntu.com' --recv '7F0CEB10'`<p>
@@ -50,4 +48,4 @@
 * Install the MongoDB packages<p>
 `sudo apt-get install -y mongodb-org`<p>
 
-##### Done
+### Done
