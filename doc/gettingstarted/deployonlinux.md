@@ -1,4 +1,4 @@
-### precondition:
+### Precondition:
 
 * Debian 8.3 64bit
 * Ubuntu 14.04 64bit
