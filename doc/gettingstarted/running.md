@@ -1,4 +1,4 @@
-### Linux Platform
+# Linux Platform
 + Enter the project<p>
 `cd fruitmix`<p>
 
@@ -18,7 +18,7 @@
 
 ### Done
 
-### Windows Platform
+# Windows Platform
 + Launch cmd tools under "Windows 7"<p>
 `"Start" -> "Visual Studio 2013" -> "Visual Studio Tools" -> "Developer Command Prompt for VS2013"`<p>
 
