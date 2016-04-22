@@ -16,7 +16,6 @@ function mtojson(){
   this.createtime='';
   this.changetime='';
   this.modifytime='';
-  this.accesstime='';
   this.size='';
   this.path='';
   this.parent='';
@@ -35,6 +34,7 @@ function mtojson(){
 
 function commoncheck(f){
   helper.tattoo(f);
+  fstat=fs.statSync(f);
   var uid = xattr.getSync(f,'user.uuid').toString('utf-8');
   var readlist = xattr.getSync(f,'user.readlist').toString('utf-8').split(',');
   var writelist = xattr.getSync(f,'user.writelist').toString('utf-8').split(',');
@@ -43,7 +43,6 @@ function commoncheck(f){
   var createtime = fstat.birthtime;
   var changetime = fstat.ctime;
   var modifytime = fstat.mtime;
-  var accesstime = fstat.atime;
   var size = fstat.size;
   var mtobj = new mtojson();
   mtobj.uid=uid;
@@ -54,7 +53,6 @@ function commoncheck(f){
   mtobj.createtime=createtime;
   mtobj.changetime=changetime;
   mtobj.modifytime=modifytime;
-  mtobj.accesstime=accesstime;
   mtobj.size=size;
   mtobj.path=f;
 

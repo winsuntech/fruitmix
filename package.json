@@ -17,6 +17,7 @@
     "express": "^4.13.4",
     "fs-xattr": "^0.1.11",
     "globby": "^4.0.0",
+    "gm": "^1.22.0",
     "jsmediatags": "^3.0.5",
     "jwt-simple": "^0.4.1",
     "mongoose": "^4.4.6",

@@ -101,7 +101,7 @@ io.sockets.on('connection', function(socket){
   socket.on('addfoldernode', function(msg){
     if(!memt.has(msg.uid)){
       var mtop=new MTOpermission(msg.readlist,msg.writelist,msg.owner);
-      var mtoa= new MTOattribute(msg.createtime,msg.changetime,msg.modifytime,msg.accesstime,msg.size,msg.path.substr(msg.path.lastIndexOf('/')+1));
+      var mtoa= new MTOattribute(msg.createtime,msg.changetime,msg.modifytime,msg.size,msg.path.substr(msg.path.lastIndexOf('/')+1));
       var memobj = new MTObj(msg.uid,msg.type,msg.parent,[],msg.path,mtop,mtoa,msg.hash);
       memt.add(msg.uid,memobj);
       console.log(msg.uid);
@@ -114,7 +114,7 @@ io.sockets.on('connection', function(socket){
     if(!memt.has(msg.uid)){
       //var a =helper.pastedetail(msg.path,msg.uid);
       var mtop=new MTOpermission(msg.readlist,msg.writelist,msg.owner);
-      var mtoa= new MTOattribute(msg.createtime,msg.changetime,msg.modifytime,msg.accesstime,msg.size,msg.path.substr(msg.path.lastIndexOf('/')+1));
+      var mtoa= new MTOattribute(msg.createtime,msg.changetime,msg.modifytime,msg.size,msg.path.substr(msg.path.lastIndexOf('/')+1));
       var memobj = new MTObj(msg.uid,msg.type,msg.parent,[],msg.path,mtop,mtoa,msg.hash);
       memt.add(msg.uid,memobj);
       console.log(msg.uid);

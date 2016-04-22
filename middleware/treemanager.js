@@ -15,10 +15,6 @@ function Memtree() {
         root = value;
     };
 
-    this.getuuid = function(key) {  
-        return this.get(key).uuid;  
-    };  
-
     this.gettype = function(key) { 
         return this.get(key).type;
     };
@@ -109,7 +105,7 @@ function Memtree() {
 
     this.deletefile = function(uuid){
         this.parentremove(uuid);
-        visitor(uuid,this.deletefilebyuuid);
+        visitor(uuid,this.deletefilebyuuid(uuid));
         visitor(uuid,this.removehashobj(uuid));
     };
 
@@ -149,7 +145,7 @@ function Memtree() {
 
     this.removehashobj =function(uuid){
         if(this.hashash(this.get(uuid).hash)){
-            var tmplist=this.getbyhash(this.get(uuid).hash)
+            var tmplist=this.getbyhash(this.get(uuid).hash);
             for (i = 0; i < tmplist.length; i++) {
                 if (tmplist[i] === uuid) {
                     tmplist.splice(i, 1);

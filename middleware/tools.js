@@ -20,6 +20,14 @@ function contains(array, value) {
     return false;
 }
 
+function removex(array, value) {
+    for (i = 0; i < array.length; i++) {
+	    if (array[i] === value) {
+	        array.splice(i, 1);
+	    }
+    }
+}
+
 function getfilehelperbyhash(user) {
 	var tmpobjlist =[];
 	memt.gethashmap().forEach((value, key) => {
@@ -72,7 +80,7 @@ function fileformatedetail(uuid){
 }
 
 function tattoo(f){
-  fstat=fs.statSync(f);
+  var fstat=fs.statSync(f);
   try{
     xattr.getSync(f,'user.uuid');
   }
@@ -138,7 +146,6 @@ function formatformedia(obj){
 		this.createtime='';
 		this.changetime='';
 		this.modifytime='';
-		this.accesstime='';
 		this.size='';
 		this.hash = '';
 		this.name = '';
@@ -149,7 +156,6 @@ function formatformedia(obj){
 	tmpobj.createtime=obj.attribute.createtime;
 	tmpobj.changetime=obj.attribute.changetime;
 	tmpobj.modifytime=obj.attribute.modifytime;
-	tmpobj.accesstime=obj.attribute.accesstime;
 	tmpobj.size=obj.attribute.size;
 	tmpobj.name = obj.attribute.name;
 	tmpobj.hash = obj.hash;
@@ -159,6 +165,8 @@ function formatformedia(obj){
 }
 
 exports.contains = contains
+
+exports.removex = removex
 
 exports.getfilelist = getfilehelper 
 
