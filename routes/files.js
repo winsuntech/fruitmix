@@ -13,24 +13,10 @@ var socket = require('socket.io-client')('http://localhost:10086');
 var multer  = require('multer')
 var upload = multer({ dest: '/mnt/uploads/' })
 var helper = require('middleware/tools');
-var mime = require('middleware/mime').types;
 var path = require('path');
-
-function mtojson(){
-  this.uid='';
-  this.readlist=[];
-  this.writelist=[];
-  this.owner=[];
-  this.type='';
-  this.createtime='';
-  this.changetime='';
-  this.modifytime='';
-  this.accesstime='';
-  this.size='';
-  this.path='';
-  this.parent='';
-  this.hash = '';
-}
+const readChunk = require('read-chunk');
+const fileType = require('file-type');
+var adapter = require('middleware/adapter')
 
 router.get('/*',auth.jwt(), (req, res) => {
     var pathname = url.parse(req.url).pathname;
@@ -52,10 +38,9 @@ router.get('/*',auth.jwt(), (req, res) => {
                   res.writeHead(500, {'Content-Type': 'text/plain'});
                   res.end(err);
               } else {
-                  var ext = path.extname(realpath);
-                  ext = ext ? ext.slice(1) : 'unknown';
-                  var contentType = mime[ext] || "text/plain";
-                  res.writeHead(200, {'Content-Type': contentType});
+                  const buffer = readChunk.sync(realpath, 0, 262);
+                  var filetype =  fileType(buffer);
+                  res.writeHead(200, {'Content-Type': filetype.mime});
                   res.write(file, "binary");
                   res.end();
               }
@@ -143,8 +128,7 @@ router.post('/*',auth.jwt(),upload.single('avatar'),(req, res) => {
           }
           var newlist = globby.sync([targetpath+'/'+memt.getname(fuuid)]);
           newlist.forEach(function(f){
-            var mto =new mtojson();
-            mto.path = f;
+            var mto =adapter.treebuilder('','','','','','','','','',f,'','','');
             socket.emit('checkpath',mto);
           });
           return res.status(200).json('success');
@@ -258,14 +242,13 @@ router.patch('/*',auth.jwt(), (req, res) => {
 router.delete('/*',auth.jwt(), (req, res) => {
     var pathname = url.parse(req.url).pathname;
     var fuuid = pathname.substr(1);
-    var mto = new mtojson();
     if (!memt.has(fuuid)){
       return res.status(404).json('invalid uuid');
     }
     else{
       if (memt.checkownerpermission(fuuid,req.user.uuid)||memt.checkwritepermission(fuuid,req.user.uuid)){
         var realpath = memt.getpath(fuuid);
-        mto.uid = xattr.getSync(realpath,'user.uuid').toString('utf-8');
+        var mto = adapter.treebuilder(xattr.getSync(realpath,'user.uuid').toString('utf-8'),'','','','','','','','','','','','');
         spawn('rm', ['-rf',realpath]);
         socket.emit('deletefolderorfile',mto);
         return res.status(200).json('success');

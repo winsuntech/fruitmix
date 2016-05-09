@@ -3,7 +3,7 @@ var express = require('express');
 var assert = require('chai').assert;
 var expect = require('chai').expect;
 var sinon = require('sinon');
-var memt = require('middleware/treemanager');
+memt = require('middleware/treemanager');
 
 describe("unit testing middleware/treemanager.js", function() { 
   // stub mongoose.model() and express.Router()
@@ -102,9 +102,23 @@ describe("unit testing middleware/treemanager.js", function() {
     expect(memt.has('root123456')).to.equal(true);
   });
 
-  // it("get", function() {
-  //   expect(memt.get('root123456')).to.equal(mtobj1);
-  // });
+  it("get", function() {
+    var mtobj = {
+    hash : "",
+    uuid : "root123456",
+    type : "folder",
+    parent : "",
+    children : ["file1111"],
+    attribute : {changetime : "111111111111",
+                modifytime : "222222222222",
+                createtime : "333333333333",
+                size : "4444",
+                name : "555"},
+    permission : {readlist : ["a11"],
+                  writelist : ["a22"],
+                  owner: ["a33"]}}
+    expect(memt.get('root123456')).to.deep.equal(mtobj);
+  });
 
   it("setchildren", function() {
     expect(memt.getchildren('file1111')).to.deep.equal(['file2222']);
@@ -125,16 +139,28 @@ describe("unit testing middleware/treemanager.js", function() {
   });
 
   it("remove", function() {
-    console.log(memt);
+    var mtobj = {
+    hash : "",
+    uuid : "root123456",
+    type : "folder",
+    parent : "",
+    children : ["file1111"],
+    attribute : {changetime : "111111111111",
+                modifytime : "222222222222",
+                createtime : "333333333333",
+                size : "4444",
+                name : "555"},
+    permission : {readlist : ["a11"],
+                  writelist : ["a22"],
+                  owner: ["a33"]}}
     memt.remove('file1111');
     expect(memt.size()).to.equal(1);
     expect(memt.has('file1111')).to.equal(false);
     expect(memt.has('root123456')).to.equal(true);
-    // expect(memt.get('root123456')).to.equal(mtobj1);
+    expect(memt.get('root123456')).to.deep.equal(mtobj);
   });
 
   it("addchild", function() {
-    console.log(memt);
     expect(memt.getchildren('file1111')).to.deep.equal(['file2222']);
     memt.addchild('file1111','file3333');
     expect(memt.getchildren('file1111')).to.deep.equal(['file2222','file3333']);

@@ -32,7 +32,9 @@ mongoose.connect(dbUrl, err => { if (err) throw err; });
 
 /** Model Initialization **/
 var User = require('./models/user');
-
+var Document = require('./models/document');
+var Documentlink = require('./models/documentlink');
+var Photolink = require('./models/photolink');
 /** Authentication **/
 var auth = require('./middleware/auth');
 memt = require('./middleware/treemanager');
@@ -54,7 +56,9 @@ app.use('/token', require('./routes/token'));
 app.use('/users', require('./routes/users'));
 app.use('/files',require('./routes/files'));
 app.use('/media',require('./routes/media'));
+app.use('/document',require('./routes/document'));
 app.use('/authtest', require('./routes/authtest'));
+app.use('/library',require('./routes/library'));
 /** Routing Ends **/
 //app.use(fileUpload());
 
@@ -112,10 +116,10 @@ io.sockets.on('connection', function(socket){
 
   socket.on('addfilenode', function(msg){
     if(!memt.has(msg.uid)){
-      //var a =helper.pastedetail(msg.path,msg.uid);
+      var a =helper.pastedetail(msg.path,msg.uid);
       var mtop=new MTOpermission(msg.readlist,msg.writelist,msg.owner);
       var mtoa= new MTOattribute(msg.createtime,msg.changetime,msg.modifytime,msg.size,msg.path.substr(msg.path.lastIndexOf('/')+1));
-      var memobj = new MTObj(msg.uid,msg.type,msg.parent,[],msg.path,mtop,mtoa,msg.hash);
+      var memobj = new MTObj(msg.uid,msg.type,msg.parent,[],msg.path,mtop,mtoa,msg.hash,'');
       memt.add(msg.uid,memobj);
       console.log(msg.uid);
       console.log(msg.path);

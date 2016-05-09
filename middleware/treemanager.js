@@ -103,6 +103,14 @@ function Memtree() {
         return elements;  
     };  
 
+    this.setdetail= function(uuid,data){
+        this.get(uuid).detail=data;
+    }
+
+    this.getdetail= function(uuid){
+        return this.get(uuid).detail;
+    }
+
     this.deletefile = function(uuid){
         this.parentremove(uuid);
         visitor(uuid,this.deletefilebyuuid(uuid));
@@ -230,7 +238,7 @@ function writecheck(uuid,user){
     return bln
 }
 
-function ownercheck(uuid,user){  
+function ownercheck(uuid,user){
     var bln = true;
     if (uuid!==memt.getroot()){
         bln = memt.isowner(uuid,user);

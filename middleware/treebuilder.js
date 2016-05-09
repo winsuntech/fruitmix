@@ -5,22 +5,7 @@ var xattr = require('fs-xattr');
 var socket = require('socket.io-client')('http://localhost:10086');
 var dmap1 = new Map();
 var helper = require('middleware/tools');
-
-
-function mtojson(){
-  this.uid='';
-  this.readlist=[];
-  this.writelist=[];
-  this.owner=[];
-  this.type='';
-  this.createtime='';
-  this.changetime='';
-  this.modifytime='';
-  this.size='';
-  this.path='';
-  this.parent='';
-  this.hash = '';
-}
+var adapter = require('middleware/adapter');
 
 // io.sockets.on('connection', function(socket1){
 //   socket1.on('deletefolderorfile', function(msg){
@@ -40,22 +25,14 @@ function commoncheck(f){
   var writelist = xattr.getSync(f,'user.writelist').toString('utf-8').split(',');
   var owner = xattr.getSync(f,'user.owner').toString('utf-8').split(',');
   var type = xattr.getSync(f,'user.type').toString('utf-8');
-  var createtime = fstat.birthtime;
+  //var createtime = fstat.birthtime;
+  var createtime = "2015-"+parseInt(Math.random()*12+1,10).toString()+"-"+parseInt(Math.random()*31+1,10).toString();
+  //console.log(createtime);
   var changetime = fstat.ctime;
   var modifytime = fstat.mtime;
   var size = fstat.size;
-  var mtobj = new mtojson();
-  mtobj.uid=uid;
-  mtobj.readlist=readlist;
-  mtobj.writelist=writelist;
-  mtobj.owner=owner;
-  mtobj.type=type;
-  mtobj.createtime=createtime;
-  mtobj.changetime=changetime;
-  mtobj.modifytime=modifytime;
-  mtobj.size=size;
-  mtobj.path=f;
-
+  var mtobj = adapter.treebuilder(uid,readlist,writelist,owner,type,createtime,changetime,modifytime,size,f,'','','');
+  
   if(dmap1.has(f.substr(0,f.lastIndexOf('/')))){
     var parent = dmap1.get(f.substr(0,f.lastIndexOf('/')));
     mtobj.parent=parent;

@@ -6,9 +6,14 @@ var sha256 = require('sha256');
 var ExifImage = require('exif').ExifImage;
 var id3 = require("jsmediatags");
 var probe = require('node-ffprobe');
-const IMAGE = [".BMP",".PCX",".TIFF",".GIF",".JPEG",".JPG",".TGA",".EXIF",".FPX",".SVG",".PSD",".CDR",".PCD",".DXF",".UFO",".EPS",".AI",".PNG",".HDRI",".RAW"]
-const MUSIC = [".MP3",".WMA",".WAV",".MOD",".RA",".CD",".MD",".ASF",".AAC",".Mp3Pro",".VQF",".FLAC",".APE",".MID",".vOGG",".M4A",".AAC+",".AIFF",".AU",".VQF"]
-const VIDEO = [".AVI",".RMVB",".RM",".ASF",".DIVX",".MPG",".MPEG",".MPE",".WMV",".MP4",".MKV",".VOB"]
+var gm = require('gm');
+const IMAGE = ["bmp","pcx","tiff","gif","jpeg","jpg","tga","exif","fpx","svg","psd","cdr","pcd","dxf","ufo","eps","ai","png","hdri","raw"]
+const MUSIC = ["mp3","wma","wav","mod","ra","cd","md","asf","aac","mp3pro","vqf","flac","ape","mid","vogg","m4a","aac","aiff","au","vqf"]
+const VIDEO = ["avi","rmvb","rm","asf","divx","mpg","mpeg","mpe","wmv","mp4","mkv","vob"]
+const readChunk = require('read-chunk');
+const fileType = require('file-type');
+var piexif = require("piexifjs");
+
 
 function contains(array, value) {
     var i = array.length;
@@ -95,24 +100,37 @@ function tattoo(f){
     }
     else if(fstat&&!fstat.isDirectory()){
       xattr.setSync(f,'user.type','file');
-      xattr.setSync(f,'user.hash',sha256(f));
+      var tmpx =fs.readFileSync(f);
+      xattr.setSync(f,'user.hash',sha256(tmpx));
     }
   }
 }
 
 function pastedetail(path,uuid){
-	var ext = path.substr(path.lastIndexOf('.')).toUpperCase();
+	const buffer = readChunk.sync(path, 0, 262);
+    var filetype = fileType(buffer);
+	var ext = filetype.ext;
 	var tmpobj=''
 	if (contains(IMAGE,ext)){
 		try {
 		    new ExifImage({image:path}, function (error, exifData) {
-		        if (error)
-		            var tmpobj='';
+		        if (error){
+		            var tmpobj={};
+		            gm(path)
+					.size(function (err, size) {
+					  if (!err){
+					  	tmpobj.height=size.height;
+					  	tmpobj.width=size.width;
+					  }
+	            	});
+		        }
 		        else
 		        {
 		            var tmpobj=exifData;
-		            memt.setdetail(uuid,exifData);
+		            if (tmpobj.exif.MakerNote!==undefined)tmpobj.exif.MakerNote="";
+		            if (tmpobj.exif.UserComment!==undefined)tmpobj.exif.UserComment="";
 		        }
+		        memt.setdetail(uuid,tmpobj);
 		    });
 		} catch (error) {
 		    var tmpobj='';
@@ -122,7 +140,7 @@ function pastedetail(path,uuid){
 		id3.read(path, {
 		  onSuccess: function(tag) {
 		    var tmpobj=tag;
-		    memt.setdetail(uuid,tag);
+		    memt.setdetail(uuid,tmpobj);
 		  },
 		  onError: function(error) {
 		    var tmpobj='';
@@ -132,7 +150,7 @@ function pastedetail(path,uuid){
 	else if(contains(VIDEO,ext)){
 		probe(path, function(err, probeData) {
 		    var tmpobj=probeData;
-		    memt.setdetail(uuid,probeData);
+		    memt.setdetail(uuid,tmpobj);
 		});
 	}
 	else{
@@ -141,27 +159,31 @@ function pastedetail(path,uuid){
 	return tmpobj;
 }
 
-function formatformedia(obj){
-	function mediajson(){
-		this.createtime='';
-		this.changetime='';
-		this.modifytime='';
-		this.size='';
-		this.hash = '';
-		this.name = '';
-		this.detail='';
-	}
-	console.log(obj)
-	var tmpobj = new mediajson();
-	tmpobj.createtime=obj.attribute.createtime;
-	tmpobj.changetime=obj.attribute.changetime;
-	tmpobj.modifytime=obj.attribute.modifytime;
-	tmpobj.size=obj.attribute.size;
-	tmpobj.name = obj.attribute.name;
-	tmpobj.hash = obj.hash;
-	//tmpobj.detail=obj.getdetail();
+function pastethumbexif(uuid,path){
+	var jpeg = fs.readFileSync(path);
+	var data = jpeg.toString("binary");
 
-	return tmpobj;
+	var zeroth = {};
+	var exif = {};
+	var gps = {};
+	const buffer = readChunk.sync(memt.getpath(uuid), 0, 262);
+    var filetype = fileType(buffer);
+	var ext = filetype.ext;
+	var tmpobj=''
+	if (contains(IMAGE,ext)){
+		try {
+		    new ExifImage({image:memt.getpath(uuid)}, function (error, exifData) {
+		        zeroth[piexif.ImageIFD.Orientation] = exifData.image.Orientation;
+				var exifObj = {"0th":zeroth, "Exif":exif, "GPS":gps};
+				var exifbytes = piexif.dump(exifObj);
+
+				var newData = piexif.insert(exifbytes, data);
+				var newJpeg = new Buffer(newData, "binary");
+				fs.writeFileSync(path, newJpeg);
+		    });
+		} catch (error) {
+		}
+	}
 }
 
 exports.contains = contains
@@ -178,4 +200,4 @@ exports.getfiledetail = fileformatedetail
 
 exports.pastedetail = pastedetail
 
-exports.formatformedia = formatformedia
+exports.pastethumbexif = pastethumbexif
