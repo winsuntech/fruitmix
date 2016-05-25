@@ -4,9 +4,8 @@ var Schema = mongoose.Schema;
 var bcrypt = require('bcrypt');
 
 var DocumentlinkSchema = new Schema({
-	uuid: { type: Object,unique: true, required: true},
+	uuid: { type: String,unique: true, required: true},
   	dhashlist: { type: Array},
-  	
   // owner: { type: String, unique: true, required: true },
   // permission: { type: Object, required: true },
   // content: { type: Object, required: true },

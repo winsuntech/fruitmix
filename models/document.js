@@ -5,6 +5,7 @@ var bcrypt = require('bcrypt');
 
 var DocumentSchema = new Schema({
   hash: { type: String, unique: true, required: true },
+  permission:{type: Array},
   data: { type: Object},
   // owner: { type: String, unique: true, required: true },
   // permission: { type: Object, required: true },
