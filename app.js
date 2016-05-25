@@ -10,11 +10,13 @@ var xattr = require('fs-xattr');
 var MTObj = require('middleware/memtree');
 const uuid = require('node-uuid');
 var schedule = require('node-schedule');
-var helper = require('middleware/tools');
-
+var MediaObj = require('middleware/mediaobj');
+var Mediamap = require('middleware/mediamanager');
 /** Express **/
 var app = express();
 var fs = require("fs");
+//var timeout =require('connect-timeout');
+//app.use(timeout('10000s'));
 /** Database Connection **/
 var env = app.get('env');
 if (env !== 'production' && env !== 'development' && env !== 'test') {
@@ -32,16 +34,24 @@ mongoose.connect(dbUrl, err => { if (err) throw err; });
 
 /** Model Initialization **/
 var User = require('./models/user');
-var Document = require('./models/document');
-var Documentlink = require('./models/documentlink');
-var Photolink = require('./models/photolink');
+//var Document = require('./models/document');
+//var Documentlink = require('./models/documentlink');
+//var Photolink = require('./models/photolink');
+var Version = require('./models/version');
+var Versionlink = require('./models/versionlink');
+var Comment = require('./models/comment');
+var Udbindling = require('./models/udbinding');
+var Librarylist = require('./models/librarylist');
+//var Group = require('./models/group');
+var Config = require('./models/config');
 /** Authentication **/
 var auth = require('./middleware/auth');
-memt = require('./middleware/treemanager');
+global.memt = require('./middleware/treemanager');
 //memt = new Memtree();
 
 // uncomment after placing your favicon in /public
 //app.use(favicon(path.join(__dirname, 'public', 'favicon.ico')));
+var helper = require('middleware/tools');
 
 app.use(logger('dev'));
 app.use(bodyParser.json());
@@ -56,9 +66,13 @@ app.use('/token', require('./routes/token'));
 app.use('/users', require('./routes/users'));
 app.use('/files',require('./routes/files'));
 app.use('/media',require('./routes/media'));
-app.use('/document',require('./routes/document'));
+
+//app.use('/document',require('./routes/document'));
+//app.use('/mediashare',require('/routes/mediashare'));
 app.use('/authtest', require('./routes/authtest'));
 app.use('/library',require('./routes/library'));
+//app.use('/group',require('./routes/group'));
+app.use('/mediashare',require('./routes/mediashare'));
 /** Routing Ends **/
 //app.use(fileUpload());
 
@@ -95,9 +109,11 @@ app.use(multer({
 //   });
 // });
 
+global.mshare = require('./middleware/mediamanager');
+helper.buildmediamap();
 
 var io = require("socket.io").listen(10086);
-dmap = new Map();
+global.dmap = new Map();
 var MTOpermission = require('middleware/mtopermission');
 var MTOattribute = require('middleware/mtoattribute');
 
@@ -229,7 +245,7 @@ io.sockets.on('connection', function(socket){
 //     }
 // });
 
-builder = require('./middleware/treebuilder');
+global.builder = require('./middleware/treebuilder');
 builder.checkall('/mnt/**');
 
 var rule = new schedule.RecurrenceRule();
@@ -238,7 +254,7 @@ var rule = new schedule.RecurrenceRule();
 // rule.minute =0;
 rule.second = 0;
 schedule.scheduleJob(rule, function(){
-  builder.checkall('/mnt/**');
+  //builder.checkall('/mnt/**');
 });
 
 // catch 404 and forward to error handler
