@@ -1,6 +1,7 @@
 var Document = require('mongoose').model('Document');
 var Documentlink = require('mongoose').model('Documentlink');
 var Photolink = require('mongoose').model('Photolink');
+var Group = require('mongoose').model('Group');
 var router = require('express').Router();
 const auth = require('middleware/auth');
 const uuid = require('node-uuid');
@@ -10,6 +11,7 @@ var helper = require('middleware/tools');
 const readChunk = require('read-chunk');
 const fileType = require('file-type');
 var fs = require('fs');
+var debug=true;
 
 router.get('/*',auth.jwt(), (req, res) => {
   var pathname = url.parse(req.url).pathname;
@@ -34,11 +36,26 @@ router.get('/*',auth.jwt(), (req, res) => {
   }
   else if(pathname!=='/'&&req.query.type==='photo'){
     Documentlink.find({uuid:duuid},'uuid dhashlist',(err,docs) => {
-        if(docs.length!==0){
-          Document.find({hash:docs[0].dhashlist[docs[0].dhashlist.length-1]}, 'hash data', (err, docs) => {
-            if(docs.length!==0){
-              var tlist=docs[0].data.content;
-              if(helper.contains(tlist,req.query.target)){
+      if(docs.length!==0){
+        Document.find({hash:docs[0].dhashlist[docs[0].dhashlist.length-1]}, 'hash data', (err, docs) => {
+          if(docs.length!==0){
+            var tlist=docs[0].data.content;
+            var check=0;
+            var tmpobj="";
+            for(var d in tlist){
+              if(d.digest===req.query.target){
+                check=1;
+                tmpobj=d;
+              }
+            }
+            if(check===1){
+              var pcheck=0;
+              for(var x in memt.getbyhash(d.digest)){
+                if(memt.checkownerpermission(x,d.creator)===1||memt.checkwritepermission(x,creator)===1){
+                  pcheck=1;
+                }  
+              }
+              if(pcheck===1){
                 var tuuid=memt.getbyhash(req.query.target);
                 var tpath=memt.getpath(tuuid[0]);
                 fs.readFile(tpath, "binary", function(err, file) {
@@ -54,13 +71,17 @@ router.get('/*',auth.jwt(), (req, res) => {
                   }
                 });
               }
-              else return res.status(404).json('invalid hash');
+              else{
+                return res.status(403).json('Permission denied'); 
+              }
             }
             else return res.status(404).json('invalid hash');
-          })
-        }
-        else return res.status(404).json('invalid hash');
-      });
+          }
+          else return res.status(404).json('invalid hash');
+        })
+      }
+      else return res.status(404).json('invalid hash');
+    });
   }
   else if(pathname==='/'&&req.query.type==='photo'){
     var tlist=[];
@@ -124,6 +145,7 @@ router.post('/*',auth.jwt(), (req, res) => {
   data.createtime = new Date().getTime();
   data.lastmodifytime = new Date().getTime();
   var datahash = sha256(JSON.stringify(data));
+  debug && console.log(1);
   var newdocument = new Document({
     hash:datahash,
     data:data,
@@ -137,7 +159,9 @@ router.post('/*',auth.jwt(), (req, res) => {
   });
   var pathname = url.parse(req.url).pathname;
   var duuid = pathname.substr(1);
+  debug && console.log(2);
   if (pathname==="/"){
+    debug && console.log(3);
     Document.find({hash:datahash},'hash data',(err,docs) => {
       if (docs.length===0){
         Documentlink.find({uuid:duuid},'uuid dhashlist',(err,docs) => {
@@ -147,10 +171,20 @@ router.post('/*',auth.jwt(), (req, res) => {
           });
           var tmplist =[];
           tmplist.push(datahash);
+          var tmpuuid=uuid.v4();
           var newdocumentlink = new Documentlink({
-            uuid:uuid.v4(),
-            dhashlist:tmplist,
+            uuid:tmpuuid,
+            dhashlist:tmplist
           });
+          if(req.body.doctype==='photolink'){
+            var newphotolink = new Photolink({
+              uuid:tmpuuid,
+              photohash:req.body.contents.digest
+            });
+            newphotolink.save((err)=>{
+              if (err) { return res.status(500).json(null); }
+            })
+          }
           newdocumentlink.save((err) => {
             if (err) { return res.status(500).json(null); }
           });
@@ -162,26 +196,43 @@ router.post('/*',auth.jwt(), (req, res) => {
     })
   }
   else{
-    Documentlink.find({uuid:duuid},'uuid dhashlist',(err,docs) => {
-      if(docs.length!==0){
-        var x =docs[0].dhashlist;
-        console.log(x);
-        x.push(datahash);
-        console.log(x);
-        Documentlink.findOneAndUpdate({uuid:duuid}, { $set: { dhashlist: x }}, function (err) {
-          if (err) return handleError(err);
-          else{
-            newdocument.save((err) => {
-              if (err) { return res.status(500).json(null); }
-              return res.status(200).json(null);
-            });
-          }
-          });
+    debug && console.log(4);
+    Group.find({ members:{$contains:req.user.uuid}},'uuid groupname members',(err,docs) =>{
+      console.log(docs);
+      if(docs===undefined||docs.length!==0){
+        for (var i in docs){
+          tmplist = docs.members
+        }
       }
       else{
-        return res.status(404).json('invalid uuid');
+        tmplist = [];
       }
-    })
+
+      //(&&req.body.doctype==='album')
+        Documentlink.find({uuid:duuid},'uuid dhashlist',(err,doc) => {
+          if(doc.length!==0){
+            var x =doc[0].dhashlist;
+            x.push(datahash);
+            Documentlink.findOneAndUpdate({uuid:duuid}, { $set: { dhashlist: x }}, function (err) {
+              if (err) return handleError(err);
+              else{
+                newdocument.save((err) => {
+                  if (err) { return res.status(500).json(null); }
+                  return res.status(200).json(null);
+                });
+              }
+              });
+          }
+          else{
+            return res.status(404).json('invalid uuid');
+          }
+        })
+      //}
+
+    });
+
+
+
   }
 });
 
@@ -208,6 +259,7 @@ router.post('/*',auth.jwt(), (req, res) => {
 //     return res.status(403).json('403 Permission denied');
 //   }
 // });
+
 
 
 module.exports = router;

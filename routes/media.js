@@ -1,4 +1,5 @@
 //var User = require('mongoose').model('User');
+var Comment = require('mongoose').model('Comment');
 var router = require('express').Router();
 const auth = require('middleware/auth');
 const uuid = require('node-uuid');
@@ -23,143 +24,179 @@ const readChunk = require('read-chunk');
 const fileType = require('file-type');
 
 router.get('/*',auth.jwt(), (req, res) => {
-    var pathname = url.parse(req.url).pathname;
-    var hashvalue = pathname.substr(1);
-    debug && console.log(1);
-    var passuuid="";
-    var pcheck=false;
-    var width = Number(req.query.width);
-    var height = Number(req.query.height);
-    if(memt.hashash(hashvalue)&&req.query.type==='thumb'){
-      if(width<=0||height<=0||Number.isNaN(height)||Number.isNaN(width)){
-        return res.status(406).json('error');
+  var pathname = url.parse(req.url).pathname;
+  var hashvalue = pathname.substr(1);
+  debug && console.log(1);
+  var passuuid="";
+  var pcheck=false;
+  var width = Number(req.query.width);
+  var height = Number(req.query.height);
+  if(memt.hashash(hashvalue)&&req.query.type==='thumb'){
+    if(width<=0||height<=0||Number.isNaN(height)||Number.isNaN(width)){
+      return res.status(406).json('error');
+    }
+    debug && console.log(memt.getbyhash(hashvalue));
+    memt.getbyhash(hashvalue).forEach(function(f){
+      debug && console.log(f);
+      debug && console.log(2);
+      if (memt.checkreadpermission(f,req.user.uuid)===1||memt.checkownerpermission(f,req.user.uuid)===1){
+        pcheck=true;
+        passuuid=f;
       }
-      debug && console.log(memt.getbyhash(hashvalue));
-      memt.getbyhash(hashvalue).forEach(function(f){
-        debug && console.log(f);
-        debug && console.log(2);
-        if (memt.checkreadpermission(f,req.user.uuid)||memt.checkownerpermission(f,req.user.uuid)){
-          pcheck=true;
-          passuuid=f;
+    });
+  if(pcheck==true){
+    var newpath = "/mnt/thumbs/"+hashvalue+"&&"+width+"@"+height+".jpeg";
+    debug && console.log(3);
+    if(!fs.existsSync(newpath)&&!helper.contains(jobq,hashvalue)){
+      jobq.push(hashvalue);
+      gm(memt.getpath(passuuid))
+      .resize(width,height,'!')
+      .noProfile()
+      .write(newpath,function(err){
+        if(err){console.log(err);
+          helper.removex(jobq,hashvalue);
         }
-      });
-    if(pcheck==true){
-      var newpath = "/mnt/thumbs/"+hashvalue+"&&"+width+"@"+height+".jpeg";
-      debug && console.log(3);
-      if(!fs.existsSync(newpath)&&!helper.contains(jobq,hashvalue)){
-        jobq.push(hashvalue);
-        gm(memt.getpath(passuuid))
-        .resize(width,height,'!')
-        .noProfile()
-        .write(newpath,function(err){
-          if(err){console.log(err);}
+        else{
           helper.pastethumbexif(passuuid,newpath);
           helper.removex(jobq,hashvalue);
-        });
+        }
+      });
 
-        debug && console.log(4);
-        return res.status(202).json('creating thumb');
-      }
-      else if(!fs.existsSync(newpath)&&helper.contains(jobq,hashvalue)&&pcheck==true){
-        debug && console.log(5);
-        return res.status(202).json('please try again later');
-      }
-      else if(fs.existsSync(newpath)&&pcheck==true){
-        debug && console.log(6);
-        fs.readFile(newpath, "binary", function(err, file) {
-          if (err) {
-              debug && console.log(7);
-              res.writeHead(500, {'Content-Type': 'text/plain'});
-              res.end(err);
-          } else {
-              debug && console.log(8);
-              res.writeHead(200, {'Content-Type': 'image/jpeg'});
-              res.write(file, "binary");
-              res.end();
-          }
-        });
-      }
-      else{
-        return res.status(403).json('Permission denied'); 
-      }
-      }
+      debug && console.log(4);
+      return res.status(202).json('creating thumb');
     }
-    else if(memt.hashash(hashvalue)&&req.query.type==='original'){
-      debug && console.log(9);
-      var tmppath='';
-      memt.getbyhash(hashvalue).forEach(function(f){
-        if(memt.checkreadpermission(f,req.user.uuid)||memt.checkownerpermission(f,req.user.uuid)){
-          pcheck=true;
-          tmppath=memt.getpath(f);
-      }});
-      if(tmppath!==''&&pcheck===true){
-        fs.readFile(tmppath, "binary", function(err, file) {
-            if (err) {
-              res.writeHead(500, {'Content-Type': 'text/plain'});
-              res.end(err);
-            } else {
-              const buffer = readChunk.sync(tmppath, 0, 262);
-              var filetype =  fileType(buffer);
-              res.writeHead(200, {'Content-Type': filetype.mime});
-              res.write(file, "binary");
-              res.end();
-            }
-        });
-      }
-      else{
-        return res.status(404).json('invalid hash');
-      }
+    else if(!fs.existsSync(newpath)&&helper.contains(jobq,hashvalue)&&pcheck==true){
+      debug && console.log(5);
+      return res.status(202).json('please try again later');
     }
-    else if(!memt.hashash(hashvalue)&&pathname!=='/'){
-      debug && console.log(10);
-      
-      return res.status(404).json('invalid hash');
+    else if(fs.existsSync(newpath)&&pcheck==true){
+      debug && console.log(6);
+      fs.readFile(newpath, "binary", function(err, file) {
+        if (err) {
+            debug && console.log(7);
+            res.writeHead(500, {'Content-Type': 'text/plain'});
+            res.end(err);
+        } else {
+            debug && console.log(8);
+            res.writeHead(200, {'Content-Type': 'image/jpeg'});
+            res.write(file, "binary");
+            res.end();
+        }
+      });
     }
     else{
-      debug && console.log(11);
-      if (pathname==='/'){
-        var tmparray=[];
-        helper.getfilelistbyhash(req.user.uuid).forEach(function(f){
-          if(req.query.filter==='photo'){
-            const buffer = readChunk.sync(memt.getpath(f.uuid), 0, 262);
-            var filetype = fileType(buffer);
-            if (filetype!==null&&filetype.ext==='jpg'){
-              tmparray.push(adapter.formatformedia(f));
-            }
+      return res.status(403).json('Permission denied'); 
+    }
+    }
+  }
+  else if(memt.hashash(hashvalue)&&req.query.type==='original'){
+    debug && console.log(9);
+    var tmppath='';
+    memt.getbyhash(hashvalue).forEach(function(f){
+      if(memt.checkreadpermission(f,req.user.uuid)===1||memt.checkownerpermission(f,req.user.uuid)===1){
+        pcheck=true;
+        tmppath=memt.getpath(f);
+    }});
+    if(tmppath!==''&&pcheck===true){
+      fs.readFile(tmppath, "binary", function(err, file) {
+          if (err) {
+            res.writeHead(500, {'Content-Type': 'text/plain'});
+            res.end(err);
+          } else {
+            const buffer = readChunk.sync(tmppath, 0, 262);
+            var filetype =  fileType(buffer);
+            res.writeHead(200, {'Content-Type': filetype.mime});
+            res.write(file, "binary");
+            res.end();
           }
-          else{
+      });
+    }
+    else{
+      return res.status(404).json('invalid hash');
+    }
+  }
+  else if(!memt.hashash(hashvalue)&&pathname!=='/'){
+    debug && console.log(10);
+    
+    return res.status(404).json('invalid hash');
+  }
+  else if(memt.hashash(hashvalue)&&req.query.type==='comments'){
+    Comment.find({hash:hashvalue},'creator datatime text shareid',(err,docs) => {
+      var data =docs.map(doc => ({
+        creator: doc.creator, 
+        datatime: doc.datatime,
+        text: doc.text,
+        shareid: doc.shareid
+      })) 
+      return res.status(200).json(data);
+    });
+  }
+  else{
+    debug && console.log(11);
+    if (pathname==='/'){
+      var tmparray=[];
+      helper.getfilelistbyhash(req.user.uuid).forEach(function(f){
+        if(req.query.filter==='photo'){
+          const buffer = readChunk.sync(memt.getpath(f.uuid), 0, 262);
+          var filetype = fileType(buffer);
+          if (filetype!==null&&filetype.ext==='jpg'){
             tmparray.push(adapter.formatformedia(f));
           }
-        });
-        tmparray.sort(function(a,b){
-          var a1 = a.createtime.split('-');
-          var tmpa = parseInt(a1[0])*10000+parseInt(a1[1])*100+parseInt(a1[2]);
-          var b1 = b.createtime.split('-');
-          var tmpb = parseInt(b1[0])*10000+parseInt(b1[1])*100+parseInt(b1[2]);
-          if(tmpa<tmpb) return 1;
-          else return -1;
-        });
-        tmparray.forEach(function(f){
-          console.log(f.createtime);
-        })
-        return res.status(200).json(tmparray);
-      }
-      else{
-        var bln =false;
-        var objs=memt.getbyhash(hashvalue);
-        objs.forEach(function(f){
-          if(memt.checkreadpermission(f,req.user.uuid)||memt.checkownerpermission(f,req.user.uuid)){
-            bln=true;
-          }
-        });
-        if(bln===true){
-          return res.status(200).json(adapter.formatformedia(helper.getfiledetail(objs[0])));
         }
-        else
-          return res.status(403).json('Permission denied');
-      }
+        else{
+          tmparray.push(adapter.formatformedia(f));
+        }
+      });
+      tmparray.sort(function(a,b){
+        var a1 = a.createtime.split('-');
+        var tmpa = parseInt(a1[0])*10000+parseInt(a1[1])*100+parseInt(a1[2]);
+        var b1 = b.createtime.split('-');
+        var tmpb = parseInt(b1[0])*10000+parseInt(b1[1])*100+parseInt(b1[2]);
+        if(tmpa<tmpb) return 1;
+        else return -1;
+      });
+      tmparray.forEach(function(f){
+        console.log(f.createtime);
+      })
+      return res.status(200).json(tmparray);
     }
+    else{
+      var bln =false;
+      var objs=memt.getbyhash(hashvalue);
+      objs.forEach(function(f){
+        if(memt.checkreadpermission(f,req.user.uuid)===1||memt.checkownerpermission(f,req.user.uuid)===1){
+          bln=true;
+        }
+      });
+      if(bln===true){
+        return res.status(200).json(adapter.formatformedia(helper.getfiledetail(objs[0])));
+      }
+      else
+        return res.status(403).json('Permission denied');
+    }
+  }
 });
+
+router.post('/*',auth.jwt(), (req, res) => {
+  var pathname = url.parse(req.url).pathname;
+  var hashvalue = pathname.substr(1);
+  if(memt.hashash(hashvalue)){
+    var newcomment = new Comment({
+      hash:req.body.hash,
+      creator:req.body.creator,
+      datatime: new Date().getTime(),
+      text:req.body.text,
+      shareid:req.body.shareid
+    })
+    newcomment.save((err)=>{
+      if (err) { return res.status(500).json(null); }
+      return res.status(200).json(newcomment);
+    })
+  }
+  else{
+    return res.status(404).json('invalid hash');
+  }
+})
 
 module.exports = router;
 

@@ -17,8 +17,8 @@ router.get('/',auth.jwt(), (req, res) => {
       isAdmin: doc.isAdmin,
       isFirstUser: doc.isFirstUser,
       type: doc.type
-    }))
-    return res.status(200).json(null);
+    })) 
+    return res.status(200).json(data);
   });
 });
 
