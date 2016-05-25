@@ -19,14 +19,14 @@ var adapter = require('middleware/adapter');
 
 function commoncheck(f){
   helper.tattoo(f);
-  fstat=fs.statSync(f);
+  var fstat=fs.statSync(f);
   var uid = xattr.getSync(f,'user.uuid').toString('utf-8');
   var readlist = xattr.getSync(f,'user.readlist').toString('utf-8').split(',');
   var writelist = xattr.getSync(f,'user.writelist').toString('utf-8').split(',');
   var owner = xattr.getSync(f,'user.owner').toString('utf-8').split(',');
   var type = xattr.getSync(f,'user.type').toString('utf-8');
-  //var createtime = fstat.birthtime;
-  var createtime = "2015-"+parseInt(Math.random()*12+1,10).toString()+"-"+parseInt(Math.random()*31+1,10).toString();
+  var createtime = fstat.birthtime;
+  //var createtime = "2015-"+parseInt(Math.random()*12+1,10).toString()+"-"+parseInt(Math.random()*31+1,10).toString();
   //console.log(createtime);
   var changetime = fstat.ctime;
   var modifytime = fstat.mtime;
@@ -57,7 +57,7 @@ function commoncheck(f){
 }
 
 function cronjob(tpath){
-  newlist = globby.sync([tpath]);
+  var newlist = globby.sync([tpath]);
   newlist.forEach(function(f){
    commoncheck(f);
   });
