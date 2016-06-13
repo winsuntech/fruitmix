@@ -11,13 +11,14 @@ var spawn = require('child_process').spawn;
 var spawnSync = require('child_process').spawnSync;
 var socket = require('socket.io-client')('http://localhost:10086');
 var multer  = require('multer')
-var upload = multer({ dest: '/mnt/uploads/' })
+var upload = multer({ dest: '/data/fruitmix/uploads/' })
 var helper = require('middleware/tools');
 var path = require('path');
 const readChunk = require('read-chunk');
 const fileType = require('file-type');
 var xattr = require('fs-xattr');
 var adapter = require('middleware/adapter')
+var debug=false;
 
 router.get('/*',auth.jwt(), (req, res) => {
     var pathname = url.parse(req.url).pathname;
@@ -34,29 +35,43 @@ router.get('/*',auth.jwt(), (req, res) => {
         } 
         else {
           if (!fstat.isDirectory()){
-            fs.readFile(realpath, "binary", function(err, file) {
-              if (err) {
-                console.log(1)
-                res.writeHead(500, {'Content-Type': 'text/plain'});
-                console.log(2)
-                console.log(err)
-                res.end();
-              } else {
-                console.log(3)
-                const buffer = readChunk.sync(realpath, 0, 262);
+            // fs.readFile(realpath, "binary", function(err, file) {
+            //   if (err) {
+            //     console.log(1)
+            //     res.writeHead(500, {'Content-Type': 'text/plain'});
+            //     console.log(2)
+            //     console.log(err)
+            //     res.end();
+            //   } else {
+            //     console.log(3)
+            //     const buffer = readChunk.sync(realpath, 0, 262);
+            //     var filetype =  fileType(buffer);
+            //     if (filetype!==null){
+            //       res.writeHead(200, {'Content-Type': filetype.mime});
+            //       res.write(file, "binary");
+            //       res.end();
+            //     }
+            //     else{
+            //       res.writeHead(200, {'Content-Type': 'unknow'});
+            //       res.write(file, "binary");
+            //       res.end();
+            //     }
+            //   }
+            var readStream = fs.createReadStream(realpath)
+            const buffer = readChunk.sync(realpath, 0, 262);
                 var filetype =  fileType(buffer);
                 if (filetype!==null){
                   res.writeHead(200, {'Content-Type': filetype.mime});
-                  res.write(file, "binary");
-                  res.end();
+                  //res.write(file, "binary");
+                  //res.end();
+                  readStream.pipe(res);
                 }
                 else{
                   res.writeHead(200, {'Content-Type': 'unknow'});
-                  res.write(file, "binary");
-                  res.end();
+                  //res.write(file, "binary");
+                  //res.end();
+                  readStream.pipe(res);
                 }
-              }
-           });
           }
           else{
             return res.status(501).json(fuuid+" is a directory");
@@ -70,7 +85,15 @@ router.get('/*',auth.jwt(), (req, res) => {
     }
     else{
       if (pathname==='/'){
-        return res.status(200).json(helper.getfilelist(memt.getroot(),req.user.uuid,[]));
+        var tdata=helper.getfilelist(memt.getroot(),req.user.uuid,[]);
+        // console.log("---------------=================");
+        // console.log(tdata)
+        // var rdata=[];
+        // for (var f of tdata){
+        //   console.log(memt.getpath(f.uuid))
+        //   rdata=helper.getparentobj(f.uuid,rdata);
+        // }
+        return res.status(200).json(tdata);
         //return res.status(200).json(mtree);
       }
       else{
@@ -122,9 +145,12 @@ router.get('/*',auth.jwt(), (req, res) => {
 });
 
 router.post('/*',auth.jwt(),upload.single('file'),(req, res) => {
+  var pathname = url.parse(req.url).pathname;
+  var fuuid = pathname.substr(1);
+  if(memt.islibrary(fuuid)){
+      return res.status(400).json('this uuid from a library');
+  }
   if (req.body.type==='copy'){
-    var pathname = url.parse(req.url).pathname;
-    var fuuid = pathname.substr(1);
     if (!memt.has(fuuid)||!memt.has(req.body.target)||memt.isfile(req.body.target)){
       return res.status(404).json('invalid uuid');
     }
@@ -153,8 +179,6 @@ router.post('/*',auth.jwt(),upload.single('file'),(req, res) => {
     }
   }
   else{
-    var pathname = url.parse(req.url).pathname;
-    var fuuid = pathname.substr(1);
     if(!memt.has(fuuid)){
       return res.status(404).json('invalid uuid');
     }
@@ -171,6 +195,9 @@ router.post('/*',auth.jwt(),upload.single('file'),(req, res) => {
         return res.status(400).json('file is missing');
       }
       var tmp_path = req.file.path;
+      if(fs.existsSync(memt.getpath(fuuid)+'/'+req.file.originalname)){
+        return res.status(400).json('file already exists');
+      }
       helper.tattoo(tmp_path);
       try{
         spawnSync('mv',[tmp_path,memt.getpath(fuuid)+'/'+req.file.originalname]);
@@ -180,6 +207,7 @@ router.post('/*',auth.jwt(),upload.single('file'),(req, res) => {
       }
       var tmpuuid = uuid.v4();
       xattr.setSync(memt.getpath(fuuid)+'/'+req.file.originalname,'user.uuid',tmpuuid);
+      xattr.setSync(memt.getpath(fuuid)+'/'+req.file.originalname,'user.owner',req.user.uuid);
       builder.checkall(memt.getpath(fuuid)+'/'+req.file.originalname);
       //spawn('rm',['-rf',tmp_path]);
       console.log(tmp_path);
@@ -189,11 +217,14 @@ router.post('/*',auth.jwt(),upload.single('file'),(req, res) => {
       if(req.body.foldername===undefined){
         return res.status(400).json('type is missing');
       }
-
+      if(fs.existsSync(memt.getpath(fuuid)+'/'+req.body.foldername)){
+        return res.status(400).json('folder already exists');
+      }
       else{
         spawnSync('mkdir',[memt.getpath(fuuid)+'/'+req.body.foldername]);
         var tmpuuid = uuid.v4();
         xattr.setSync(memt.getpath(fuuid)+'/'+req.body.foldername,'user.uuid',tmpuuid);
+        xattr.setSync(memt.getpath(fuuid)+'/'+req.body.foldername,'user.owner',req.user.uuid);
         builder.checkall(memt.getpath(fuuid)+'/'+req.body.foldername);
         return res.status(200).json(tmpuuid);
       }
@@ -205,14 +236,53 @@ router.post('/*',auth.jwt(),upload.single('file'),(req, res) => {
 router.patch('/*',auth.jwt(), (req, res) => {
   var pathname = url.parse(req.url).pathname;
   var fuuid = pathname.substr(1);
+  if(memt.islibrary(fuuid)){
+    return res.status(400).json('this uuid from a library');
+    }
   if (!memt.has(fuuid)){
     return res.status(404).json('invalid uuid');
   }
   else{
     if (memt.checkwritepermission(fuuid,req.user.uuid)===1||memt.checkownerpermission(fuuid,req.user.uuid)===1){
-      if(req.body.filename&&!req.body.target){
+      console.log(req.body)
+      if(req.query.type==='permission'&&req.body.readlist!==undefined&&req.body.writelist!==undefined){
+        debug && console.log(1);
+        memt.setreadlist(fuuid,JSON.parse(req.body.readlist));
+        debug && console.log(2);
+        memt.setwritelist(fuuid,JSON.parse(req.body.writelist));
+        debug && console.log(3);
+        debug && console.log(memt.getpath(fuuid));
+        debug && console.log(req.body);
+        debug && console.log(req.body.writelist);
+        debug && console.log(req.body.readlist);
+        var tx =JSON.parse(req.body.readlist)
+        var rl =''
+        for (var i = 0; i < tx.length; i++) {
+          if (i === tx.length-1) {
+            rl=rl+tx[i];
+          }
+          else rl=rl+tx[i]+',';
+        }
+        var ty =JSON.parse(req.body.writelist)
+        var wl =''
+        for (var i = 0; i < ty.length; i++) {
+          if (i === ty.length-1) {
+            wl=wl+ty[i];
+          }
+          else wl=wl+ty[i]+',';
+        }
+        xattr.setSync(memt.getpath(fuuid),'user.writelist',wl);
+        debug && console.log(4);
+        xattr.setSync(memt.getpath(fuuid),'user.readlist',rl);
+        debug && console.log(5);
+        return res.status(200).json('success');
+      }
+      else if(req.body.filename&&!req.body.target){
         var nowpath = memt.getpath(fuuid);
         var targetpath = nowpath.substr(0,nowpath.lastIndexOf('/'))+'/'+req.body.filename
+        if(fs.existsSync(targetpath)){
+          return res.status(400).json('folder or file already exists');
+        }
         try{
           spawn('mv', [nowpath,targetpath]);
         }
@@ -230,6 +300,10 @@ router.patch('/*',auth.jwt(), (req, res) => {
           if(memt.checkwritepermission(req.body.target,req.user.uuid)!==1&&memt.checkownerpermission(req.body.target,req.user.uuid)!==1){return res.status(403).json('Permission denied!');}
           var targetpath = memt.getpath(req.body.target);
           var nowpath = memt.getpath(fuuid);
+          console.log(targetpath+'/'+memt.getname(fuuid))
+          if(fs.existsSync(targetpath+'/'+memt.getname(fuuid))){
+            return res.status(400).json('folder or file already exists');
+          }
           try{
             spawn('mv', [nowpath,targetpath]);
           }
@@ -274,6 +348,9 @@ router.patch('/*',auth.jwt(), (req, res) => {
 router.delete('/*',auth.jwt(), (req, res) => {
     var pathname = url.parse(req.url).pathname;
     var fuuid = pathname.substr(1);
+    if(memt.islibrary(fuuid)){
+      return res.status(400).json('this uuid from a library');
+    }
     if (!memt.has(fuuid)){
       return res.status(404).json('invalid uuid');
     }

@@ -4,7 +4,7 @@ var tools = require('middleware/tools');
 var root = "";
 var elements = new Map(); 
 var hashmap = new Map();
-var debug = true; 
+var debug = false; 
 function Memtree() { 
    
     this.getroot = function(){
@@ -41,6 +41,14 @@ function Memtree() {
 
     this.getowner = function(key){
         return this.get(key).permission.owner;
+    };
+
+    this.setwritelist = function(key,value){
+        this.get(key).permission.writelist=value;
+    };
+
+    this.setreadlist = function(key,value){
+        this.get(key).permission.readlist=value;
     };
 
     this.getname = function(key) { 
@@ -134,7 +142,7 @@ function Memtree() {
         this.getpathobj(key).forEach(function(f){
             realpath='/'+f.attribute.name+realpath;
         });
-        return '/mnt'+realpath;
+        return '/data/fruitmix'+realpath;
     };
 
     this.addchild = function(target,value){
@@ -255,6 +263,15 @@ function Memtree() {
     this.checkownerpermission = function(uuid,user){
         return ownercheck(uuid,user);
     };
+
+    this.islibrary = function(uuid){
+        var result=false;
+        var tpl=memt.getpath(uuid).split('/');
+        if(tools.contains(tpl,'library')){
+            result=true;
+        }
+        return result;
+    }
 }  
 
 function readcheck(uuid,user){
@@ -269,7 +286,7 @@ function readcheck(uuid,user){
             bln = c1+c2;
         }
         var t=readcheck(memt.getparent(uuid),user);
-        // if(uuid==='854237a4-3582-48c1-8420-4536fa4263c7'){
+        // if(uuid==='47d560c3-80d6-460f-81b1-7d446f63cfe1'){
         // console.log("++++++++++");
         // console.log(c1);
         // console.log(c2);
@@ -280,7 +297,7 @@ function readcheck(uuid,user){
         if(bln<2&&t>1){
             t=1
         }
-        else if(t<2&&bln>2){
+        else if(t<2&&bln>1){
             bln=1
         }
         bln=bln*t;
@@ -304,7 +321,7 @@ function writecheck(uuid,user){
         if(bln<2&&t>1){
             t=1
         }
-        else if(t<2&&bln>2){
+        else if(t<2&&bln>1){
             bln=1
         }
         bln=bln*t;
@@ -320,7 +337,7 @@ function ownercheck(uuid,user){
         if(bln<2&&t>1){
             t=1
         }
-        else if(t<2&&bln>2){
+        else if(t<2&&bln>1){
             bln=1
         }
         bln=bln*t;

@@ -1,7 +1,8 @@
 const User = require('mongoose').model('User');
 const router = require('express').Router();
 const uuid = require('node-uuid');
-
+var spawnSync = require('child_process').spawnSync;
+var xattr = require('fs-xattr');
 /*
  * only post method provided for one-time usage
  */
@@ -23,8 +24,9 @@ router.post('/', (req, res) => {
     }
     else {
       // create first user
+      var tmpuuid=uuid.v4()
       var firstUser = new User({
-        uuid: uuid.v4(),
+        uuid: tmpuuid,
         username: req.body.username,
         password: req.body.password,
         avatar: 'defaultAvatar.jpg',
@@ -34,6 +36,9 @@ router.post('/', (req, res) => {
       });
       firstUser.save((err) => {
         if (err) { return res.status(500).json(null); }
+        spawnSync('mkdir',['-p','/data/fruitmix/drive/'+tmpuuid]);
+        xattr.setSync('/data/fruitmix/drive/'+tmpuuid,'user.owner',tmpuuid);
+        builder.checkall('/data/fruitmix/drive/'+tmpuuid);
         return res.status(200).json(null);
       });
     }

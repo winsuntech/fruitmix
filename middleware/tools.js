@@ -7,6 +7,8 @@ var ExifImage = require('exif').ExifImage;
 var id3 = require("jsmediatags");
 var probe = require('node-ffprobe');
 var gm = require('gm');
+var crypto = require('crypto');
+
 const IMAGE = ["bmp","pcx","tiff","gif","jpeg","jpg","tga","exif","fpx","svg","psd","cdr","pcd","dxf","ufo","eps","ai","png","hdri","raw"]
 const MUSIC = ["mp3","wma","wav","mod","ra","cd","md","asf","aac","mp3pro","vqf","flac","ape","mid","vogg","m4a","aac","aiff","au","vqf"]
 const VIDEO = ["avi","rmvb","rm","asf","divx","mpg","mpeg","mpe","wmv","mp4","mkv","vob"]
@@ -15,6 +17,85 @@ const fileType = require('file-type');
 var piexif = require("piexifjs");
 var Version = require('mongoose').model('Version');
 var Versionlink = require('mongoose').model('Versionlink');
+
+function getHash(path) {
+     var Q = require('q');
+     var fs = require('fs');
+     var crypto = require('crypto');
+
+     var deferred = Q.defer();
+
+     var fd = fs.createReadStream(path);
+     var hash = crypto.createHash('sha256');
+	fd.on('readable', () => {
+		var data = fd.read();
+		if (data)
+			hash.update(data);
+		else {
+			//console.log(hash)
+			console.log(pp)
+			console.log(1)
+			deferred.resolve(hash.digest('hex'));
+			//return hash;
+		}
+	});
+
+     fd.pipe(hash);
+
+     return deferred.promise;
+};
+
+// async function getHash(path) {
+// 	//console.log(3.1)
+// 	return new Promise((resolve,reject)=>{
+//      var fs = require('fs');
+//      var crypto = require('crypto');
+//      //console.log(3.2)
+//      var fd = fs.createReadStream(path);
+//      //console.log(3.21)
+//      var hash = crypto.createHash('sha256');
+//      //console.log(3.22)
+//      hash.setEncoding('hex');
+//      //console.log(3.23)
+//      var tmpx =fs.readFileSync(path);
+//      //console.log(sha256(tmpx));
+//      fd.on('data', function (data) {
+// 	    hash.update(data, 'hex')
+// 	    //console.log(3.3)
+// 	 })
+//      fd.on('end', function () {
+//         hash.end();
+//         //console.log(3.4)
+//         //console.log(hash.read()); 
+//         //resolve(hash.read());
+//         return hash.read();
+//      });
+//      //console.log(3.5)
+//      fd.pipe(hash);
+// 	})
+// };
+
+// function chash(f){
+// 	xattr.setSync(f,'user.type','file');
+// 		var tmpx =fs.readFileSync(f);
+// 		var hash = crypto.createHash('sha256')
+// 		var readStream = fs.createReadStream(f);
+//       //xattr.setSync(f,'user.hash',sha256(tmpx));
+//       	readStream.on('data', function(data){
+// 		    hash.update(data, 'utf8')
+// 		    console.log(4)
+// 		})
+//       	var cuuid=xattr.getSync(f,'user.uuid').toString();
+// 		readStream.on('end', function(){
+// 			console.log(5)
+// 			var thash=hash.digest('hex')
+// 			console.log(thash)
+// 			console.log(cuuid);
+//
+// 		})
+// 	readStream.pipe(hash);
+// }
+
 
 
 function contains(array, value) {
@@ -33,17 +114,33 @@ function removex(array, value) {
 	        array.splice(i, 1);
 	    }
     }
+    return array
 }
 
-function getfilehelperbyhash(user) {
+function getfilehelperbyhash(user,list) {
 	var tmpobjlist =[];
+	var clist=[]
 	memt.gethashmap().forEach((value, key) => {
 		value.forEach(function(f){
 			if(memt.checkreadpermission(f,user)===1||memt.checkownerpermission(f,user)===1){
-				tmpobjlist.push(fileformatedetail(f));
+				if(!contains(clist,key)){
+					tmpobjlist.push(fileformatedetail(f));
+					clist.push(key);
+				}
 			}
 		});
 	});
+	console.log(clist)
+	for(var x of list){
+		//console.log("-----------------------------");
+		//console.log(x);
+		var tlist=memt.getbyhash(x);
+		if (tlist!==undefined){
+			if(!contains(clist,x)){
+				tmpobjlist.push(fileformatedetail(tlist[0]));
+			}
+		}
+	}
 	return tmpobjlist;
 	// tmplist.forEach(function(f){
 	// 		// if(Checker.read(f.getuuid(),user)||Checker.owner(f.getuuid(),user)){
@@ -64,27 +161,54 @@ function getfilehelperbyhash(user) {
 }
 
 function getfilehelper(uuid,user,tmpobjlist) {
+	//console.log(uuid)
 	if (memt.has(uuid)){
     	var tmpobj = clone({},memt.get(uuid));
     	tmpobj.children=memt.getrawchildrenlist(uuid);
-    	tmpobjlist.push(tmpobj);
+    	//var tpl = memt.getpath(uuid).split('/');
     	var tmpchildren=memt.getchildren(uuid);
+  //   	console.log("----------");
+		// console.log(memt.getpath(uuid));
+		// console.log(uuid);
+		// console.log(memt.checkreadpermission(uuid,user));
+		// console.log(memt.checkownerpermission(uuid,user));
+    	//console.log(tmpchildren)
+    	if(memt.checkownerpermission(uuid,user)===1||memt.checkreadpermission(uuid,user)===1){
+    		tmpobjlist.push(tmpobj);
+    	}
+    	else if(memt.getpath(tmpobj.uuid)==='/data/fruitmix'||memt.getpath(tmpobj.uuid)==='/data/fruitmix/drive'||memt.getpath(tmpobj.uuid)==='/data/fruitmix/libarary'){
+    		tmpobjlist.push(tmpobj);
+    	}
 		tmpchildren.forEach(function(f){
-			// if (f.attribute.name==='444.jpg'){
-			// console.log("----------");
-			// console.log(f.attribute.name);
-			//console.log(f.uuid);
-			//console.log(memt.checkreadpermission(f.uuid,user));
-			//console.log(memt.checkownerpermission(f.uuid,user));
-			
+			// if (f.attribute.name==='444.jpg'){			
 			// }
-			if(memt.checkreadpermission(f.uuid,user)===1||memt.checkownerpermission(f.uuid,user)===1){
+			//memt.getpath(f.uuid)==='/data/fruitmix/drive'||memt.getpath(f.uuid)==='/data/fruitmix/libarary'||
+			if(memt.checkreadpermission(f.uuid,user)!==0||memt.checkownerpermission(f.uuid,user)!==0){
 				getfilehelper(f.uuid,user,tmpobjlist);
 			}
 			//console.log("------------------------------");
         });
+        //console.log(tmpobjlist);
         return tmpobjlist;
 	}
+}
+
+function getparentobj(uuid,tlist){
+	if (memt.has(uuid)){
+		var tmpobj = clone({},memt.get(memt.getparent(uuid)));
+		tmpobj.children=memt.getrawchildrenlist(uuid);
+		if(!contains(tlist,tmpobj)){
+			tlist.push(tmpobj);
+		}
+		// console.log('-----------------------')
+		// console.log(contains(tlist,tmpobj))
+		if(tmpobj.parent!==''&&!contains(tlist,tmpobj)){
+			//console.log('-----------------------')
+			//console.log(memt.getpath(tmpobj.uuid));
+			getparentobj(tmpobj.parent,tlist);
+		}
+	}
+	return tlist;
 }
 
 function fileformatedetail(uuid){
@@ -97,6 +221,7 @@ function fileformatedetail(uuid){
 
 function tattoo(f){
 	var fstat=fs.statSync(f);
+	//console.log(1)
 	try{
 		xattr.getSync(f,'user.uuid');
 	}
@@ -124,14 +249,64 @@ function tattoo(f){
     catch(e){
     	xattr.setSync(f,'user.owner','');
     }
+    //console.log(2)
     if (fstat&&fstat.isDirectory()){ 
       xattr.setSync(f,'user.type','folder');
     }
     else if(fstat&&!fstat.isDirectory()){
-      xattr.setSync(f,'user.type','file');
-      var tmpx =fs.readFileSync(f);
-      xattr.setSync(f,'user.hash',sha256(tmpx));
+    	try{
+    		var thash=xattr.getSync(f,'user.hash').toString('utf-8');
+    		var cuuid=xattr.getSync(f,'user.uuid').toString('utf-8');
+    		console.log(thash)
+			if(memt.hashash(thash)){
+		        var tmplist=memt.getbyhash(thash);
+		        tmplist.push(cuuid);
+		        memt.setbyhash(thash,tmplist);
+		      }
+		      else{
+		        var tmplist = [];
+		        tmplist.push(cuuid);
+		        memt.setbyhash(thash,tmplist);
+			}
+    	}
+    	catch(e)
+    	{
+	    	xattr.setSync(f,'user.type','file');
+	    	console.log(3)
+			var fd = fs.createReadStream(f);
+		    var hash = crypto.createHash('sha256');
+			fd.on('readable', () => {
+				var data = fd.read();
+				if (data)
+					hash.update(data);
+				else {
+					//console.log(hash)
+					console.log(f)
+					var cuuid=xattr.getSync(f,'user.uuid').toString('utf-8');
+					var tlist=hash.digest('hex');
+					//return hash;
+					xattr.setSync(f,'user.hash',tlist);
+	   				memt.sethash(cuuid,tlist)
+					if(memt.hashash(tlist)){
+				        var tmplist=memt.getbyhash(tlist);
+				        tmplist.push(cuuid);
+				        memt.setbyhash(tlist,tmplist);
+				      }
+				      else{
+				        var tmplist = [];
+				        tmplist.push(cuuid);
+				        memt.setbyhash(tlist,tmplist);
+				     }
+				}
+			});
+	   				
+	   				//var cuuid=xattr.getSync(f,'user.uuid').toString('utf-8');
+	   				//console.log("-----------")
+	   				//console.log(r)
+	   		
+   		}
     }
+    //console.log(6)
 }
 
 function pastedetail(path,uuid){
@@ -244,7 +419,6 @@ async function getall2(docs){
 				}
 				sv.viewers=tlist
 				mshare.add(p.digest,sv);
-				}
 			}
 		})
 	}
@@ -268,6 +442,21 @@ function buildmediamap(){
 		})
 }
 
+function filetype(ext){
+	if(contains(IMAGE,ext)){
+		return 'image'
+	}
+	else if(contains(VIDEO,ext)){
+		return 'video'
+	}
+	else if(contains(MUSIC,ext)){
+		return 'music'
+	}
+	else{
+		return 'unknown'
+	}
+}
+
 exports.contains = contains
 
 exports.removex = removex
@@ -285,3 +474,7 @@ exports.pastedetail = pastedetail
 exports.pastethumbexif = pastethumbexif
 
 exports.buildmediamap = buildmediamap
+
+exports.filetype = filetype
+
+exports.getparentobj = getparentobj

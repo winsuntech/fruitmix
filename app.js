@@ -11,7 +11,6 @@ var MTObj = require('middleware/memtree');
 const uuid = require('node-uuid');
 var schedule = require('node-schedule');
 var MediaObj = require('middleware/mediaobj');
-var Mediamap = require('middleware/mediamanager');
 /** Express **/
 var app = express();
 var fs = require("fs");
@@ -46,12 +45,11 @@ var Librarylist = require('./models/librarylist');
 var Config = require('./models/config');
 /** Authentication **/
 var auth = require('./middleware/auth');
-global.memt = require('./middleware/treemanager');
 //memt = new Memtree();
+var helper = require('middleware/tools');
 
 // uncomment after placing your favicon in /public
 //app.use(favicon(path.join(__dirname, 'public', 'favicon.ico')));
-var helper = require('middleware/tools');
 
 app.use(logger('dev'));
 app.use(bodyParser.json());
@@ -79,7 +77,7 @@ app.use('/mediashare',require('./routes/mediashare'));
 var multer = require('multer');
 
 app.use(multer({
-    dest:"/mnt/files/"
+    dest:"/data/fruitmix/files"
 }).any());
 
 // app.use(auth.jwt(),function(req, res){
@@ -108,12 +106,17 @@ app.use(multer({
 //     }
 //   });
 // });
+global.dmap = new Map();
+global.memt = require('./middleware/treemanager');
+global.builder = require('./middleware/treebuilder');
+builder.checkall('/data/fruitmix/**');
+
 
 global.mshare = require('./middleware/mediamanager');
 helper.buildmediamap();
 
 var io = require("socket.io").listen(10086);
-global.dmap = new Map();
+
 var MTOpermission = require('middleware/mtopermission');
 var MTOattribute = require('middleware/mtoattribute');
 
@@ -136,18 +139,10 @@ io.sockets.on('connection', function(socket){
       var mtop=new MTOpermission(msg.readlist,msg.writelist,msg.owner);
       var mtoa= new MTOattribute(msg.createtime,msg.changetime,msg.modifytime,msg.size,msg.path.substr(msg.path.lastIndexOf('/')+1));
       var memobj = new MTObj(msg.uid,msg.type,msg.parent,[],msg.path,mtop,mtoa,msg.hash,'');
+      console.log("ttttt")
       memt.add(msg.uid,memobj);
-      console.log(msg.uid);
-      console.log(msg.path);
-      if(memt.hashash(msg.hash)){
-        var tmplist=memt.getbyhash(msg.hash);
-        tmplist.push(msg.uid);
-      }
-      else{
-        var tmplist = [];
-        tmplist.push(msg.uid);
-        memt.setbyhash(msg.hash,tmplist);
-      }
+      //console.log(msg.uid);
+      //console.log(msg.path);
     }
   });
 
@@ -244,9 +239,6 @@ io.sockets.on('connection', function(socket){
 //       memt.add(tuuid,memobj);
 //     }
 // });
-
-global.builder = require('./middleware/treebuilder');
-builder.checkall('/mnt/**');
 
 var rule = new schedule.RecurrenceRule();
 // rule.dayOfWeek = [0, new schedule.Range(1, 6)];

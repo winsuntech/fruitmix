@@ -111,7 +111,7 @@ describe("test files", function() {
 
   it("GET /document/333333?type=photo&target=2323 should return 404 if target is invalid", function(done) {
     request(app)
-      .get('/document/333333?type=photo')
+      .get('/document/333333?type=photo&target=2323')
       .set('Accept', 'application/json')
       .set('Authorization', 'JWT eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1dWlkIjoiYzMxYTJlOTktOTg3ZC00ZjY1LTk1NTktMjJlMjJmZjYwM2RhIn0.C7j5pmnGXSr2ZB2NTHJHMNw2HGDrZlmgXbNa-TtSUoU')
       .expect(404, done);

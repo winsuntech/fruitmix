@@ -63,7 +63,6 @@ router.post('/*',auth.jwt(), (req, res) => {
   if (req.user.isAdmin === true ) {
     var pathname = url.parse(req.url).pathname;
     var duuid = pathname.substr(1);
-
     var tmpuuid=uuid.v4();
     var newgroup = new Group({
       uuid:tmpuuid,

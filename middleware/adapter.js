@@ -17,16 +17,20 @@ function treebuilderformat(uid,readlist,writelist,owner,type,createtime,changeti
 	return mtobj;
 }
 
-function mediaformat(obj){
+function mediaformat(obj,kind,type){
 	var tmpobj = {};
-	tmpobj.createtime=obj.attribute.createtime;
-	tmpobj.changetime=obj.attribute.changetime;
-	tmpobj.modifytime=obj.attribute.modifytime;
-	tmpobj.size=obj.attribute.size;
-	tmpobj.name = obj.attribute.name;
-	tmpobj.hash = obj.hash;
+	tmpobj.hash = obj.hash
+	tmpobj.kind=kind;
+	if(obj.detail.exif!==undefined){
+		tmpobj.width=obj.detail.exif.ExifImageWidth;
+		tmpobj.height=obj.detail.exif.ExifImageHeight;
+	}
+	else{
+		tmpobj.width=obj.detail.width;
+		tmpobj.height=obj.detail.height;
+	}
+	tmpobj.type=type;
 	tmpobj.detail=obj.detail;
-
 	return tmpobj;
 }
 
