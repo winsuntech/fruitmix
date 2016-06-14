@@ -11,6 +11,7 @@ var MTObj = require('middleware/memtree');
 const uuid = require('node-uuid');
 var schedule = require('node-schedule');
 var MediaObj = require('middleware/mediaobj');
+var spawnSync = require('child_process').spawnSync;
 /** Express **/
 var app = express();
 var fs = require("fs");
@@ -106,6 +107,44 @@ app.use(multer({
 //     }
 //   });
 // });
+if(!fs.existsSync('/data/fruitmix/thumbs')){
+  spawnSync('mkdir',['/data/fruitmix/thumbs']);
+}
+if(!fs.existsSync('/data/fruitmix/library')){
+  spawnSync('mkdir',['/data/fruitmix/library']);
+}
+if(!fs.existsSync('/data/fruitmix/drive')){
+  spawnSync('mkdir',['/data/fruitmix/drive']);
+}
+// fmap = new Map();
+try{
+  var to1=xattr.getSync('/data/fruitmix/library','user.owner').toString('utf-8')
+  if(to1!==''){
+    xattr.setSync('/data/fruitmix/library','user.owner','')
+  }
+}
+catch(e){
+  xattr.setSync('/data/fruitmix/library','user.owner','')
+}
+try{
+  var to1=xattr.getSync('/data/fruitmix/drive','user.owner').toString('utf-8')
+  if(to1!==''){
+    xattr.setSync('/data/fruitmix/drive','user.owner','')
+  }
+}
+catch(e){
+  xattr.setSync('/data/fruitmix/drive','user.owner','')
+}
+try{
+  var to1=xattr.getSync('/data/fruitmix/thumbs','user.owner').toString('utf-8')
+  if(to1!==''){
+    xattr.setSync('/data/fruitmix/thumbs','user.owner','')
+  }
+}
+catch(e){
+  xattr.setSync('/data/fruitmix/thumbs','user.owner','')
+}
+
 global.dmap = new Map();
 global.memt = require('./middleware/treemanager');
 global.builder = require('./middleware/treebuilder');
@@ -175,8 +214,6 @@ io.sockets.on('connection', function(socket){
 // spawn('node', ['/trynode/scanner.js']);
 
 
-
-// fmap = new Map();
 
 // var newlist = globby.sync(['/mnt/**']);
 // newlist.forEach(function(f){

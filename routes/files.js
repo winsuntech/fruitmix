@@ -16,7 +16,6 @@ var helper = require('middleware/tools');
 var path = require('path');
 const readChunk = require('read-chunk');
 const fileType = require('file-type');
-var xattr = require('fs-xattr');
 var adapter = require('middleware/adapter')
 var debug=false;
 
