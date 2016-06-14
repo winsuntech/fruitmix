@@ -197,7 +197,7 @@ router.post('/*',auth.jwt(),upload.single('file'),(req, res) => {
       if(fs.existsSync(memt.getpath(fuuid)+'/'+req.file.originalname)){
         return res.status(400).json('file already exists');
       }
-      helper.tattoo(tmp_path);
+      //helper.tattoo(tmp_path);
       try{
         spawnSync('mv',[tmp_path,memt.getpath(fuuid)+'/'+req.file.originalname]);
       }

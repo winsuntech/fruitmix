@@ -60,14 +60,19 @@ router.post('/*',auth.jwt(),upload.single('file'),(req, res) => {
     return res.status(404).json('invalid uuid');
   }
   debug && console.log(3);
+  try{
   Librarylist.find({uuid:fuuid},'uuid',(err,docs) => {
     if(docs.length!==0){
+      debug && console.log(4);
       var tmp_path = req.file.path;
       xattr.setSync(tmp_path,'user.owner',req.user.uuid);
-      helper.tattoo(tmp_path);
+      debug && console.log(5);
+      //helper.tattoo(tmp_path);
+      debug && console.log(6);
       try{
-        if(fs.existsSync('/data/fruitmix/libraryt/'+fuuid+'/'+req.query.hash)){
+        if(fs.existsSync('/data/fruitmix/library/'+fuuid+'/'+req.query.hash)){
           spawnSync('rm',['-rf',tmp_path]);
+
           return res.status(200).json(null);
           //return res.status(403).json("file already exist");
         }
@@ -77,12 +82,18 @@ router.post('/*',auth.jwt(),upload.single('file'),(req, res) => {
         return res.status(500).json('failed to upload file');
       }
       //builder.checkall(memt.getpath(fuuid)+req.file.originalname);
+      debug && console.log(7);
       builder.checkall('/data/fruitmix/library/'+fuuid+'/'+req.query.hash);
-      console.log(tmp_path);
+      debug && console.log(8);
+      //console.log(tmp_path);
       return res.status(200).json(null);
     }
     else return res.status(404).json('invalid hash')
   })
+  }
+  catch(e){
+    console.log(e)
+  }
 });
 
 module.exports = router;

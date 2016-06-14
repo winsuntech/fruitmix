@@ -87,6 +87,9 @@ function commoncheck(f){
 function cronjob(tpath){
   var newlist = globby.sync([tpath]);
   newlist.forEach(function(f){
+    console.log("----")
+    console.log(f)
+    console.log("----")
     var tf=f.split('/');
     if(f==='/data/fruitmix'||helper.contains(tf,'library')||helper.contains(tf,'drive')){
       commoncheck(f);
