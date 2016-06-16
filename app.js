@@ -107,6 +107,8 @@ app.use(multer({
 //     }
 //   });
 // });
+spawnSync('rm',['-rf','/data/fruitmix/uploads']);
+
 if(!fs.existsSync('/data/fruitmix/thumbs')){
   spawnSync('mkdir',['/data/fruitmix/thumbs']);
 }

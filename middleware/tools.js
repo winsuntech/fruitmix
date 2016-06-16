@@ -8,6 +8,7 @@ var id3 = require("jsmediatags");
 var probe = require('node-ffprobe');
 var gm = require('gm');
 var crypto = require('crypto');
+var spawnSync = require('child_process').spawnSync;
 
 const IMAGE = ["bmp","pcx","tiff","gif","jpeg","jpg","tga","exif","fpx","svg","psd","cdr","pcd","dxf","ufo","eps","ai","png","hdri","raw"]
 const MUSIC = ["mp3","wma","wav","mod","ra","cd","md","asf","aac","mp3pro","vqf","flac","ape","mid","vogg","m4a","aac","aiff","au","vqf"]
@@ -324,13 +325,25 @@ function pastedetail(path,uuid){
 		    new ExifImage({image:path}, function (error, exifData) {
 		        if (error){
 		            var tmpobj={};
-		            gm(path)
-					.size(function (err, size) {
-					  if (!err){
-					  	tmpobj.height=size.height;
-					  	tmpobj.width=size.width;
-					  }
-	            	});
+		            console.log("************")
+		            if(fs.existsSync(path)){
+		            	console.log(11111)
+		            }
+		            else console.log(22222)
+		            console.log(path)
+		            console.log("************")
+		            var tsize=spawnSync('gm',['identify','-format','%w,%h',path])
+		            console.log(tsize)
+		            var fsize=tsize.split(',')
+		            tmpobj.height=fsize[1]
+		            tmpobj.width=fsize[0]
+		   //          gm(path)
+					// .size(function (err, size) {
+					//   if (!err){
+					//   	tmpobj.height=size.height;
+					//   	tmpobj.width=size.width;
+					//   }
+	    //         	});
 		        }
 		        else
 		        {
