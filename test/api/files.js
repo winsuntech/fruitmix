@@ -53,7 +53,7 @@ describe("test files", function() {
       .expect(501, done);
   });
 
-  it("GET /files should return (root)200 if do not an uuid", function(done) {
+  it("GET /files should return (root)200 if do not have an uuid", function(done) {
     request(app)
       .get('/files')
       .set('Accept', 'application/json')
@@ -112,7 +112,7 @@ describe("test files", function() {
   it("POST /files should return 200 if success", function(done) {
     request(app)
       .post('/files/854237a4-3582-48c1-8420-4536fa4263c7')
-      .attach('avatar','/trynode/ts.js')
+      .attach('file','/trynode/ts.js')
       .set('Authorization','JWT eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1dWlkIjoiYzMxYTJlOTktOTg3ZC00ZjY1LTk1NTktMjJlMjJmZjYwM2RhIn0.C7j5pmnGXSr2ZB2NTHJHMNw2HGDrZlmgXbNa-TtSUoU')
       .expect(200, done);
   });

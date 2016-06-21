@@ -10,11 +10,13 @@ var xattr = require('fs-xattr');
 var MTObj = require('middleware/memtree');
 const uuid = require('node-uuid');
 var schedule = require('node-schedule');
-var helper = require('middleware/tools');
-
+var MediaObj = require('middleware/mediaobj');
+var spawnSync = require('child_process').spawnSync;
 /** Express **/
 var app = express();
 var fs = require("fs");
+//var timeout =require('connect-timeout');
+//app.use(timeout('10000s'));
 /** Database Connection **/
 var env = app.get('env');
 if (env !== 'production' && env !== 'development' && env !== 'test') {
@@ -32,11 +34,20 @@ mongoose.connect(dbUrl, err => { if (err) throw err; });
 
 /** Model Initialization **/
 var User = require('./models/user');
-
+//var Document = require('./models/document');
+//var Documentlink = require('./models/documentlink');
+//var Photolink = require('./models/photolink');
+var Version = require('./models/version');
+var Versionlink = require('./models/versionlink');
+var Comment = require('./models/comment');
+var Udbindling = require('./models/udbinding');
+var Librarylist = require('./models/librarylist');
+//var Group = require('./models/group');
+var Config = require('./models/config');
 /** Authentication **/
 var auth = require('./middleware/auth');
-const Memtree = require('./middleware/treemanager');
-memt = new Memtree();
+//memt = new Memtree();
+var helper = require('middleware/tools');
 
 // uncomment after placing your favicon in /public
 //app.use(favicon(path.join(__dirname, 'public', 'favicon.ico')));
@@ -54,14 +65,20 @@ app.use('/token', require('./routes/token'));
 app.use('/users', require('./routes/users'));
 app.use('/files',require('./routes/files'));
 app.use('/media',require('./routes/media'));
+
+//app.use('/document',require('./routes/document'));
+//app.use('/mediashare',require('/routes/mediashare'));
 app.use('/authtest', require('./routes/authtest'));
+app.use('/library',require('./routes/library'));
+//app.use('/group',require('./routes/group'));
+app.use('/mediashare',require('./routes/mediashare'));
 /** Routing Ends **/
 //app.use(fileUpload());
 
 var multer = require('multer');
 
 app.use(multer({
-    dest:"/mnt/files/"
+    dest:"/data/fruitmix/files"
 }).any());
 
 // app.use(auth.jwt(),function(req, res){
@@ -79,7 +96,7 @@ app.use(multer({
 //       console.log('222');
 //       fs.readFile(realPath, "binary", function(err, file) {
 //           if (err) {
-//               res.writeHead(500, {'Content-Type': 'text/plain'});
+//               res.writeHead(500, {'Content-Type': 'tex t/plain'});
 //               res.end(err);
 //           } else {
 //               res.writeHead(200, {'Content-Type': 'text/html'});
@@ -90,44 +107,83 @@ app.use(multer({
 //     }
 //   });
 // });
+spawnSync('rm',['-rf','/data/fruitmix/uploads']);
+spawnSync('mkdir',['/data/fruitmix/uploads']);
+if(!fs.existsSync('/data/fruitmix/thumbs')){
+  spawnSync('mkdir',['/data/fruitmix/thumbs']);
+}
+if(!fs.existsSync('/data/fruitmix/library')){
+  spawnSync('mkdir',['/data/fruitmix/library']);
+}
+if(!fs.existsSync('/data/fruitmix/drive')){
+  spawnSync('mkdir',['/data/fruitmix/drive']);
+}
+// fmap = new Map();
+try{
+  var to1=xattr.getSync('/data/fruitmix/library','user.owner').toString('utf-8')
+  if(to1!==''){
+    xattr.setSync('/data/fruitmix/library','user.owner','')
+  }
+}
+catch(e){
+  xattr.setSync('/data/fruitmix/library','user.owner','')
+}
+try{
+  var to1=xattr.getSync('/data/fruitmix/drive','user.owner').toString('utf-8')
+  if(to1!==''){
+    xattr.setSync('/data/fruitmix/drive','user.owner','')
+  }
+}
+catch(e){
+  xattr.setSync('/data/fruitmix/drive','user.owner','')
+}
+try{
+  var to1=xattr.getSync('/data/fruitmix/thumbs','user.owner').toString('utf-8')
+  if(to1!==''){
+    xattr.setSync('/data/fruitmix/thumbs','user.owner','')
+  }
+}
+catch(e){
+  xattr.setSync('/data/fruitmix/thumbs','user.owner','')
+}
 
+global.dmap = new Map();
+global.memt = require('./middleware/treemanager');
+global.builder = require('./middleware/treebuilder');
+builder.checkall('/data/fruitmix/**');
+
+
+global.mshare = require('./middleware/mediamanager');
+helper.buildmediamap();
 
 var io = require("socket.io").listen(10086);
-dmap = new Map();
-hashmap = new Map();
+
 var MTOpermission = require('middleware/mtopermission');
 var MTOattribute = require('middleware/mtoattribute');
-
 
 io.sockets.on('connection', function(socket){
   socket.on('addfoldernode', function(msg){
     if(!memt.has(msg.uid)){
       var mtop=new MTOpermission(msg.readlist,msg.writelist,msg.owner);
-      var mtoa= new MTOattribute(msg.createtime,msg.changetime,msg.modifytime,msg.accesstime,msg.size,msg.path.substr(msg.path.lastIndexOf('/')+1));
+      var mtoa= new MTOattribute(msg.createtime,msg.changetime,msg.modifytime,msg.size,msg.path.substr(msg.path.lastIndexOf('/')+1));
       var memobj = new MTObj(msg.uid,msg.type,msg.parent,[],msg.path,mtop,mtoa,msg.hash);
       memt.add(msg.uid,memobj);
       console.log(msg.uid);
-      //console.log(msg.path);
+      console.log(msg.path);
       dmap.set(msg.path,msg.uid);
     }
   });
 
   socket.on('addfilenode', function(msg){
     if(!memt.has(msg.uid)){
-      //var a =helper.pastedetail(msg.path,msg.uid);
+      var a =helper.pastedetail(msg.path,msg.uid);
       var mtop=new MTOpermission(msg.readlist,msg.writelist,msg.owner);
-      var mtoa= new MTOattribute(msg.createtime,msg.changetime,msg.modifytime,msg.accesstime,msg.size,msg.path.substr(msg.path.lastIndexOf('/')+1));
-      var memobj = new MTObj(msg.uid,msg.type,msg.parent,[],msg.path,mtop,mtoa,msg.hash);
+      var mtoa= new MTOattribute(msg.createtime,msg.changetime,msg.modifytime,msg.size,msg.path.substr(msg.path.lastIndexOf('/')+1));
+      var memobj = new MTObj(msg.uid,msg.type,msg.parent,[],msg.path,mtop,mtoa,msg.hash,'');
+      console.log("ttttt")
       memt.add(msg.uid,memobj);
-      if(hashmap.has(msg.hash)){
-        var tmplist=hashmap.get(msg.hash);
-        tmplist.push(msg.uid);
-      }
-      else{
-        var tmplist = [];
-        tmplist.push(msg.uid);
-        hashmap.set(msg.hash,tmplist);
-      }
+      //console.log(msg.uid);
+      //console.log(msg.path);
     }
   });
 
@@ -160,8 +216,6 @@ io.sockets.on('connection', function(socket){
 // spawn('node', ['/trynode/scanner.js']);
 
 
-
-// fmap = new Map();
 
 // var newlist = globby.sync(['/mnt/**']);
 // newlist.forEach(function(f){
@@ -225,16 +279,13 @@ io.sockets.on('connection', function(socket){
 //     }
 // });
 
-builder = require('./middleware/treebuilder');
-builder.checkall('/mnt/**');
-
 var rule = new schedule.RecurrenceRule();
 // rule.dayOfWeek = [0, new schedule.Range(1, 6)];
 // rule.hour = 6;
 // rule.minute =0;
 rule.second = 0;
 schedule.scheduleJob(rule, function(){
-  builder.checkall('/mnt/**');
+  //builder.checkall('/mnt/**');
 });
 
 // catch 404 and forward to error handler

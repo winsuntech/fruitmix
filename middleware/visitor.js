@@ -3,7 +3,8 @@ function Visitor(node,callback){
     	var obj=memt.get(node);
     	var tmpchildren=obj.children;
 		tmpchildren.forEach(function(f){
-            Visit(f.getuuid(), callback);
+			console.log(f);
+            Visitor(f.uuid, callback);
         });
         callback(node);
 	}

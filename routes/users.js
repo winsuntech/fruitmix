@@ -3,6 +3,8 @@ var router = require('express').Router();
 const auth = require('middleware/auth');
 const uuid = require('node-uuid');
 var url = require("url");
+var spawnSync = require('child_process').spawnSync;
+var xattr = require('fs-xattr');
 
 router.get('/',auth.jwt(), (req, res) => {
   User.find({ type: 'user' }, 'uuid username avatar email isAdmin isFirstUser type', (err, docs) => {
@@ -17,15 +19,16 @@ router.get('/',auth.jwt(), (req, res) => {
       isAdmin: doc.isAdmin,
       isFirstUser: doc.isFirstUser,
       type: doc.type
-    }))
-    return res.status(200).json(null);
+    })) 
+    return res.status(200).json(data);
   });
 });
 
 router.post('/',auth.jwt(), (req, res) => {
   if (req.user.isAdmin === true ) {
+    var tmpuuid=uuid.v4()
     var newuser = new User({
-      uuid: uuid.v4(),
+      uuid: tmpuuid,
       username: req.body.username,
       password: req.body.password,
       avatar: 'defaultAvatar.jpg',
@@ -35,8 +38,11 @@ router.post('/',auth.jwt(), (req, res) => {
       type: 'user',
     });
     newuser.save((err) => {
-      if (err) { return res.status(500).json(null); }
-      return res.status(200).json(null);
+      if (err) { return res.status(500).json(err); }
+      spawnSync('mkdir',['-p','/data/fruitmix/drive/'+tmpuuid]);
+      xattr.setSync('/data/fruitmix/drive/'+tmpuuid,'user.owner',tmpuuid);
+      builder.checkall('/data/fruitmix/drive/'+tmpuuid);
+      return res.status(200).json(newuser);
     });
   }
   else{

@@ -1,32 +1,23 @@
 var visitor = require('middleware/visitor');
 var tools = require('middleware/tools');
 
-function Memtree() {  
-    this.root=''; 
-    this.elements = new Map();  
+var root = "";
+var elements = new Map(); 
+var hashmap = new Map();
+var debug = false; 
+function Memtree() { 
    
     this.getroot = function(){
-        return this.root;
+        return root;
     };
 
     this.setroot = function(value){
-        this.root = value;
+        root = value;
     };
-
-    this.getuuid = function(key) {  
-        return this.get(key).uuid;  
-    };  
 
     this.gettype = function(key) { 
         return this.get(key).type;
     };
-    // this.getdetail = function(uuid){
-    //     return this.get(uuid).getdetail();
-    // };
-
-    // this.setdetail = function(uuid,value){
-    //     return this.get(uuid).setdetail(value);
-    // };
 
     this.getchildren = function(uuid){
         return this.get(uuid).children;
@@ -52,6 +43,14 @@ function Memtree() {
         return this.get(key).permission.owner;
     };
 
+    this.setwritelist = function(key,value){
+        this.get(key).permission.writelist=value;
+    };
+
+    this.setreadlist = function(key,value){
+        this.get(key).permission.readlist=value;
+    };
+
     this.getname = function(key) { 
         return this.get(key).attribute.name;
     };
@@ -60,16 +59,32 @@ function Memtree() {
         this.get(key).attribute.name=name;
     };
 
+    this.hashash = function(hash){
+        return hashmap.has(hash);
+    }
+
+    this.getbyhash = function(hash){
+        return hashmap.get(hash);
+    }
+
+    this.setbyhash = function(hash,tmplist){
+        hashmap.set(hash,tmplist);;
+    }
+
+    this.gethashmap = function(){
+        return hashmap;
+    }
+
     this.getpathobj = function(key){
         return createpathobj(key,[]);
     };
 
     this.size = function(){
-        return this.elements.size;
+        return elements.size;
     };
 
     this.clear = function() {  
-        this.elements.clear();  
+        elements.clear();  
     };  
 
     this.deletefilebyuuid=function(key){
@@ -77,33 +92,48 @@ function Memtree() {
     };
 
     this.add = function(key,obj) {
-        this.elements.set( key, obj);
+        elements.set(key,obj);
     };  
   
     this.remove = function(key) {  
-        this.elements.delete(key);
+        elements.delete(key);
     };  
 
     this.get = function(key) { 
-        return this.elements.get(key);
+        return elements.get(key);
     };  
 
     this.has = function(key) {  
-        return this.elements.has(key);  
+        return elements.has(key);  
     };  
 
     this.mtobjs = function() {  
-        return this.elements;  
+        return elements;  
     };  
 
+    this.setdetail= function(uuid,data){
+        this.get(uuid).detail=data;
+    }
+
+    this.getdetail= function(uuid){
+        return this.get(uuid).detail;
+    }
 
     this.deletefile = function(uuid){
+        debug && console.log(uuid);
+        debug && console.log(11);
         this.parentremove(uuid);
+        debug && console.log(22);
+        visitor(uuid,this.removehashobj);
+        debug && console.log(33);
         visitor(uuid,this.deletefilebyuuid);
+        debug && console.log(44);
     };
 
     this.parentremove = function(key){
-        var tmpparent=this.get(key).parent;
+
+        var tmpparent=memt.get(key).parent;
+        debug && console.log('----'+tmpparent);
         this.removechild(tmpparent,key);
     };
 
@@ -112,7 +142,7 @@ function Memtree() {
         this.getpathobj(key).forEach(function(f){
             realpath='/'+f.attribute.name+realpath;
         });
-        return '/mnt'+realpath;
+        return '/data/fruitmix'+realpath;
     };
 
     this.addchild = function(target,value){
@@ -121,18 +151,10 @@ function Memtree() {
         }
     };
 
-//this.addchild=function(_value) {
-//         //console.log(_value);
-//         //console.log('------------------');
-//         if(!this.ischild(_value)||this.children.length===0){
-//             this.children.push(_value);
-//         }
-//     };
-
     this.removechild=function(uuid,key) {
         var bln = false;
         try {
-            for (i = 0; i < this.get(uuid).children.length; i++) {
+            for (var i = 0; i < this.get(uuid).children.length; i++) {
                 if (this.get(uuid).children[i].uuid === key) {
                     this.get(uuid).children.splice(i, 1);
                     return true;
@@ -142,6 +164,17 @@ function Memtree() {
             bln = false;
         }
         return bln;
+    }
+
+    this.removehashobj =function(uuid){
+        if(memt.hashash(memt.get(uuid).hash)){
+            var tmplist=memt.getbyhash(memt.get(uuid).hash);
+            for (var i = 0; i < tmplist.length; i++) {
+                if (tmplist[i] === uuid) {
+                    tmplist.splice(i, 1);
+                }
+            }
+        }
     }
 
     this.getrawchildrenlist = function(uuid){
@@ -155,12 +188,36 @@ function Memtree() {
 
     this.canread = function(uuid,useruuid){
         var tmplist=this.get(uuid).permission.readlist;
-        return tools.contains(tmplist,useruuid);
+        var re=0;
+        // if(uuid==='a0207fb9-eeb3-41fe-82d4-aed75e05bb74'){
+        //     console.log(tmplist[0]);
+        // }
+        if(tmplist[0]===''){
+            // if(uuid==='a0207fb9-eeb3-41fe-82d4-aed75e05bb74'){
+            // console.log(111111);
+            // }
+            re=2;
+        }
+        else{
+            var result=tools.contains(tmplist,useruuid);
+            if(result===true)re=1;
+            else re=0;
+        }
+        return re;
     };
 
     this.canwrite = function(uuid,useruuid){
         var tmplist=this.get(uuid).permission.writelist;
-        return tools.contains(tmplist,useruuid);
+        var re=0;
+        if(tmplist[0]===''){
+            re=2;
+        }
+        else{
+            var result=tools.contains(tmplist,useruuid);
+            if(result===true)re=1;
+            else re=0;
+        }
+        return re;
     };
 
     this.isfile = function(key){
@@ -174,7 +231,16 @@ function Memtree() {
 
     this.isowner = function(key,value){
         var tmplist=this.getowner(key);
-        return tools.contains(tmplist,value);
+        var re=0;
+        if(tmplist[0]===''){
+            re=2;
+        }
+        else{
+            var result=tools.contains(tmplist,value);
+            if(result===true)re=1;
+            else re=0;
+        }
+        return re;
     }
 
     this.moveto = function(_key,target){
@@ -182,7 +248,102 @@ function Memtree() {
         this.addchild(target,this.get(_key));
         this.get(_key).parent=target;
     };
+
+    this.checkreadpermission = function(uuid,user){
+        // console.log(":::::::::::::::::");
+        // console.log(readcheck(uuid,user));
+        // console.log(":::::::::::::::::");
+        return readcheck(uuid,user);
+    };
+
+    this.checkwritepermission = function(uuid,user){
+        return writecheck(uuid,user);
+    };
+
+    this.checkownerpermission = function(uuid,user){
+        return ownercheck(uuid,user);
+    };
+
+    this.islibrary = function(uuid){
+        var result=false;
+        var tpl=memt.getpath(uuid).split('/');
+        if(tools.contains(tpl,'library')){
+            result=true;
+        }
+        return result;
+    }
 }  
+
+function readcheck(uuid,user){
+    var bln = 2;
+    if (uuid!==memt.getroot()){
+        var c1=memt.canread(uuid,user);
+        var c2=memt.isowner(uuid,user);
+        if(c1===1&&c2===1){
+            bln = 1;
+        }
+        else{
+            bln = c1+c2;
+        }
+        var t=readcheck(memt.getparent(uuid),user);
+        // if(uuid==='47d560c3-80d6-460f-81b1-7d446f63cfe1'){
+        // console.log("++++++++++");
+        // console.log(c1);
+        // console.log(c2);
+        // console.log(bln);
+        // console.log(t);
+        // console.log("++++++++++");
+        // }
+        if(bln<2&&t>1){
+            t=1
+        }
+        else if(t<2&&bln>1){
+            bln=1
+        }
+        bln=bln*t;
+    }
+    //console.log(bln);
+    return bln
+}
+
+function writecheck(uuid,user){  
+    var bln = 2;
+    if (uuid!==memt.getroot()){
+        var c1=memt.canwrite(uuid,user);
+        var c2=memt.isowner(uuid,user);
+        if(c1===1&&c2===1){
+            bln = 1;
+        }
+        else{
+            bln = c1+c2;
+        }
+        var t=writecheck(memt.getparent(uuid),user);
+        if(bln<2&&t>1){
+            t=1
+        }
+        else if(t<2&&bln>1){
+            bln=1
+        }
+        bln=bln*t;
+    }
+    return bln
+}
+
+function ownercheck(uuid,user){
+    var bln = 2;
+    if (uuid!==memt.getroot()){
+        bln = memt.isowner(uuid,user);
+        var t=ownercheck(memt.getparent(uuid),user);
+        if(bln<2&&t>1){
+            t=1
+        }
+        else if(t<2&&bln>1){
+            bln=1
+        }
+        bln=bln*t;
+    }
+    return bln
+}
 
 function ischild(key,value){
     var ist = false;
@@ -199,7 +360,7 @@ function createpathobj(key,array){
         array.push(memt.get(key));
         createpathobj(memt.getparent(key),array);
     }
-    return array
+    return array;
 }
 
-module.exports = Memtree;
+module.exports = new Memtree();
