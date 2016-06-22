@@ -8,7 +8,10 @@ var id3 = require("jsmediatags");
 var probe = require('node-ffprobe');
 var gm = require('gm');
 var crypto = require('crypto');
+var spawn = require('child_process').spawn;
 var spawnSync = require('child_process').spawnSync;
+//var gd = require('easy-gd')
+
 
 const IMAGE = ["bmp","pcx","tiff","gif","jpeg","jpg","tga","exif","fpx","svg","psd","cdr","pcd","dxf","ufo","eps","ai","png","hdri","raw"]
 const MUSIC = ["mp3","wma","wav","mod","ra","cd","md","asf","aac","mp3pro","vqf","flac","ape","mid","vogg","m4a","aac","aiff","au","vqf"]
@@ -162,7 +165,7 @@ function getfilehelperbyhash(user,list) {
 }
 
 function getfilehelper(uuid,user,tmpobjlist) {
-	//console.log(uuid)
+	console.log(uuid)
 	if (memt.has(uuid)){
     	var tmpobj = clone({},memt.get(uuid));
     	tmpobj.children=memt.getrawchildrenlist(uuid);
@@ -310,6 +313,44 @@ function tattoo(f){
     //console.log(6)
 }
 
+// var dopastedetail =function(path){
+// 	return new Promise(function(resolve,reject){
+// 		console.log("22222222")
+// 		new ExifImage({image:path}, function (error, exifData) {
+// 	        if (error){
+// 	            var tmpobj={};
+// 	            console.log("3333333333")
+// 	            var tsize=spawnSync('gm',['identify','-format','%w,%h',path]).stdout.toString()
+// 	            //var tsize=spawn('gm',['identify','-format','%w,%h',path])
+// 	            console.log("4444444444")
+// 	            var fsize=tsize.split(',')
+// 	            tmpobj.height=fsize[1]
+// 	            tmpobj.width=fsize[0]
+// 	   //          gm(path)
+// 				// .size(function (err, size) {
+// 				//   if (!err){
+// 				//   	tmpobj.height=size.height;
+// 				//   	tmpobj.width=size.width;
+// 				//   }
+//     //         	});
+// 	        }
+// 	        else
+// 	        {
+// 	            var tmpobj=exifData;
+// 	            if (tmpobj.exif.MakerNote!==undefined)tmpobj.exif.MakerNote="";
+// 	            if (tmpobj.exif.UserComment!==undefined)tmpobj.exif.UserComment="";
+// 	        }
+// 	        memt.setdetail(uuid,tmpobj);
+
+// 	    });
+// 	})
+// }
+
+// var start=async function(path){
+// 	console.log("1111111111")
+// 	await dopastedetail(path)
+// 	console.log("5555555555")
+// }
 function pastedetail(path,uuid){
 	const buffer = readChunk.sync(path, 0, 262);
     var filetype = fileType(buffer);
@@ -322,40 +363,58 @@ function pastedetail(path,uuid){
 	var tmpobj=''
 	if (contains(IMAGE,ext)){
 		try {
-		    new ExifImage({image:path}, function (error, exifData) {
-		        if (error){
-		            var tmpobj={};
-		            console.log("************")
-		            if(fs.existsSync(path)){
-		            	console.log(11111)
-		            }
-		            else console.log(22222)
-		            console.log(path)
-		            console.log("************")
-		            var tsize=spawnSync('gm',['identify','-format','%w,%h',path])
-		            console.log(tsize)
-		            var fsize=tsize.split(',')
-		            tmpobj.height=fsize[1]
-		            tmpobj.width=fsize[0]
-		   //          gm(path)
-					// .size(function (err, size) {
-					//   if (!err){
-					//   	tmpobj.height=size.height;
-					//   	tmpobj.width=size.width;
-					//   }
-	    //         	});
-		        }
-		        else
-		        {
-		            var tmpobj=exifData;
-		            if (tmpobj.exif.MakerNote!==undefined)tmpobj.exif.MakerNote="";
-		            if (tmpobj.exif.UserComment!==undefined)tmpobj.exif.UserComment="";
-		        }
-		        memt.setdetail(uuid,tmpobj);
-		    });
+			//start(path)
+		   //  new ExifImage({image:path}, function (error, exifData) {
+		   //      if (error){
+		   //          var tmpobj={};
+		   //          console.log("************")
+		   //          if(fs.existsSync(path)){
+		   //          	console.log(11111)
+		   //          }
+		   //          else console.log(22222)
+		   //          console.log(path)
+		   //          console.log("************")
+		   //          var tsize=spawnSync('gm',['identify','-format','%w,%h',path]).stdout.toString()
+		   //          //var tsize=spawn('gm',['identify','-format','%w,%h',path])
+		   //          console.log(tsize)
+		   //          var fsize=tsize.split(',')
+		   //          tmpobj.height=fsize[1]
+		   //          tmpobj.width=fsize[0]
+		   // //          gm(path)
+					// // .size(function (err, size) {
+					// //   if (!err){
+					// //   	tmpobj.height=size.height;
+					// //   	tmpobj.width=size.width;
+					// //   }
+	    // //         	});
+		   //      }
+		   //      else
+		   //      {
+		   //          var tmpobj=exifData;
+		   //          if (tmpobj.exif.MakerNote!==undefined)tmpobj.exif.MakerNote="";
+		   //          if (tmpobj.exif.UserComment!==undefined)tmpobj.exif.UserComment="";
+		   //      }
+		   //      memt.setdetail(uuid,tmpobj);
+		   //  });
+			var tmpobj={};
+			var tsize=spawnSync('gm',['identify','-format','%w,%h',path]).stdout.toString()
+			var fsize=tsize.split(',')
+			var theight=fsize[1].split("\n")
+		    tmpobj.height=theight[0]
+		    tmpobj.width=fsize[0]
+		    memt.setdetail(uuid,tmpobj);
 		} catch (error) {
 		    var tmpobj='';
 		}
+		// try {
+		//   var image = gd.open(path)
+		//   console.log("************")
+		//   console.log(image)
+		//   console.log("------------")
+		// } catch (error) {
+		  
+		// }
+
 	}
 	else if(contains(MUSIC,ext)){
 		id3.read(path, {

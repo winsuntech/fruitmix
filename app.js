@@ -96,7 +96,7 @@ app.use(multer({
 //       console.log('222');
 //       fs.readFile(realPath, "binary", function(err, file) {
 //           if (err) {
-//               res.writeHead(500, {'Content-Type': 'text/plain'});
+//               res.writeHead(500, {'Content-Type': 'tex t/plain'});
 //               res.end(err);
 //           } else {
 //               res.writeHead(200, {'Content-Type': 'text/html'});
@@ -108,7 +108,7 @@ app.use(multer({
 //   });
 // });
 spawnSync('rm',['-rf','/data/fruitmix/uploads']);
-spawnSynv('mkdir',['/data/fruitmix/uploads']);
+spawnSync('mkdir',['/data/fruitmix/uploads']);
 if(!fs.existsSync('/data/fruitmix/thumbs')){
   spawnSync('mkdir',['/data/fruitmix/thumbs']);
 }

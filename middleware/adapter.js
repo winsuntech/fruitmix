@@ -12,6 +12,7 @@ function treebuilderformat(uid,readlist,writelist,owner,type,createtime,changeti
 	mtobj.path=path;
 	mtobj.parent=parent;
 	mtobj.hash = hash;
+	//if()
 	mtobj.detail=detail;
 
 	return mtobj;

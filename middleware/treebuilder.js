@@ -18,7 +18,7 @@ var MTObj = require('middleware/memtree');
 //     commoncheck(msg);
 //   });
 // });
-
+//var async = require("async");  
 
 
 function commoncheck(f){
@@ -31,6 +31,12 @@ function commoncheck(f){
   var writelist = xattr.getSync(f,'user.writelist').toString('utf-8').split(',');
   var owner = xattr.getSync(f,'user.owner').toString('utf-8').split(',');
   var type = xattr.getSync(f,'user.type').toString('utf-8');
+  try{
+    var hash=xattr.getSync(f,'user.hash').toString('utf-8');
+  }
+  catch(e){
+    var hash=""
+  }
   var createtime = fstat.birthtime;
   //var createtime = "2015-"+parseInt(Math.random()*12+1,10).toString()+"-"+parseInt(Math.random()*31+1,10).toString();
   //console.log(createtime);
@@ -38,7 +44,7 @@ function commoncheck(f){
   var modifytime = fstat.mtime;
   var size = fstat.size;
   //console.log(9992)
-  var mtobj = adapter.treebuilder(uid,readlist,writelist,owner,type,createtime,changetime,modifytime,size,f,'','','');
+  var mtobj = adapter.treebuilder(uid,readlist,writelist,owner,type,createtime,changetime,modifytime,size,f,'',hash,'');
   
   if(dmap.has(f.substr(0,f.lastIndexOf('/')))){
     var parent = dmap.get(f.substr(0,f.lastIndexOf('/')));
@@ -60,13 +66,13 @@ function commoncheck(f){
   }
   else{
     if(!memt.has(mtobj.uid)){
-      var a =helper.pastedetail(mtobj.path,mtobj.uid);
       var mtop=new MTOpermission(mtobj.readlist,mtobj.writelist,mtobj.owner);
       var mtoa= new MTOattribute(mtobj.createtime,mtobj.changetime,mtobj.modifytime,mtobj.size,mtobj.path.substr(mtobj.path.lastIndexOf('/')+1));
       var memobj = new MTObj(mtobj.uid,mtobj.type,mtobj.parent,[],mtobj.path,mtop,mtoa,mtobj.hash,'');
       //console.log("ttttt")
       //console.log(mtobj.uid);
       memt.add(mtobj.uid,memobj);
+      var a =helper.pastedetail(mtobj.path,mtobj.uid);
       //console.log(msg.uid);
       //console.log(msg.path);
     }
@@ -87,14 +93,21 @@ function commoncheck(f){
 function cronjob(tpath){
   var newlist = globby.sync([tpath]);
   newlist.forEach(function(f){
-    console.log("----")
-    console.log(f)
-    console.log("----")
+    // console.log("----")
+    // console.log(f)
+    // console.log("----")
     var tf=f.split('/');
     if(f==='/data/fruitmix'||helper.contains(tf,'library')||helper.contains(tf,'drive')){
       commoncheck(f);
     }
   });
+  // async.eachLimit(newlist,10,function(f,callback){
+  //   var tf=f.split('/');
+  //   if(f==='/data/fruitmix'||helper.contains(tf,'library')||helper.contains(tf,'drive')){
+  //     commoncheck(f);
+  //   }
+  //   callback();
+  // })
   //console.log('done');
 }
 

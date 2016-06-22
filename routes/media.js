@@ -163,6 +163,7 @@ router.get('/*',auth.jwt(), (req, res) => {
         else{
           if (filetype!==null&&helper.filetype(filetype.ext)==='image'){
             debug&&console.log(12.2)
+            console.log(f);
             tmparray.push(adapter.formatformedia(f,'image',filetype.ext));
             debug&&console.log(filetype.ext)
           }
