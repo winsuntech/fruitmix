@@ -38,4 +38,4 @@ node_modules
 # bundle file
 public/bundle.js
 
-
+build/
