@@ -99,48 +99,6 @@ router.get('/*',auth.jwt(), (req, res) => {
         return res.status(200).json(helper.getfiledetail(fuuid));
       }
     }
-  // var pathname = url.parse(req.url).pathname;
-  // var fmap = new Map();
-  // var dmap = new Map();
-  //   if (pathname==='/'){
-  //     return res.status(200).json(null);
-  //   }
-  //   else{
-  //     filehash = pathname.substr(1);
-  //     var fpath='/mnt';
-  //     newlist = globby.sync(['/mnt/**']);
-  //     newlist.forEach(function(f){
-  //       var tmplist=[];
-  //       fstat=fs.statSync(f);
-  //       if (fstat&&fstat.isDirectory()){ 
-  //         console.log(f);
-  //         if (f==='/mnt'){
-  //           dmap.set(f,'root');
-  //         }
-  //         else{
-  //           dmap.get(f.substr(0,f.lastIndexOf('/')));
-            
-  //           fmap.set(f,xattr.getSync(f,'user.uuid').toString('utf-8'));
-  //         }
-  //       }
-  //       else{
-  //         //console.log(xattr.getSync(f,'user.uuid').toString('utf-8'));
-  //         if(!fmap.has(f.substr(f.lastIndexOf('/')))){
-  //           tmplist.push(f.substr(0,f.lastIndexOf('/')));
-  //           fmap.set(f.substr(f.lastIndexOf('/')),tmplist);
-  //         }
-  //         else{
-  //           tmplist=fmap.get(f.substr(f.lastIndexOf('/')));
-  //           var ftmp=f.lastIndexOf('/');
-  //           tmplist.push(f.substr(0,f.lastIndexOf('/')));
-  //           fmap.set(f.substr(f.lastIndexOf('/')),tmplist);
-  //         }
-  //       }
-  //     });
-  //     //console.log(fmap.values());
-  //     //console.log(filehash);
-  //     return res.status(200).json(fmap);
-  //   }
 });
 
 router.post('/*',auth.jwt(),upload.single('file'),(req, res) => {

@@ -49,59 +49,6 @@ function getHash(path) {
      return deferred.promise;
 };
 
-// async function getHash(path) {
-// 	//console.log(3.1)
-// 	return new Promise((resolve,reject)=>{
-//      var fs = require('fs');
-//      var crypto = require('crypto');
-//      //console.log(3.2)
-//      var fd = fs.createReadStream(path);
-//      //console.log(3.21)
-//      var hash = crypto.createHash('sha256');
-//      //console.log(3.22)
-//      hash.setEncoding('hex');
-//      //console.log(3.23)
-//      var tmpx =fs.readFileSync(path);
-//      //console.log(sha256(tmpx));
-//      fd.on('data', function (data) {
-// 	    hash.update(data, 'hex')
-// 	    //console.log(3.3)
-// 	 })
-//      fd.on('end', function () {
-//         hash.end();
-//         //console.log(3.4)
-//         //console.log(hash.read()); 
-//         //resolve(hash.read());
-//         return hash.read();
-//      });
-//      //console.log(3.5)
-//      fd.pipe(hash);
-// 	})
-// };
-
-// function chash(f){
-// 	xattr.setSync(f,'user.type','file');
-// 		var tmpx =fs.readFileSync(f);
-// 		var hash = crypto.createHash('sha256')
-// 		var readStream = fs.createReadStream(f);
-//       //xattr.setSync(f,'user.hash',sha256(tmpx));
-//       	readStream.on('data', function(data){
-// 		    hash.update(data, 'utf8')
-// 		    console.log(4)
-// 		})
-//       	var cuuid=xattr.getSync(f,'user.uuid').toString();
-// 		readStream.on('end', function(){
-// 			console.log(5)
-// 			var thash=hash.digest('hex')
-// 			console.log(thash)
-// 			console.log(cuuid);
-//
-// 		})
-// 	readStream.pipe(hash);
-// }
-
-
-
 function contains(array, value) {
     var i = array.length;
     while (i--) {
@@ -304,53 +251,11 @@ function tattoo(f){
 				}
 			});
 	   				
-	   				//var cuuid=xattr.getSync(f,'user.uuid').toString('utf-8');
-	   				//console.log("-----------")
-	   				//console.log(r)
 	   		
    		}
     }
-    //console.log(6)
 }
 
-// var dopastedetail =function(path){
-// 	return new Promise(function(resolve,reject){
-// 		console.log("22222222")
-// 		new ExifImage({image:path}, function (error, exifData) {
-// 	        if (error){
-// 	            var tmpobj={};
-// 	            console.log("3333333333")
-// 	            var tsize=spawnSync('gm',['identify','-format','%w,%h',path]).stdout.toString()
-// 	            //var tsize=spawn('gm',['identify','-format','%w,%h',path])
-// 	            console.log("4444444444")
-// 	            var fsize=tsize.split(',')
-// 	            tmpobj.height=fsize[1]
-// 	            tmpobj.width=fsize[0]
-// 	   //          gm(path)
-// 				// .size(function (err, size) {
-// 				//   if (!err){
-// 				//   	tmpobj.height=size.height;
-// 				//   	tmpobj.width=size.width;
-// 				//   }
-//     //         	});
-// 	        }
-// 	        else
-// 	        {
-// 	            var tmpobj=exifData;
-// 	            if (tmpobj.exif.MakerNote!==undefined)tmpobj.exif.MakerNote="";
-// 	            if (tmpobj.exif.UserComment!==undefined)tmpobj.exif.UserComment="";
-// 	        }
-// 	        memt.setdetail(uuid,tmpobj);
-
-// 	    });
-// 	})
-// }
-
-// var start=async function(path){
-// 	console.log("1111111111")
-// 	await dopastedetail(path)
-// 	console.log("5555555555")
-// }
 function pastedetail(path,uuid){
 	const buffer = readChunk.sync(path, 0, 262);
     var filetype = fileType(buffer);
