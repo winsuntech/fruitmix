@@ -24,7 +24,7 @@ function defaultXattrVal() {
     writelist: null,
     readlist: null,
     hash: null,
-    htime: null
+    htime: 0 // epoch time
   }
 }
 
@@ -110,6 +110,13 @@ async function readXstatsAsync(path) {
   }
 }
 
+function readXstats(path, callback) {
+
+  readXstatsAsync(path)
+    .then(r => (r instanceof Error) ? callback(r) : callback(null, r))
+    .catch(e => callback(e))
+}
+
 async function updateXattrPermissionAsync(path, permission) {
   
   let defVal = defaultXattrVal()
@@ -154,9 +161,11 @@ let testing = {
 }
 
 export { 
+  readXstats,
   readXstatsAsync,
   updateXattrPermissionAsync,
   updateXattrHashAsync,
+
   testing
 }
 
