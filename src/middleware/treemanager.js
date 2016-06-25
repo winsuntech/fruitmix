@@ -5,121 +5,122 @@ var root = "";
 var elements = new Map(); 
 var hashmap = new Map();
 var debug = false; 
-function Memtree() { 
+
+class Memtree() { 
    
-    this.getroot = function(){
+    getroot() {
         return root;
     };
 
-    this.setroot = function(value){
+    setroot(value){
         root = value;
     };
 
-    this.gettype = function(key) { 
+    gettype(key) { 
         return this.get(key).type;
     };
 
-    this.getchildren = function(uuid){
+    getchildren(uuid){
         return this.get(uuid).children;
     };
 
-    this.setchildren = function(uuid,value){
+    setchildren(uuid,value){
         this.get(uuid).children=value;
     };
 
-    this.gethash = function(uuid){
+    gethash(uuid) {
         return this.get(uuid).hash;
     };
 
-    this.sethash = function(uuid,value){
+    sethash(uuid,value){
         this.get(uuid).hash=value;
     };
 
-    this.getparent = function(key){
+    getparent(key){
         return this.get(key).parent;
     };
 
-    this.getowner = function(key){
+    getowner(key){
         return this.get(key).permission.owner;
     };
 
-    this.setwritelist = function(key,value){
+    setwritelist(key,value){
         this.get(key).permission.writelist=value;
     };
 
-    this.setreadlist = function(key,value){
+    setreadlist(key,value){
         this.get(key).permission.readlist=value;
     };
 
-    this.getname = function(key) { 
+    getname(key) { 
         return this.get(key).attribute.name;
     };
 
-    this.setname = function(key,name) { 
+    setname(key,name) { 
         this.get(key).attribute.name=name;
     };
 
-    this.hashash = function(hash){
+    hashash(hash){
         return hashmap.has(hash);
     }
 
-    this.getbyhash = function(hash){
+    getbyhash(hash){
         return hashmap.get(hash);
     }
 
-    this.setbyhash = function(hash,tmplist){
+    setbyhash(hash,tmplist){
         hashmap.set(hash,tmplist);;
     }
 
-    this.gethashmap = function(){
+    gethashmap(){
         return hashmap;
     }
 
-    this.getpathobj = function(key){
+    getpathobj(key){
         return createpathobj(key,[]);
     };
 
-    this.size = function(){
+    size(){
         return elements.size;
     };
 
-    this.clear = function() {  
+    clear() {  
         elements.clear();  
     };  
 
-    this.deletefilebyuuid=function(key){
+    deletefilebyuuid(key){
         memt.remove(key);
     };
 
-    this.add = function(key,obj) {
+    add (key,obj) {
         elements.set(key,obj);
     };  
   
-    this.remove = function(key) {  
+    remove (key) {  
         elements.delete(key);
     };  
 
-    this.get = function(key) { 
+    get (key) { 
         return elements.get(key);
     };  
 
-    this.has = function(key) {  
+    has (key) {  
         return elements.has(key);  
     };  
 
-    this.mtobjs = function() {  
+    mtobjs() {  
         return elements;  
     };  
 
-    this.setdetail= function(uuid,data){
+    setdetail (uuid,data){
         this.get(uuid).detail=data;
     }
 
-    this.getdetail= function(uuid){
+    getdetail (uuid){
         return this.get(uuid).detail;
     }
 
-    this.deletefile = function(uuid){
+    deletefile (uuid){
         debug && console.log(uuid);
         debug && console.log(11);
         this.parentremove(uuid);
@@ -130,14 +131,14 @@ function Memtree() {
         debug && console.log(44);
     };
 
-    this.parentremove = function(key){
+    parentremove(key){
 
         var tmpparent=memt.get(key).parent;
         debug && console.log('----'+tmpparent);
         this.removechild(tmpparent,key);
     };
 
-    this.getpath = function(key) {
+    getpath(key) {
         var realpath='';
         this.getpathobj(key).forEach(function(f){
             realpath='/'+f.attribute.name+realpath;
@@ -145,13 +146,13 @@ function Memtree() {
         return '/data/fruitmix'+realpath;
     };
 
-    this.addchild = function(target,value){
+    addchild(target,value){
         if(!ischild(target,value)||this.get(target).children.length===0){
             this.get(target).children.push(value);
         }
     };
 
-    this.removechild=function(uuid,key) {
+    removechild(uuid,key) {
         var bln = false;
         try {
             for (var i = 0; i < this.get(uuid).children.length; i++) {
@@ -166,7 +167,7 @@ function Memtree() {
         return bln;
     }
 
-    this.removehashobj =function(uuid){
+    removehashobj(uuid){
         if(memt.hashash(memt.get(uuid).hash)){
             var tmplist=memt.getbyhash(memt.get(uuid).hash);
             for (var i = 0; i < tmplist.length; i++) {
@@ -177,7 +178,7 @@ function Memtree() {
         }
     }
 
-    this.getrawchildrenlist = function(uuid){
+    getrawchildrenlist(uuid){
         var tmplist=this.get(uuid).children;
         var tmparray=[];
         tmplist.forEach(function(f){
@@ -186,7 +187,7 @@ function Memtree() {
         return tmparray;
     };
 
-    this.canread = function(uuid,useruuid){
+    canread (uuid,useruuid){
         var tmplist=this.get(uuid).permission.readlist;
         var re=0;
         // if(uuid==='a0207fb9-eeb3-41fe-82d4-aed75e05bb74'){
@@ -206,7 +207,7 @@ function Memtree() {
         return re;
     };
 
-    this.canwrite = function(uuid,useruuid){
+    canwrite (uuid,useruuid){
         var tmplist=this.get(uuid).permission.writelist;
         var re=0;
         if(tmplist[0]===''){
@@ -220,7 +221,7 @@ function Memtree() {
         return re;
     };
 
-    this.isfile = function(key){
+    isfile (key){
         if (this.gettype(key) ==='file'){
             return true;
         }
@@ -229,7 +230,7 @@ function Memtree() {
         }
     }
 
-    this.isowner = function(key,value){
+    isowner (key,value){
         var tmplist=this.getowner(key);
         var re=0;
         if(tmplist[0]===''){
@@ -243,28 +244,25 @@ function Memtree() {
         return re;
     }
 
-    this.moveto = function(_key,target){
+    moveto (_key,target){
         this.parentremove(_key);
         this.addchild(target,this.get(_key));
         this.get(_key).parent=target;
     };
 
-    this.checkreadpermission = function(uuid,user){
-        // console.log(":::::::::::::::::");
-        // console.log(readcheck(uuid,user));
-        // console.log(":::::::::::::::::");
+    checkreadpermission (uuid,user){
         return readcheck(uuid,user);
     };
 
-    this.checkwritepermission = function(uuid,user){
+    checkwritepermission (uuid,user){
         return writecheck(uuid,user);
     };
 
-    this.checkownerpermission = function(uuid,user){
+    checkownerpermission (uuid,user){
         return ownercheck(uuid,user);
     };
 
-    this.islibrary = function(uuid){
+    islibrary (uuid){
         var result=false;
         var tpl=memt.getpath(uuid).split('/');
         if(tools.contains(tpl,'library')){
