@@ -25,10 +25,6 @@ class Memtree {
         return this.get(uuid).children;
     };
 
-    setchildren(uuid,value){
-        this.get(uuid).children=value;
-    };
-
     gethash(uuid) {
         return this.get(uuid).hash;
     };

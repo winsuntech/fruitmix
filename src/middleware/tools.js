@@ -93,22 +93,6 @@ function getfilehelperbyhash(user,list) {
 		}
 	}
 	return tmpobjlist;
-	// tmplist.forEach(function(f){
-	// 		// if(Checker.read(f.getuuid(),user)||Checker.owner(f.getuuid(),user)){
-	// 		// 	getfilehelper(f.getuuid(),user,tmpobjlist);
-	// 		// }
-	// 		console.log(f);
- //        });
-	// if (memt.has(uuid)){
-	// 	console.log(memt.getrawchildrenlist(uuid));
- //    	var tmpobj = clone({},memt.get(uuid));
- //    	tmpobj.setchildren(memt.getrawchildrenlist(uuid));
- //    	tmpobjlist.push(tmpobj);
- //    	var tmpchildren=memt.getchildren(uuid);
-
-		
- //        return tmpobjlist;
-	// }
 }
 
 function getfilehelper(uuid,user,tmpobjlist) {
