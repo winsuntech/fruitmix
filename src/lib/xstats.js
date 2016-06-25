@@ -60,12 +60,19 @@ async function xattrSetAsync(path, attr, val) {
   })
 }
 
+
+// get xattr, parsed, 
+// defval: if provided, will be set if there is no valid xattr; 
+// if not provided (undefined or null), won't try to set
 async function xattrGetOrDefault(path, attr, defVal) {
 
   let defJsonVal = JSON.stringify(defVal)
 
   let val = await xattrGetAsync(path, attr)
   if (val instanceof Error) {
+
+    if (!defVal) return val
+
     let err = await xattrSetAsync(path, attr, defJsonVal)
     if (err instanceof Error) return err
     return defVal
@@ -81,7 +88,8 @@ async function xattrGetOrDefault(path, attr, defVal) {
   return parsed
 }
 
-// this function returns extended stats, i.e, merged stats and extended attributes
+// this function returns extended stats, 
+// i.e, merged stats and extended attributes, with hash timestamp verified
 async function readXstatsAsync(path) {
 
   let defVal = defaultXattrVal()
@@ -103,23 +111,6 @@ async function readXstatsAsync(path) {
   return Object.assign(stats, attr, {
     abspath: path
   })
-
-/*
-  return {
-    uuid: attr.uuid,
-    owner: attr.owner,
-    writelist: attr.writelist,
-    readlist: attr.readlist
-    ,
-    attribute: {
-      changetime: stats.ctime.getTime(),
-      modifytime: stats.mtime.getTime(),
-      createtime: stats.birthtime.getTime(),
-      size: stats.size,
-    },
-    hash: stats.mtime.getTime() === attr.htime ? attr.hash : null
-  }
-*/
 }
 
 function readXstats(path, callback) {
@@ -142,7 +133,8 @@ async function updateXattrPermissionAsync(path, permission) {
   if (permission.writelist) perm.writelist = permission.writelist
 
   let newattr = Object.assign({}, attr, perm) 
-  return await xattrSetAsync(path, 'user.fruitmix', JSON.stringify(newattr))
+  let err = await xattrSetAsync(path, 'user.fruitmix', JSON.stringify(newattr))
+  return err
 }
 
 async function updateXattrHashAsync(path, hash, htime) {
@@ -155,7 +147,7 @@ async function updateXattrHashAsync(path, hash, htime) {
   if (stats.mtime.getTime() !== htime) {
 
     let e = new Error('htime outdated')
-    e.code = 'EINVAL'
+    e.code = 'ETIMESTAMP_OUTDATED'
     return e 
   }
 
@@ -169,7 +161,7 @@ async function updateXattrHashAsync(path, hash, htime) {
 }
 
 let testing = {
-
+  xattrGetOrDefault
 }
 
 export { 
@@ -177,7 +169,6 @@ export {
   readXstatsAsync,
   updateXattrPermissionAsync,
   updateXattrHashAsync,
-
   testing
 }
 
