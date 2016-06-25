@@ -93,6 +93,7 @@ describe('xstats', function() {
     it('should readback preset xattrs, with null hash', function(done) {
       readXstatsAsync(fpath)
         .then(r => {
+          expect(r.abspath).to.equal(fpath) 
           expect(r.uuid).to.equal(uuid1)
           expect(r.owner[0]).to.equal(uuid2)
           expect(r.writelist[0]).to.equal(uuid3)
@@ -120,6 +121,7 @@ describe('xstats', function() {
     it('should readback default xattrs, with null hash', function(done) {
       readXstatsAsync(fpath)
         .then(r => {
+          expect(r.abspath).to.equal(fpath)
           expect(validator.isUUID(r.uuid)).to.be.true
           expect(r.owner).to.be.null
           expect(r.writelist).to.be.null
