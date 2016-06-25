@@ -74,5 +74,4 @@ function cronjob(tpath){
 }
 
 exports.checkall = cronjob;
-
 exports.docheck = commoncheck;
