@@ -24,7 +24,7 @@ function defaultXattrVal() {
     writelist: null,
     readlist: null,
     hash: null,
-    htime: 0 // epoch time
+    htime: -1 // epoch time value, i.e. dateObject.getTime()
   }
 }
 
@@ -81,7 +81,7 @@ async function xattrGetOrDefault(path, attr, defVal) {
   return parsed
 }
 
-// this function returns stats and extended attributes
+// this function returns extended stats, i.e, merged stats and extended attributes
 async function readXstatsAsync(path) {
 
   let defVal = defaultXattrVal()
@@ -92,14 +92,25 @@ async function readXstatsAsync(path) {
   let attr = await xattrGetOrDefault(path, 'user.fruitmix', defVal)
   if (attr instanceof Error) return attr
 
-  // hash is stored as integer !
+  // verify hash timestamp
+  if (attr.htime !== stats.mtime.getTime()) {
+     attr.hash = null 
+  } 
+
+  // remove htime
+  delete attr.htime
+
+  return Object.assign(stats, attr, {
+    abspath: path
+  })
+
+/*
   return {
     uuid: attr.uuid,
-    permission: {
-      owner: attr.owner,
-      writelist: attr.writelist,
-      readlist: attr.readlist
-    },
+    owner: attr.owner,
+    writelist: attr.writelist,
+    readlist: attr.readlist
+    ,
     attribute: {
       changetime: stats.ctime.getTime(),
       modifytime: stats.mtime.getTime(),
@@ -108,6 +119,7 @@ async function readXstatsAsync(path) {
     },
     hash: stats.mtime.getTime() === attr.htime ? attr.hash : null
   }
+*/
 }
 
 function readXstats(path, callback) {

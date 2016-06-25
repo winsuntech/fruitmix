@@ -54,9 +54,9 @@ describe('Xstats readXstatsAsync', function(){
       readXstatsAsync(fpath)
         .then(r => {
           expect(r.uuid).to.equal(uuid1)
-          expect(r.permission.owner[0]).to.equal(uuid2)
-          expect(r.permission.writelist[0]).to.equal(uuid3)
-          expect(r.permission.readlist[0]).to.equal(uuid4)
+          expect(r.owner[0]).to.equal(uuid2)
+          expect(r.writelist[0]).to.equal(uuid3)
+          expect(r.readlist[0]).to.equal(uuid4)
           expect(r.hash).to.be.null    // IMPORTANT!
           done() 
         })
@@ -81,9 +81,9 @@ describe('Xstats readXstatsAsync', function(){
       readXstatsAsync(fpath)
         .then(r => {
           expect(validator.isUUID(r.uuid)).to.be.true
-          expect(r.permission.owner).to.be.null
-          expect(r.permission.writelist).to.be.null
-          expect(r.permission.readlist).to.be.null
+          expect(r.owner).to.be.null
+          expect(r.writelist).to.be.null
+          expect(r.readlist).to.be.null
           expect(r.hash).to.be.null    // IMPORTANT!
           done() 
         })
