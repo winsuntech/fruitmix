@@ -9,6 +9,7 @@ import UUID from 'node-uuid'
 import validator from 'validator'
 
 import {
+  readTimeStampAsync,
   readXstatsAsync,
   updateXattrPermissionAsync,
   updateXattrHashAsync,
@@ -40,6 +41,38 @@ describe('xstats', function() {
 
   let cwd = process.cwd()
   let fpath = path.join(cwd, 'tmptest')
+
+  describe('readTimeStampAsync 01', function(){
+
+    let timestamp
+
+    before(function(done) {
+
+      let uuid = UUID.v4()
+      rimraf('tmptest', err => {
+        if (err) return done(err)
+        mkdirp('tmptest', err => {
+          if (err) return done(err)
+          fs.stat(fpath, (err, stats) => {
+            if (err) return done(err)
+            timestamp = stats.mtime.getTime()
+            done() 
+          })
+        })
+      })  
+    })
+
+    it('should read timestamp', function(done) {
+      readTimeStampAsync(fpath)
+        .then(r => {
+          // console.log(r)
+          expect(r).to.equal(timestamp)
+          done() 
+        })
+        .catch(e => done(e))
+    })
+  })
+
 
   describe('readXstatsAsync 01', function(){
 

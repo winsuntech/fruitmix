@@ -44,6 +44,14 @@ async function fsStatAsync(path) {
   })
 }
 
+async function readTimeStampAsync(path) {
+
+  let stats = await fsStatAsync(path)
+  if (stats instanceof Error) return stats
+
+  return stats.mtime.getTime()
+}
+
 async function xattrGetAsync(path, attr) {
   return new Promise(resolve => {
     xattr.get(path, attr, (err, val) => {
@@ -165,6 +173,7 @@ let testing = {
 }
 
 export { 
+  readTimeStampAsync,
   readXstats,
   readXstatsAsync,
   updateXattrPermissionAsync,
