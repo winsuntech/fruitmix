@@ -2,7 +2,6 @@ const uuid = require('node-uuid');
 const globby = require('globby');
 var fs = require('fs');
 var xattr = require('fs-xattr');
-var socket = require('socket.io-client')('http://localhost:10086');
 var dmap1 = new Map();
 var helper = require('../middleware/tools');
 var adapter = require('../middleware/adapter');
@@ -57,7 +56,7 @@ function commoncheck(f){
   }
 
   if(dmap.has(f.substr(0,f.lastIndexOf('/')))){
-    socket.emit('addchild',mtobj);
+    memt.addchild(mtobj.parent, memt.get(mtobj.uid))
   }
   else{
     memt.setroot(mtobj.uid)
@@ -73,8 +72,6 @@ function cronjob(tpath){
     }
   });
 }
-
-socket.on('connect', function () { console.log("socket connected"); });
 
 exports.checkall = cronjob;
 

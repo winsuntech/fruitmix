@@ -9,7 +9,6 @@ var MTObj = require('../middleware/memtree');
 var xattr = require('fs-xattr');
 var spawn = require('child_process').spawn;
 var spawnSync = require('child_process').spawnSync;
-var socket = require('socket.io-client')('http://localhost:10086');
 var multer  = require('multer')
 var upload = multer({ dest: '/data/fruitmix/uploads/' })
 var helper = require('../middleware/tools');
@@ -126,7 +125,7 @@ router.post('/*',auth.jwt(),upload.single('file'),(req, res) => {
           var newlist = globby.sync([targetpath+'/'+memt.getname(fuuid)]);
           newlist.forEach(function(f){
             var mto =adapter.treebuilder('','','','','','','','','',f,'','','');
-            socket.emit('checkpath',mto);
+            builder.docheck(mto.path)
           });
           return res.status(200).json('success');
         }
@@ -316,7 +315,7 @@ router.delete('/*',auth.jwt(), (req, res) => {
         var realpath = memt.getpath(fuuid);
         var mto = adapter.treebuilder(xattr.getSync(realpath,'user.uuid').toString('utf-8'),'','','','','','','','','','','','');
         spawn('rm', ['-rf',realpath]);
-        socket.emit('deletefolderorfile',mto);
+        memt.deletefile(mto.uid); 
         return res.status(200).json('success');
       }
       else{

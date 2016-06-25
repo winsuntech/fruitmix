@@ -9,7 +9,6 @@ var MTObj = require('../middleware/memtree');
 var xattr = require('fs-xattr');
 var spawn = require('child_process').spawn;
 var spawnSync = require('child_process').spawnSync;
-var socket = require('socket.io-client')('http://localhost:10086');
 var multer  = require('multer')
 var upload = multer({ dest: '/data/fruitmix/uploads/'})
 var helper = require('../middleware/tools');

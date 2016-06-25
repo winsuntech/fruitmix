@@ -148,6 +148,10 @@ class Memtree {
     };
 
     addchild(target,value){
+      console.log('addchild >>>')
+      console.log(target)
+      console.log(value)
+      console.log('addchild <<<')
         if(!ischild(target,value)||this.get(target).children.length===0){
             this.get(target).children.push(value);
         }

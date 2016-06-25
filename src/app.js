@@ -156,60 +156,11 @@ builder.checkall('/data/fruitmix/**');
 global.mshare = require('./middleware/mediamanager');
 helper.buildmediamap();
 
-var io = require("socket.io").listen(10086);
 
 var MTOpermission = require('./middleware/mtopermission');
 var MTOattribute = require('./middleware/mtoattribute');
 
 console.log('app starts')
-
-io.sockets.on('connection', function(socket){
-  socket.on('addfoldernode', function(msg){
-    if(!memt.has(msg.uid)){
-      var mtop=new MTOpermission(msg.readlist,msg.writelist,msg.owner);
-      var mtoa= new MTOattribute(msg.createtime,msg.changetime,msg.modifytime,msg.size,msg.path.substr(msg.path.lastIndexOf('/')+1));
-      var memobj = new MTObj(msg.uid,msg.type,msg.parent,[],msg.path,mtop,mtoa,msg.hash);
-      memt.add(msg.uid,memobj);
-      //console.log(msg.uid);
-      //console.log(msg.path);
-      dmap.set(msg.path,msg.uid);
-    }
-  });
-
-  socket.on('addfilenode', function(msg){
-    if(!memt.has(msg.uid)){
-      var a =helper.pastedetail(msg.path,msg.uid);
-      var mtop=new MTOpermission(msg.readlist,msg.writelist,msg.owner);
-      var mtoa= new MTOattribute(msg.createtime,msg.changetime,msg.modifytime,msg.size,msg.path.substr(msg.path.lastIndexOf('/')+1));
-      var memobj = new MTObj(msg.uid,msg.type,msg.parent,[],msg.path,mtop,mtoa,msg.hash,'');
-      //console.log("ttttt")
-      memt.add(msg.uid,memobj);
-      //console.log(msg.uid);
-      //console.log(msg.path);
-    }
-  });
-
-  socket.on('addchild', function(msg){
-    memt.addchild(msg.parent,memt.get(msg.uid));
-  });
-
-  socket.on('checkpath', function(msg){
-    builder.docheck(msg.path);
-  });
-
-  socket.on('rename', function(msg){
-    memt.setname(msg.uid,msg.filename);
-  });
-
-  socket.on('moveto', function(msg){
-    memt.moveto(msg.uid,msg.target);
-  });
-
-  socket.on('deletefolderorfile', function(msg){
-    memt.deletefile(msg.uid);
-  });
-});
-
 
 var rule = new schedule.RecurrenceRule();
 // rule.dayOfWeek = [0, new schedule.Range(1, 6)];
