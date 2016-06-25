@@ -118,20 +118,14 @@ class Memtree {
     }
 
     deletefile (uuid){
-        debug && console.log(uuid);
-        debug && console.log(11);
         this.parentremove(uuid);
-        debug && console.log(22);
         visitor(uuid,this.removehashobj);
-        debug && console.log(33);
         visitor(uuid,this.deletefilebyuuid);
-        debug && console.log(44);
     };
 
     parentremove(key){
 
         var tmpparent=memt.get(key).parent;
-        debug && console.log('----'+tmpparent);
         this.removechild(tmpparent,key);
     };
 
