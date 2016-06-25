@@ -6,13 +6,14 @@ var elements = new Map();
 var hashmap = new Map();
 var debug = false; 
 
-class Memtree() { 
+class Memtree { 
    
     getroot() {
         return root;
     };
 
     setroot(value){
+        console.log('setroot: ' + value)
         root = value;
     };
 

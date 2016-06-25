@@ -161,6 +161,8 @@ var io = require("socket.io").listen(10086);
 var MTOpermission = require('./middleware/mtopermission');
 var MTOattribute = require('./middleware/mtoattribute');
 
+console.log('app starts')
+
 io.sockets.on('connection', function(socket){
   socket.on('addfoldernode', function(msg){
     if(!memt.has(msg.uid)){
@@ -201,10 +203,6 @@ io.sockets.on('connection', function(socket){
 
   socket.on('moveto', function(msg){
     memt.moveto(msg.uid,msg.target);
-  });
-
-  socket.on('setroot', function(msg){
-    memt.setroot(msg.uid);
   });
 
   socket.on('deletefolderorfile', function(msg){
