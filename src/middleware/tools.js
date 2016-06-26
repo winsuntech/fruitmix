@@ -97,34 +97,25 @@ function getfilehelperbyhash(user,list) {
 
 function getfilehelper(uuid,user,tmpobjlist) {
 	debug &&console.log(uuid)
-	if (memt.has(uuid)){
-    	var tmpobj = clone({},memt.get(uuid));
-    	tmpobj.children=memt.getrawchildrenlist(uuid);
-    	//var tpl = memt.getpath(uuid).split('/');
-    	var tmpchildren=memt.getchildren(uuid);
-  //   	console.log("----------");
-		// console.log(memt.getpath(uuid));
-		// console.log(uuid);
-		// console.log(memt.checkreadpermission(uuid,user));
-		// console.log(memt.checkownerpermission(uuid,user));
-    	//console.log(tmpchildren)
-    	if(memt.checkownerpermission(uuid,user)===1||memt.checkreadpermission(uuid,user)===1){
-    		tmpobjlist.push(tmpobj);
-    	}
-    	else if(memt.getpath(tmpobj.uuid)==='/data/fruitmix'||memt.getpath(tmpobj.uuid)==='/data/fruitmix/drive'||memt.getpath(tmpobj.uuid)==='/data/fruitmix/libarary'){
-    		tmpobjlist.push(tmpobj);
-    	}
-		tmpchildren.forEach(function(f){
-			// if (f.attribute.name==='444.jpg'){			
-			// }
-			//memt.getpath(f.uuid)==='/data/fruitmix/drive'||memt.getpath(f.uuid)==='/data/fruitmix/libarary'||
-			if(memt.checkreadpermission(f.uuid,user)!==0||memt.checkownerpermission(f.uuid,user)!==0){
-				getfilehelper(f.uuid,user,tmpobjlist);
-			}
-			//console.log("------------------------------");
-        });
-        //console.log(tmpobjlist);
-        return tmpobjlist;
+	if (memt.has(uuid)) {
+
+    var tmpobj = clone({},memt.get(uuid));
+    tmpobj.children=memt.getrawchildrenlist(uuid);
+    var tmpchildren=memt.getchildren(uuid);
+
+    if(memt.checkownerpermission(uuid,user)===1||memt.checkreadpermission(uuid,user)===1){
+      tmpobjlist.push(tmpobj);
+    }
+    else if(memt.getpath(tmpobj.uuid)==='/data/fruitmix'||memt.getpath(tmpobj.uuid)==='/data/fruitmix/drive'||memt.getpath(tmpobj.uuid)==='/data/fruitmix/libarary'){
+      tmpobjlist.push(tmpobj);
+    }
+
+    tmpchildren.forEach(function(f){
+      if(memt.checkreadpermission(f.uuid,user)!==0||memt.checkownerpermission(f.uuid,user)!==0){
+        getfilehelper(f.uuid,user,tmpobjlist);
+      }
+    });
+    return tmpobjlist;
 	}
 }
 
