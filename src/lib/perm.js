@@ -8,10 +8,9 @@
 class PermCheck {
 
   constructor(nwl, nrl, nro) {
-    this.nodeWriteList = nwl
-    ...
-    ...
+    this.nodeWriteList = nwl // TODO
   }
+}
 
 const isExplicit = (node) => (nodeWriteList(node) !== null || nodeReadList(node) !== null)
 
@@ -41,7 +40,7 @@ const nodeReadables = (node) => {
   let read = nodeReadList(node)
   if (read === null) read = []
 
-  retun [...write, ...read] // no undup
+  return [...write, ...read] // no undup
 }
 
 const nodeUserWritable = (node, user) => {
@@ -56,11 +55,11 @@ const nodeUserWritable = (node, user) => {
 
 const nodeUserReadable = (node, user) => {
 
-  if (user === nodeRootOwner(node) return true
+  if (user === nodeRootOwner(node)) return true
 
   let ancestor = nearestExplicit(node)
   let readables = nodeReaables(ancestor)
 
   return readables.find(r => r === user) ? true : false
 }
-}
+

@@ -12,7 +12,7 @@ export async function fsReaddirAsync(dirpath) {
       err ? resolve(err) : resolve(files)))
 }
 
-export const mapXstatToObject = (xstat) {
+export const mapXstatToObject = (xstat) => {
 
 /* example xstat, xstat instanceof fs.stat
 { dev: 2049,
@@ -53,9 +53,9 @@ export const mapXstatToObject = (xstat) {
       readlist: xstat.readlist,
     },
     attribute: {
-      changetime = xstat.ctime,
-      modifytime = xstat.mtime,
-      createtime = xstat.birthtime,
+      changetime: xstat.ctime,
+      modifytime: xstat.mtime,
+      createtime: xstat.birthtime,
       size: xstat.size,
       name: name,     
     },

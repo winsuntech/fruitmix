@@ -11,7 +11,7 @@ class Node {
 **/
 
   constructor(object) {
-    this = Object.assign({}, object, {
+    Object.assign(this, object, {
       parent: null,
       children: []
     })
@@ -140,7 +140,7 @@ class MapTree {
   // new node by uuid, with map set
   createNodeByUUID(parentUUID, content) {
     let parent = this.uuidMap.get(parentUUID)
-    return parent ? this.createNode(parent, content) 
+    return parent ? this.createNode(parent, content) : null
   } 
 
   // detach subtree, clean maps

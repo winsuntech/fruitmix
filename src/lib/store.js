@@ -72,7 +72,7 @@ async function checkDriveXstat(rootpath, uuid) {
 }
 
 // skip owner check for now TODO
-async checkLibraryXstat(rootpath, uuid) {
+async function checkLibraryXstat(rootpath, uuid) {
 
   let libraryPath = path.join(rootpath, uuid)  
   let perm = { writelist: [], readlist: [] }
@@ -101,7 +101,7 @@ async function inspectLibraries(libraryDir) {
   }
 }
 
-const mapXstatToObject = (xstat) {
+const mapXstatToObject = (xstat) => {
 
 /* example xstat, xstat instanceof fs.stat
 { dev: 2049,
@@ -142,9 +142,9 @@ const mapXstatToObject = (xstat) {
       readlist: xstat.readlist,
     },
     attribute: {
-      changetime = xstat.ctime,
-      modifytime = xstat.mtime,
-      createtime = xstat.birthtime,
+      changetime: xstat.ctime,
+      modifytime: xstat.mtime,
+      createtime: xstat.birthtime,
       size: xstat.size,
       name: name,     
     },
