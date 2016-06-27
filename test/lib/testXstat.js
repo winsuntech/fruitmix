@@ -10,11 +10,11 @@ import validator from 'validator'
 
 import {
   readTimeStampAsync,
-  readXstatsAsync,
+  readXstatAsync,
   updateXattrPermissionAsync,
   updateXattrHashAsync,
   testing
-} from '../../src/lib/xstats.js'
+} from '../../src/lib/xstat.js'
 
 const expect = chai.expect
 
@@ -37,7 +37,7 @@ const defaultXattr = {
   htime: -1
 }
 
-describe('xstats', function() {
+describe('xstat', function() {
 
   let cwd = process.cwd()
   let fpath = path.join(cwd, 'tmptest')
@@ -74,7 +74,7 @@ describe('xstats', function() {
   })
 
 
-  describe('readXstatsAsync 01', function(){
+  describe('readXstatAsync 01', function(){
 
     before(function(done) {
 
@@ -91,7 +91,7 @@ describe('xstats', function() {
     })
 
     it('should readback preset xattrs, with null hash', function(done) {
-      readXstatsAsync(fpath)
+      readXstatAsync(fpath)
         .then(r => {
           expect(r.abspath).to.equal(fpath) 
           expect(r.uuid).to.equal(uuid1)
@@ -105,7 +105,7 @@ describe('xstats', function() {
     })
   })
 
-  describe('readXstatsAsync 02', function(){
+  describe('readXstatAsync 02', function(){
 
     before(function(done) {
 
@@ -119,7 +119,7 @@ describe('xstats', function() {
     })
 
     it('should readback default xattrs, with null hash', function(done) {
-      readXstatsAsync(fpath)
+      readXstatAsync(fpath)
         .then(r => {
           expect(r.abspath).to.equal(fpath)
           expect(validator.isUUID(r.uuid)).to.be.true
@@ -133,7 +133,7 @@ describe('xstats', function() {
     })
   })
 
-  describe('readXstatsAsync 03', function(){
+  describe('readXstatAsync 03', function(){
 
     before(function(done) {
 
@@ -156,7 +156,7 @@ describe('xstats', function() {
     })
 
     it('should readback preset xattrs, with good hash', function(done) {
-      readXstatsAsync(fpath)
+      readXstatAsync(fpath)
         .then(r => {
           expect(r.hash).to.equal(uuid5)
           done() 
