@@ -133,6 +133,7 @@ describe('xstat', function() {
     })
   })
 
+/** this test case removed 
   describe('readXstatAsync 02.01', function(){
 
     before(function(done) {
@@ -160,6 +161,7 @@ describe('xstat', function() {
         .catch(e => done(e))
     })
   })
+**/
 
   describe('readXstatAsync 03', function(){
 

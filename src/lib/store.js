@@ -5,6 +5,7 @@ import validator from 'validator'
 import mkdirp from 'mkdirp'
 import rimraf from 'rimraf'
 
+import { mkdirAsync, fsReaddirAsync, mapXstatToObject } from './tools'
 import { readXstat, readXstatAsync, updateXattrPermissionAsync } from './xstats'
 import { Node, MapTree } from './maptree'
 
@@ -12,26 +13,9 @@ const driveDir = (root) => path.join(root, 'drive')
 const libraryDir = (root) => path.join(root, 'library')
 const updateDir = (root) => path.join(root, 'uploads')
 const thumbDir = (root) => path.join(root, 'thumb')
+const predefinedDirs = (root) => 
+  [ root, driveDir(root), libraryDir(root), uploadDir(root), thumbDir(root) ]
 
-const predefinedDirs = (root) => [
-  root, 
-  driveDir(root),
-  libraryDir(root),
-  uploadDir(root),
-  thumbDir(root)
-]
-
-async function mkdirpAsync(dirpath) {
-  return new Promise(resolve => 
-    mkdirp(dirpath, err => 
-      err ? resolve(err) : resolve(null)))
-}
-
-async function fsReaddirAsync(dirpath) {
-  return new Promise(resolve => 
-    fs.readdir(dirpath, (err, files) => 
-      err ? resolve(err) : resolve(files)))
-}
 
 async function initMkdirs(root) {
   let predefined = predefiendDirs(root) 
@@ -40,182 +24,191 @@ async function initMkdirs(root) {
   }
 }
 
-const validateOwner = (owner, uuid) =>
+/*
+ * only one owner allowed
+ */
+const validateDriveOwner = (owner, uuid) =>
   (owner && Array.isArray(owner) && owner.length === 1 && owner[0] === uuid)
 
+const validateLibraryOwner = (owner) =>
+  (owner && Array.isArray(owner) && owner.length === 1 && (typeof owner[0] === 'string') && validator.isUUID(owner[0]))
+/*
+ * not null, is array, uuid valid
+ */
 const validateUserList = (list) => 
-  (list && Array.isArray(list) && list.every(w => validator.isUUID(w)))
+  (list && Array.isArray(list) && list.every(u => typeof u === 'string') && list.every(u => validator.isUUID(u)))
 
-async function checkDriveXstat(rootpath, uuid) {
 
-  let drivePath = path.join(rootpath, uuid)
-  let mix = {
-    owner: [uuid],
-    writelist: [],
-    readlist: [],
-  }
+/*
+ * drive permission check, return <entry, owner> pair
+ */ 
+async function checkDriveXstat(drivedir, uuid) {
 
-  let x = await readXstatsAsync(drivePath, mix)
+  let dir = path.join(drivedir, uuid)
+
+  let x = await readXstatAsync(dir)
+  if (x instanceof Error) return x
   let { owner, writelist, readlist } = x
 
-  if (validateOwner(owner) &&
-      validateList(writelist) &&
-      validateList(readlist)) return
+  if (validateDriveOwner(owner) &&
+      validateUserList(writelist) &&
+      validateUserList(readlist)) return null
 
-  let perm = {
+  let err = await updateXattrPermissionAsync(dir, {
     owner: [uuid],
-    writelist: validateList(writelist) ? writelist : [],
-    readlist: validateList(readlist) ? readlist : [] 
-  } 
+    writelist: validateUserList(writelist) ? writelist : [],
+    readlist: validateUserList(readlist) ? readlist : [] 
+  })
 
-  await updateXattrPermissionAsync(drivepath, perm)
+  if (err instanceof Error) return err
+  return {
+    entry: uuid,
+    owner: [uuid]
+  } 
 }
 
-// skip owner check for now TODO
-async function checkLibraryXstat(rootpath, uuid) {
+/*
+ * library permission check, return <entry, owner> pair
+ */
+async function checkLibraryXstat(librarydir, uuid) {
 
-  let libraryPath = path.join(rootpath, uuid)  
-  let perm = { writelist: [], readlist: [] }
+  let dir = path.join(librarydir, uuid)  
+  let x = await readXstatAsync(dir)
+  if (x instanceof Error) return x
+
+  let { owner, writelist, readlist } = x
+
+  // if no owner, TODO may check database
+  if (!validateLibraryOwner(owner))
+    return new Error(`${dir} owner invalid`)
 
   // do this anyway
-  await updateXattrPermissionAsync(libraryPath, perm)
+  let err = await updateXattrPermissionAsync(dir, {
+    owner, 
+    writelist: [], // force clear
+    readlist: validateUserList(readlist) ? readlist : []
+  })
+
+  if (err instanceof Error) return err
+  return {
+    entry: uuid,
+    owner: owner
+  }
 }
 
 async function inspectDrives(driveDir) {
 
-  let files = await fsReaddirAsync(droot)
+  let files = await fsReaddirAsync(driveDir)
   files = files.filter(f => validator.isUUID(f))
 
+  let valid = []
   for (let i = 0; i < files.length; i++) {
-    await checkDriveXstat(droot, files[i])
+    let uuid = files[i]
+    let r = await checkDriveXstat(driveDir, uuid)
+    if (!(r instanceof Error)) valid.push(r)
   } 
+  return valid
 }
 
-async function inspectLibraries(libraryDir) {
+async function inspectLibraries(librarydir) {
 
-  let files = await fsReaddirAsync(lroot)
+  let files = await fsReaddirAsync(librarydir)
   files = files.filter(f => validator.isUUID(f))
 
+  let valid = []
   for (let i = 0; i < files.length; i++) {
-    await checkLibraryXstat(lroot, files[i])
+    let uuid = files[i]
+    let r = await checkLibraryXstat(librarydir, files[i])
+    if (!(r instanceof Error)) valid.push(r)
   }
+  return valid
 }
 
-const mapXstatToObject = (xstat) => {
+const visitor = (dir, dirContext, entry, callback) => {
 
-/* example xstat, xstat instanceof fs.stat
-{ dev: 2049,
-  mode: 16893,
-  nlink: 2,
-  uid: 1000,
-  gid: 1000,
-  rdev: 0,
-  blksize: 4096,
-  ino: 135577,
-  size: 4096,
-  blocks: 16,
-  atime: 2016-06-27T06:36:58.382Z,
-  mtime: 2016-06-27T06:36:58.382Z,
-  ctime: 2016-06-27T06:36:58.382Z,
-  birthtime: 2016-06-27T06:36:58.382Z,
-  uuid: '0924c387-f1c6-4a35-a5db-ae4b7568d5de',
-  owner: [ '061a954c-c52a-4aa2-8702-7bc84c72ec84' ],
-  writelist: [ '9e7b40bf-f931-4292-8870-9e62b9d5a12c' ],
-  readlist: [ 'b7ed9abc-01d3-41f0-80eb-361498025e56' ],
-  hash: null,
-  abspath: '/home/xenial/Projects/fruitmix/tmptest' } */
+  let entrypath = path.join(dir, entry)
+  readXstat(entrypath, (err, xstat) => {
 
-  // not very safe TODO
-  let name = abspath.split('/').pop()
-  
-  let type
-  if (xstat.isDirectory()) type = 'folder'
-  else if (xstat.isFile()) type = 'file'
-  else throw 'Only xstat with type of folder or file can be mapped'
+    if (err) return callback()
+    if (!xstat.isDirectory() && !xstat.isFile()) return callback()
 
-  return {
-    uuid: xstat.uuid,
-    type: type,
-    permission: {
-      owner: xstat.owner ? xstat.owner[0] : null,
-      writelist: xstat.writelist,
-      readlist: xstat.readlist,
-    },
-    attribute: {
-      changetime: xstat.ctime,
-      modifytime: xstat.mtime,
-      createtime: xstat.birthtime,
-      size: xstat.size,
-      name: name,     
-    },
-    path: null, // TODO to be removed
-    detail: null, // TODO to be removed 
-  }
-}
+    let { tree, node, owner } = dirContext
+    let object = mapXstatToObject(xstat)
+    let entryNode = tree.createNode(node, object)
+    if (!entryNode) return callback()
+    if (!xstat.isDirectory()) return callback()  
 
-const visit = (xstat, eol, context, done) => {
-
-  fs.readdir(xstat.abspath, (err, list) => {
-    if (err || list.length === 0) return done()
-
-    let count = list.length 
-    list.forEach(entry => {
-
-      readXstat(path.join(xstat.abspath, entry), (err, entryXstat) => {
-        if (!err && eol(entryXstat, xstat, context)) 
-          return visit(entryXstat, enter, () => {
-            if (!--count) done()
-          })
-
-        if (!--count) done() 
-      })
-    })
+    // now it's directory
+    callback({ tree, node: entryNode, owner })
   })
 }
 
-// tree is context
-const eol = (cxstat, pxstat, tree) => {
+async function dirToNode(dir, tree, parent) {
 
-  // only process file and folder
-  if (cxstat.isFile() || cxstat.isDirectory()) {
-    
-    // enter only if node created and being directory
-    if (tree.createNodeByUUID(pxstat.uuid, cxstat) && cxstat.isDirectory())
-      return true
-  }
-  return false
+  let xstat = awaitreadXstatAsync(dir)
+  if (xstat instanceof Error) return xstat
+  
+  let object = mapXstatToObject(xstat)
+  if (!tree)
+    return new MapTree(object)
+  else
+    return tree.createNode(parent, object)
 }
 
-async function buildMapTree(root) {
+async function buildTree(root) {
 
-  let rxstat = await readXstatAsync(root)
-  let rootObj = mapXstatToObject(rxstat)
-  let maptree = new MapTree(rootObj)
+  let promises = [], valid, node, dir, promise
+  let tree, driveDirNode, libraryDirNode
 
-  let lxstat = await readXstatAsync(libraryDir(root))
-  let libraryObj = mapXstatToObject(lxstat)
-  let libraryDirNode = maptree.createNode(tree.root, libraryObj)
-
-  let dxstat = await readXstatAsync(driveDir(root))
-  let driveObj = mapXstatToObject(dxstat)
-  let driveDirNode = maptree.createNode(tree.root, driveObj) 
-
-  await Promise.all([
-    new Promise(resolve => visit(lxstat, eol, tree, () => resolve())),
-    new Promise(resolve => visit(dxstat, eol, tree, () => resolve()))
-  ])
-
-  return {maptree, libraryDirNode, driveDirNode}
-}
-
-// root should be something like '/data/fruitmix'
-async function init(root) {
+  let drivedir = driveDir(root)
+  let librarydir = libraryDir(root)
 
   await initMkdirs(root)
-  await inspectDrives(driveDir(root))
-  await inspectLibraries(libraryDir(root))
-  return await buildMapTree(root)
+
+  // build tree root
+  tree = dirToNode(root)
+
+  // set driveDir
+  driveDirNode = dirToNode(drivedir, tree, tree.root)
+
+  // set drives
+  valid = inspectDrives(driveDir(root))
+  for (let i = 0; i < valid.length; i++) {
+    dir = path.join(drivedir, valid[i].entry)
+    node = dirToNode(dir, tree, driveDirNode)
+    promise = new Promise(resolve => 
+      folderVisit(dir, {tree, node, owner: node.permission.owner}, visitor, () => 
+        resolve()))
+
+    promises.push(promise)
+  } 
+
+  // set libraryDir 
+  libraryDirNode = dirToNode(libraryDir, tree, tree.root) 
+
+  // set libraries
+  valid = inspectLibraries(librarydir)
+  for (let i = 0; i < valid.length; i++) {
+
+    dir = path.join(librarydir, valid[i].entry)
+    node = dirToNode(dir, tree, libraryDirNode)
+    promise = new Promise(resolve => 
+      folderVisit(dir, {tree, node, owner: node.permission.owner}, visitor, () => 
+        resolve()))
+
+    promises.push(promise)
+  }
+
+  await Promise.all(promises)
+  return {
+    root,
+    prepend: path.resolve(root, '..'),
+    tree, 
+    libraryDirNode, 
+    driveDirNode
+  }
 }
 
+export { buildTree }
 
-
+buildTree('/data/fruitmix')

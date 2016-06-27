@@ -24,7 +24,7 @@ function defaultXattrVal() {
     writelist: null,
     readlist: null,
     hash: null,
-    htime: -1 // epoch time value, i.e. dateObject.getTime()
+    htime: -1 // epoch time value, i.e. Date object.getTime()
   }
 }
 
@@ -98,11 +98,9 @@ async function xattrGetOrDefault(path, attr, defVal) {
 
 // this function returns extended stats, 
 // i.e, merged stats and extended attributes, with hash timestamp verified
-async function readXstatAsync(path, def) {
+async function readXstatAsync(path) {
 
   let defVal = defaultXattrVal()
-  if (def) 
-    Object.assign(defVal, def)
 
   let stats = await fsStatAsync(path)
   if (stats instanceof Error) return stats
@@ -123,18 +121,11 @@ async function readXstatAsync(path, def) {
   })
 }
 
-function readXstat(path, def, callback) {
+function readXstat(path, callback) {
 
-  if (typeof def === 'function') { // no def provided, def is callback
-    readXstatAsync(path)
-      .then(r => (r instanceof Error) ? def(r) : def(null, r))
-      .catch(e => def(e)) 
-  }
-  else {
-    readXstatAsync(path, def)
-      .then(r => (r instanceof Error) ? callback(r) : callback(null, r))
-      .catch(e => callback(e))
-  }
+  readXstatAsync(path)
+    .then(r => (r instanceof Error) ? callback(r) : callback(null, r))
+    .catch(e => callback(e))
 }
 
 async function updateXattrPermissionAsync(path, permission) {
