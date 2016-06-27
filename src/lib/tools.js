@@ -1,4 +1,13 @@
+import fs from 'fs'
+
+import rimraf from 'rimraf'
 import mkdirp from 'mkdirp'
+
+export async function rimrafAsync(dirpath) {
+  return new Promise(resolve => 
+    rimraf(dirpath, err => 
+      err ? resolve(err) : resolve(null)))
+}
 
 export async function mkdirpAsync(dirpath) {
   return new Promise(resolve => 

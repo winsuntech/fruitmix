@@ -5,20 +5,21 @@ import validator from 'validator'
 import mkdirp from 'mkdirp'
 import rimraf from 'rimraf'
 
-import { mkdirAsync, fsReaddirAsync, mapXstatToObject } from './tools'
-import { readXstat, readXstatAsync, updateXattrPermissionAsync } from './xstats'
+import { mkdirpAsync, fsReaddirAsync, mapXstatToObject } from './tools'
+import { readXstat, readXstatAsync, updateXattrPermissionAsync } from './xstat'
 import { Node, MapTree } from './maptree'
+import folderVisit from './folderVisit'
 
 const driveDir = (root) => path.join(root, 'drive')
 const libraryDir = (root) => path.join(root, 'library')
-const updateDir = (root) => path.join(root, 'uploads')
+const uploadDir = (root) => path.join(root, 'uploads')
 const thumbDir = (root) => path.join(root, 'thumb')
 const predefinedDirs = (root) => 
   [ root, driveDir(root), libraryDir(root), uploadDir(root), thumbDir(root) ]
 
 
 async function initMkdirs(root) {
-  let predefined = predefiendDirs(root) 
+  let predefined = predefinedDirs(root) 
   for (let i = 0; i < predefined.length; i++) {
     await mkdirpAsync(predefined[i])
   }
@@ -124,6 +125,7 @@ async function inspectLibraries(librarydir) {
   return valid
 }
 
+// TODO need more logic to fix ownerless file/folder
 const visitor = (dir, dirContext, entry, callback) => {
 
   let entrypath = path.join(dir, entry)
@@ -134,8 +136,10 @@ const visitor = (dir, dirContext, entry, callback) => {
 
     let { tree, node, owner } = dirContext
     let object = mapXstatToObject(xstat)
-    let entryNode = tree.createNode(node, object)
-    if (!entryNode) return callback()
+
+    // createNode do no check
+    let entryNode = tree.createNode(node, object) 
+
     if (!xstat.isDirectory()) return callback()  
 
     // now it's directory
@@ -145,12 +149,13 @@ const visitor = (dir, dirContext, entry, callback) => {
 
 async function dirToNode(dir, tree, parent) {
 
-  let xstat = awaitreadXstatAsync(dir)
+  let xstat = await readXstatAsync(dir)
   if (xstat instanceof Error) return xstat
   
   let object = mapXstatToObject(xstat)
-  if (!tree)
+  if (!tree) {
     return new MapTree(object)
+  }
   else
     return tree.createNode(parent, object)
 }
@@ -163,43 +168,41 @@ async function buildTree(root) {
   let drivedir = driveDir(root)
   let librarydir = libraryDir(root)
 
-  await initMkdirs(root)
+  let r = await initMkdirs(root)
 
   // build tree root
-  tree = dirToNode(root)
+  tree = await dirToNode(root)
 
   // set driveDir
-  driveDirNode = dirToNode(drivedir, tree, tree.root)
+  driveDirNode = await dirToNode(drivedir, tree, tree.root)
 
   // set drives
-  valid = inspectDrives(driveDir(root))
+  valid = await inspectDrives(drivedir)
+  console.log(`found ${valid.length} drives`)
+
   for (let i = 0; i < valid.length; i++) {
     dir = path.join(drivedir, valid[i].entry)
-    node = dirToNode(dir, tree, driveDirNode)
-    promise = new Promise(resolve => 
-      folderVisit(dir, {tree, node, owner: node.permission.owner}, visitor, () => 
-        resolve()))
-
+    node = await dirToNode(dir, tree, driveDirNode)
+    promise = new Promise(resolve => folderVisit(dir, {tree, node, owner: node.permission.owner}, visitor, () => resolve()))
     promises.push(promise)
   } 
 
   // set libraryDir 
-  libraryDirNode = dirToNode(libraryDir, tree, tree.root) 
+  libraryDirNode = await dirToNode(librarydir, tree, tree.root) 
 
   // set libraries
-  valid = inspectLibraries(librarydir)
+  valid = await inspectLibraries(librarydir)
+  console.log(`found ${valid.length} libraries`)
+
   for (let i = 0; i < valid.length; i++) {
-
     dir = path.join(librarydir, valid[i].entry)
-    node = dirToNode(dir, tree, libraryDirNode)
-    promise = new Promise(resolve => 
-      folderVisit(dir, {tree, node, owner: node.permission.owner}, visitor, () => 
-        resolve()))
-
+    node = await dirToNode(dir, tree, libraryDirNode)
+    promise = new Promise(resolve => folderVisit(dir, {tree, node, owner: node.permission.owner}, visitor, () => resolve()))
     promises.push(promise)
   }
 
   await Promise.all(promises)
+ 
   return {
     root,
     prepend: path.resolve(root, '..'),
@@ -212,3 +215,19 @@ async function buildTree(root) {
 export { buildTree }
 
 buildTree('/data/fruitmix')
+  .then(r => {
+    console.log(r.root)
+    console.log(r.prepend)
+    let count = 0
+    r.tree.root.preVisit(node => {
+      console.log(node.attribute.name)
+      count++
+    })
+    console.log(`total ${count}`)
+  })
+  .catch(e => {
+    console.log(e)
+  })
+
+
+

@@ -1,7 +1,7 @@
 import fs from 'fs'
 import path from 'path'
 
-export const visit = (dir, dirContext, func, done) => { 
+const visit = (dir, dirContext, func, done) => { 
 
   fs.readdir(dir, (err, entries) => {
     if (err || entries.length === 0) return done()
@@ -10,7 +10,8 @@ export const visit = (dir, dirContext, func, done) => {
     entries.forEach(entry => {
 
       func(dir, dirContext, entry, (entryContext) => {
-        if (context) {
+        if (entryContext) {
+          console.log('entering entering')
           visit(path.join(dir, entry), entryContext, func, () => {
             count--
             if (count === 0) done()
@@ -24,6 +25,8 @@ export const visit = (dir, dirContext, func, done) => {
     })
   })
 }
+
+export default visit
 
 /** example 
 
