@@ -98,9 +98,11 @@ async function xattrGetOrDefault(path, attr, defVal) {
 
 // this function returns extended stats, 
 // i.e, merged stats and extended attributes, with hash timestamp verified
-async function readXstatsAsync(path) {
+async function readXstatsAsync(path, def) {
 
   let defVal = defaultXattrVal()
+  if (def) 
+    Object.assign(defVal, def)
 
   let stats = await fsStatAsync(path)
   if (stats instanceof Error) return stats
