@@ -37,12 +37,12 @@ export const mapXstatToObject = (xstat) => {
   abspath: '/home/xenial/Projects/fruitmix/tmptest' } */
 
   // not very safe TODO
-  let name = abspath.split('/').pop()
+  let name = xstat.abspath.split('/').pop()
   
   let type
   if (xstat.isDirectory()) type = 'folder'
   else if (xstat.isFile()) type = 'file'
-  else throw 'Only xstat with type of folder or file can be mapped'
+  else throw new Error('Only xstat with type of folder or file can be mapped')
 
   return {
     uuid: xstat.uuid,
@@ -59,6 +59,7 @@ export const mapXstatToObject = (xstat) => {
       size: xstat.size,
       name: name,     
     },
+    hash: xstat.hash,
     path: null, // TODO to be removed
     detail: null, // TODO to be removed 
   }
