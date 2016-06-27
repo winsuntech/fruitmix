@@ -63,8 +63,6 @@ class Node {
     }
   }
 
-  nodePath // [...node]
-
   // iterator, func return truthy or falsy value
   upFind(func) {
     let node = this
@@ -73,7 +71,7 @@ class Node {
       node = node.parent
     }
     return undefined
-  }
+  } 
 
   preVisit(func) {
     func(this)
