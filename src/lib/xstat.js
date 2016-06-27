@@ -123,11 +123,18 @@ async function readXstatAsync(path, def) {
   })
 }
 
-function readXstat(path, callback) {
+function readXstat(path, def, callback) {
 
-  readXstatAsync(path)
-    .then(r => (r instanceof Error) ? callback(r) : callback(null, r))
-    .catch(e => callback(e))
+  if (typeof def === 'function') { // no def provided, def is callback
+    readXstatAsync(path)
+      .then(r => (r instanceof Error) ? def(r) : def(null, r))
+      .catch(e => def(e)) 
+  }
+  else {
+    readXstatAsync(path, def)
+      .then(r => (r instanceof Error) ? callback(r) : callback(null, r))
+      .catch(e => callback(e))
+  }
 }
 
 async function updateXattrPermissionAsync(path, permission) {

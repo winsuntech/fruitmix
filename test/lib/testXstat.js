@@ -133,6 +133,34 @@ describe('xstat', function() {
     })
   })
 
+  describe('readXstatAsync 02.01', function(){
+
+    before(function(done) {
+
+      let uuid = UUID.v4()
+      rimraf('tmptest', err => {
+        if (err) return done(err)
+        mkdirp('tmptest', err => {
+          done(err) 
+        })
+      })  
+    })
+
+    it('should readback default xattrs, with null hash and given owner', function(done) {
+      readXstatAsync(fpath, { owner: [uuid9] })
+        .then(r => {
+          expect(r.abspath).to.equal(fpath)
+          expect(validator.isUUID(r.uuid)).to.be.true
+          expect(r.owner[0]).to.equal(uuid9) // given owner 
+          expect(r.writelist).to.be.null
+          expect(r.readlist).to.be.null
+          expect(r.hash).to.be.null    // IMPORTANT!
+          done() 
+        })
+        .catch(e => done(e))
+    })
+  })
+
   describe('readXstatAsync 03', function(){
 
     before(function(done) {

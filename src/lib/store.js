@@ -5,7 +5,7 @@ import validator from 'validator'
 import mkdirp from 'mkdirp'
 import rimraf from 'rimraf'
 
-import { readXstats, readXstatsAsync, updateXattrPermissionAsync } from './xstats'
+import { readXstat, readXstatAsync, updateXattrPermissionAsync } from './xstats'
 import { Node, MapTree } from './maptree'
 
 const driveDir = (root) => path.join(root, 'drive')
@@ -101,39 +101,6 @@ async function inspectLibraries(libraryDir) {
   }
 }
 
-const visit = (xstat, eol, done) => {
-
-  fs.readdir(xstat.abspath, (err, list) => {
-    if (err || list.length === 0) return done()
-
-    let count = list.length 
-    list.forEach(entry => {
-
-      readXstats(path.join(xstat.abspath, entry), (err, entryXstat) => {
-        if (!err && eol(entryXstat, xstat)) 
-          return visit(entryXstat, enter, () => {
-            if (!--count) done()
-          })
-
-        if (!--count) done() 
-      })
-    })
-  })
-}
-
-const nodeEOL = (cxstat, pxstat) => {
-
-  // only process file and folder
-  if (cxstat.isFile() || cxstat.isDirectory()) {
-    
-    // enter only if node created and being directory
-    if (tree.createNodeByUUID(pxstat.uuid, cxstat) && cxstat.isDirectory())
-      return true
-  }
-  return false
-}
-
-
 const mapXstatToObject = (xstat) {
 
 /* example xstat, xstat instanceof fs.stat
@@ -170,7 +137,7 @@ const mapXstatToObject = (xstat) {
     uuid: xstat.uuid,
     type: type,
     permission: {
-      owner: xstat.owner[0],
+      owner: xstat.owner ? xstat.owner[0] : null,
       writelist: xstat.writelist,
       readlist: xstat.readlist,
     },
@@ -186,28 +153,60 @@ const mapXstatToObject = (xstat) {
   }
 }
 
+const visit = (xstat, eol, context, done) => {
 
+  fs.readdir(xstat.abspath, (err, list) => {
+    if (err || list.length === 0) return done()
 
-const buildMapTree = (rootDir) {
+    let count = list.length 
+    list.forEach(entry => {
 
-  let rootX = await readXstatsAsync(rootDir)
-  let rootObj = mapXstatToObject(rootX)
-  let maptree = new MapTree(rootObj)
+      readXstat(path.join(xstat.abspath, entry), (err, entryXstat) => {
+        if (!err && eol(entryXstat, xstat, context)) 
+          return visit(entryXstat, enter, () => {
+            if (!--count) done()
+          })
 
-  let libX = await readXstatsAsync(libraryDir(rootDir))
-  let libObj = mapXstatToObject(libX)
-  let libNode = maptree.createNode(tree.root, libObj)
-
-  let driveX = await readXstatsAsync(driveDir(rootDir))
-  let driveObj = mapXstatToObject(driveX)
-  let driveDirNode = maptree.createNode(tree.root, driveObj)
-
-  
+        if (!--count) done() 
+      })
+    })
+  })
 }
 
-let maptree = null
-let driveDirNode
-let libraryDirNode
+// tree is context
+const eol = (cxstat, pxstat, tree) => {
+
+  // only process file and folder
+  if (cxstat.isFile() || cxstat.isDirectory()) {
+    
+    // enter only if node created and being directory
+    if (tree.createNodeByUUID(pxstat.uuid, cxstat) && cxstat.isDirectory())
+      return true
+  }
+  return false
+}
+
+async function buildMapTree(root) {
+
+  let rxstat = await readXstatAsync(root)
+  let rootObj = mapXstatToObject(rxstat)
+  let maptree = new MapTree(rootObj)
+
+  let lxstat = await readXstatAsync(libraryDir(root))
+  let libraryObj = mapXstatToObject(lxstat)
+  let libraryDirNode = maptree.createNode(tree.root, libraryObj)
+
+  let dxstat = await readXstatAsync(driveDir(root))
+  let driveObj = mapXstatToObject(dxstat)
+  let driveDirNode = maptree.createNode(tree.root, driveObj) 
+
+  await Promise.all([
+    new Promise(resolve => visit(lxstat, eol, tree, () => resolve())),
+    new Promise(resolve => visit(dxstat, eol, tree, () => resolve()))
+  ])
+
+  return {maptree, libraryDirNode, driveDirNode}
+}
 
 // root should be something like '/data/fruitmix'
 async function init(root) {
@@ -215,23 +214,8 @@ async function init(root) {
   await initMkdirs(root)
   await inspectDrives(driveDir(root))
   await inspectLibraries(libraryDir(root))
-
-  let rootX = await readXstatsAsync('/data/fruitmix')
-  maptree = new MapTree(rootObj) 
-  let root = tree.root
-
-  let libX = await readXstatsAsync('/data/fruitmix/library')
-  let lib = tree.createNode(tree.root, libX)
-
-  let driveX = await readXstatsAsync('/data/fruitmix/drive')
-  let drive = tree.createNode(tree.root, driveX)
-
-  visit(driveX, nodeEOL, () => {
-    tree._visit_pre(drive, (node) => console.log(node.abspath))
-  })
-
-  visit(libX, nodeEOL, () => {
-    console.log(lib.children.map(c => c.abspath))
-  })
+  return await buildMapTree(root)
 }
+
+
 
