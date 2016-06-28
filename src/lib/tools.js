@@ -21,6 +21,12 @@ export async function fsStatAsync(path) {
       err ? resolve(err) : resolve(stats)))
 }
 
+export async function fsMkdirAsync(path) {
+  return new Promise(resolve =>
+    fs.mkdir(path, err =>
+      err ? resolve(err) : resolve(null)))
+}
+
 export async function fsReaddirAsync(dirpath) {
   return new Promise(resolve => 
     fs.readdir(dirpath, (err, files) => 

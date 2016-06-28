@@ -73,6 +73,12 @@ class Node {
     return undefined
   } 
 
+  nodepath() {
+    let q = []
+    this.upEach(node => q.unshift(node))
+    return q
+  }
+
   preVisit(func) {
     func(this)
     this.children.forEach(child => child.preVisit(func)) 
@@ -80,7 +86,7 @@ class Node {
 
   postVisit(func) {
     this.children.forEach(child => child.postVisit(func))
-    func(node)
+    func(this)
   }
 
   // also pre visitor, func return truthy for enter and falsy for leave

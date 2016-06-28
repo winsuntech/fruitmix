@@ -3,6 +3,7 @@ import fs from 'fs'
 import xattr from 'fs-xattr'
 import UUID from 'node-uuid'
 import validator from 'validator'
+import shallowequal from 'shallowequal'
 
 function parseJSON(string) {
 
@@ -68,6 +69,24 @@ async function xattrSetAsync(path, attr, val) {
   })
 }
 
+async function xattrGetRawAsync(path, attr) {
+
+  let val = await xattrGetAsync(path, attr)
+  if (val instanceof Error) return val
+
+  let parsed = parseJSON(val)
+  return parsed
+}
+
+function xattrGetRaw(path, attr, callback) {
+
+  xattrGetRawAsync(path, attr)
+    .then(r => {
+      if (r instanceof Error) callback(r)
+      else callback(null, r)  
+    })
+    .catch(e => callback(e))
+}
 
 // get xattr, parsed, 
 // defval: if provided, will be set if there is no valid xattr; 
@@ -96,10 +115,79 @@ async function xattrGetOrDefault(path, attr, defVal) {
   return parsed
 }
 
+//
+// opts
+//
+// forceOwner: if exists, overwrite existing
+// defaultOwner: 
+// forcePermission: 
+// defaultPermission:
+
 // this function returns extended stats, 
 // i.e, merged stats and extended attributes, with hash timestamp verified
-async function readXstatAsync(path) {
+async function readXstatAsync(path, opts) {
 
+  let props = {
+    uuid: UUID.v4(),
+    owner: null,
+    writelist: null,
+    readlist: null,
+    hash: null,
+    htime: -1 // epoch time value, i.e. Date object.getTime()
+  }
+
+  let stats = await fsStatAsync(path)
+  if (stats instanceof Error) return stats
+
+  let attr = await xattrGetAsync(path, 'user.fruitmix')
+  if (attr instanceof Error && attr.code !== 'ENODATA') return attr
+
+  if (attr instanceof Error) { // ENODATA
+
+    if (opts) {
+      if (opts.forceOwner) props.owner = opts.forceOwner
+      else if (opts.owner) props.owner = opts.owner
+
+      if (opts.forceWritelist) props.writelist = opts.forceWritelist
+      else if (opts.writelist) props.writelist = opts.writelist
+
+      if (opts.forceReadlist) props.readlist = opts.forceReadlist
+      else if (opts.readlist) props.readlist = opts.readlist
+    }   
+
+    await xattrSetAsync(path, 'user.fruitmix', JSON.stringify(props)) 
+    return Object.assign(stats, props, { abspath: path})
+  }
+
+  // DANGER! FIXME
+  attr = parseJSON(attr)
+
+  if (opts && opts.forceOwner) props.owner = opts.forceOwner
+  else if (opts && opts.owner && !attr.owner) props.owner = opts.owner
+  else if (attr.owner) props.owner = attr.owner
+
+  if (opts && opts.forceWritelist) props.writelist = opts.writelist
+  else if (opts && opts.writelist && !attr.writelist) props.writelist = opts.writelist
+  else if (attr.writelist) props.writelist = attr.writelist
+
+  if (opts && opts.forceReadlist) props.readlist = opts.readlist
+  else if (opts && opts.readlist && !attr.readlist) props.readlist= opts.readlist
+  else if (attr.readlist) props.readlist = attr.readlist
+
+  props.uuid = attr.uuid
+
+  if (attr.htime === stats.mtime.getTime()) {
+    props.hash = attr.hash
+    props.htime = attr.htime
+  }
+
+  if (!shallowequal(props, attr)) {
+    await xattrSetAsync(path, 'user.fruitmix', JSON.stringify(props))
+  } 
+
+  return Object.assign(stats, props, { abspath: path })
+
+/*
   let defVal = defaultXattrVal()
 
   let stats = await fsStatAsync(path)
@@ -119,6 +207,7 @@ async function readXstatAsync(path) {
   return Object.assign(stats, attr, {
     abspath: path
   })
+*/
 }
 
 function readXstat(path, callback) {
@@ -169,6 +258,8 @@ async function updateXattrHashAsync(path, hash, htime) {
 }
 
 let testing = {
+  xattrGetRaw,
+  xattrGetRawAsync,
   xattrGetOrDefault
 }
 
