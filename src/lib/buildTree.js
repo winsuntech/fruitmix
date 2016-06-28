@@ -8,7 +8,7 @@ import rimraf from 'rimraf'
 import { mkdirpAsync, fsReaddirAsync, mapXstatToObject } from './tools'
 import { readXstat, readXstatAsync, updateXattrPermissionAsync } from './xstat'
 import { Node, MapTree } from './maptree'
-import folderVisit from './folderVisit'
+import { visit, visitAsync } from './visitors'
 
 const driveDir = (root) => path.join(root, 'drive')
 const libraryDir = (root) => path.join(root, 'library')
@@ -16,7 +16,6 @@ const uploadDir = (root) => path.join(root, 'uploads')
 const thumbDir = (root) => path.join(root, 'thumb')
 const predefinedDirs = (root) => 
   [ root, driveDir(root), libraryDir(root), uploadDir(root), thumbDir(root) ]
-
 
 async function initMkdirs(root) {
   let predefined = predefinedDirs(root) 
@@ -147,6 +146,21 @@ const visitor = (dir, dirContext, entry, callback) => {
   })
 }
 
+async function visitorAsync(dir, dirContext, entry) {
+
+  let entrypath = path.join(dir, entry)
+  let xstat = await readXstatAsync(entrypath) 
+  if (xstat instanceof Error) return
+  if (!xstat.isDirectory() && !xstat.isFile()) return
+
+  let {tree, node, owner } = dirContext
+  let object = mapXstatToObject(xstat)
+  let entryNode = tree.createNode(node, object)
+
+  if (!xstat.isDirectory()) return
+  return { tree, node: entryNode, owner }
+}
+
 async function dirToNode(dir, tree, parent) {
 
   let xstat = await readXstatAsync(dir)
@@ -160,9 +174,9 @@ async function dirToNode(dir, tree, parent) {
     return tree.createNode(parent, object)
 }
 
-async function buildTree(root) {
+async function buildTreeAsync(root) {
 
-  let promises = [], valid, node, dir, promise
+  let promises = [], valid, node, dir
   let tree, driveDirNode, libraryDirNode
 
   let drivedir = driveDir(root)
@@ -170,64 +184,44 @@ async function buildTree(root) {
 
   let r = await initMkdirs(root)
 
-  // build tree root
+  // root, drive, and library
   tree = await dirToNode(root)
-
-  // set driveDir
   driveDirNode = await dirToNode(drivedir, tree, tree.root)
+  libraryDirNode = await dirToNode(librarydir, tree, tree.root) 
 
-  // set drives
+  // drives
   valid = await inspectDrives(drivedir)
-  console.log(`found ${valid.length} drives`)
+  if (!global.testing) console.log(`found ${valid.length} drives`)
 
   for (let i = 0; i < valid.length; i++) {
     dir = path.join(drivedir, valid[i].entry)
     node = await dirToNode(dir, tree, driveDirNode)
-    promise = new Promise(resolve => folderVisit(dir, {tree, node, owner: node.permission.owner}, visitor, () => resolve()))
-    promises.push(promise)
+    promises.push(visitAsync(dir, {tree, node, owner: node.permission.owner}, visitorAsync))
   } 
 
-  // set libraryDir 
-  libraryDirNode = await dirToNode(librarydir, tree, tree.root) 
-
-  // set libraries
+  // libraries
   valid = await inspectLibraries(librarydir)
-  console.log(`found ${valid.length} libraries`)
+  if (!global.testing) console.log(`found ${valid.length} libraries`)
 
   for (let i = 0; i < valid.length; i++) {
     dir = path.join(librarydir, valid[i].entry)
     node = await dirToNode(dir, tree, libraryDirNode)
-    promise = new Promise(resolve => folderVisit(dir, {tree, node, owner: node.permission.owner}, visitor, () => resolve()))
-    promises.push(promise)
+    promises.push(visitAsync(dir, {tree, node, owner: node.permiision.owner}, visitorAsync))
   }
 
-  await Promise.all(promises)
- 
-  return {
-    root,
-    prepend: path.resolve(root, '..'),
-    tree, 
-    libraryDirNode, 
-    driveDirNode
-  }
+  await Promise.all(promises) 
+  return tree
 }
 
-export { buildTree }
+const buildTree = (root, callback) => {
 
-buildTree('/data/fruitmix')
-  .then(r => {
-    console.log(r.root)
-    console.log(r.prepend)
-    let count = 0
-    r.tree.root.preVisit(node => {
-      console.log(node.attribute.name)
-      count++
+  buildTreeAsync(root)
+    .then(tree => {
+      if (tree instanceof Error) return callback(tree)
+      callback(null, tree)
     })
-    console.log(`total ${count}`)
-  })
-  .catch(e => {
-    console.log(e)
-  })
+    .catch(e => callback(e))
+}
 
-
+export { buildTree, buildTreeAsync }
 

@@ -15,6 +15,12 @@ export async function mkdirpAsync(dirpath) {
       err ? resolve(err) : resolve(null)))
 }
 
+export async function fsStatAsync(path) {
+  return new Promise(resolve => 
+    fs.stat(path, (err, stats) => 
+      err ? resolve(err) : resolve(stats)))
+}
+
 export async function fsReaddirAsync(dirpath) {
   return new Promise(resolve => 
     fs.readdir(dirpath, (err, files) => 
