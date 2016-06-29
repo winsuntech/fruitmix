@@ -97,9 +97,19 @@ function cronjob(tpath){
   var newlist = globby.sync([tpath]);
   newlist.forEach(function(f){
     // console.log("----")
-    // console.log(f)
+    console.log(f)
     // console.log("----")
     var tf=f.split('/');
+    if(f==='/data/fruitmix'){
+      try{
+        var puuid=xattr.getSync(f,'user.uuid');
+      }
+      catch(e){
+        var puuid=uuid.v4()
+        xattr.setSync(f,'user.uuid',puuid);
+      }
+      memt.setroot(puuid);
+    }
     if(f==='/data/fruitmix'||helper.contains(tf,'library')||helper.contains(tf,'drive')){
       commoncheck(f);
     }

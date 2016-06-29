@@ -1,5 +1,5 @@
-let Exif = require('mongoose').model('Exif');
-let ExifImage = require('exif').ExifImage;
+var Exif = require('mongoose').model('Exif');
+var ExifImage = require('exif').ExifImage;
 const IMAGE = ["bmp","pcx","tiff","gif","jpeg","jpg","tga","exif","fpx","svg","psd","cdr","pcd","dxf","ufo","eps","ai","png","hdri","raw"]
 const MUSIC = ["mp3","wma","wav","mod","ra","cd","md","asf","aac","mp3pro","vqf","flac","ape","mid","vogg","m4a","aac","aiff","au","vqf"]
 const VIDEO = ["avi","rmvb","rm","asf","divx","mpg","mpeg","mpe","wmv","mp4","mkv","vob"]
@@ -12,6 +12,8 @@ function attach(node,exif){
 	node.detail=exif
 	return node
 }
+
+//
 
 function attachall(nodes,cb){
   //console.log(nodes);
@@ -40,7 +42,8 @@ function exifp(node){
 				resolve(attach(node,doc[0].exif))
 			}
 			else {
-				resolve(null)
+				console.log(node.hash)
+				resolve(attach(node,{}))
 			}
 		})
 	})
@@ -108,9 +111,12 @@ function getvideoexifA(path){
 
 async function getexifA(node){
 	//console.log('1')
-
 	//console.log('3')
 	let path=memt.getpath(node.uuid)
+	console.log(">>>>>>>>>>>>>>>")
+	console.log(path)
+	console.log(node.hash)
+	console.log("<<<<<<<<<<<<<<<")
 	const buffer = readChunk.sync(path, 0, 262);
     let filetype = fileType(buffer);
     let ext = 'unknown';
@@ -157,17 +163,16 @@ async function save(node){
 	})
 }
 
-function getexif(node){
-	//console.log(1)
-	getexifA(node)
-	// console.log(2)
-	// console.log(tp)
-	// console.log(3)
-}
+// function getexif(node){
+// 	//console.log(1)
+// 	getexifA(node)
+// 	// console.log(2)
+// 	// console.log(tp)
+// 	// console.log(3)
+// }
 
 export{
 	attach,
 	attachall,
-	save,
-	getexif
+	save
 }
