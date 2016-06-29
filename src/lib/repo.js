@@ -47,24 +47,41 @@ class Repo {
 
   createDrive(userUUID, callback) {
     this.createDriveAsync(userUUID)
-      .then(r => callback(r))
+      .then(r => callback(r)) // TODO OK?
       .catch(e => callback(e))      
   } 
 
-  createLibrary(userUUID, libraryUUID) {
+  async createLibraryAsync(userUUID, libraryUUID) {
 
+    let dirpath = path.join(this.abspath(this.libraryDirNode), libraryUUID)
+    let err = await fsMkdirAsync(dirpath)
+    if (err instanceof Error) return err
+    
+    let xstat = await readXstatAsync(dirpath, {
+      forceOwner: [userUUID],
+      forceWritelist: [],
+      forceReadlist: []
+    })
+  }
+    
+  createLibrary(userUUID, libraryUUID, callback) {
+    this.createLibraryAsync(userUUID, libraryUUID) 
+      .then(r => callback(r)) // OK? TODO
+      .catch(e => callback(e))
   }
 
   // import, actually
-  createDriveFile(extpath, targetDirUUID, filename) {
-
+  createDriveFile(userUUID, extpath, targetDirUUID, filename) {
+    // check this is a file
+    // mv file, system api rename
+    //
   }
 
-  createDriveFolder(folderName, targetDirUUID) {
+  createDriveFolder(userUUID, folderName, targetDirUUID) {
 
   }  
 
-  createLibraryFile(extpath, targetLibraryUUID) {
+  createLibraryFile(userUUID, extpath, targetLibraryUUID) {
 
   } 
 
