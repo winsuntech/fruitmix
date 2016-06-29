@@ -6,21 +6,55 @@ const VIDEO = ["avi","rmvb","rm","asf","divx","mpg","mpeg","mpe","wmv","mp4","mk
 const readChunk = require('read-chunk');
 const fileType = require('file-type');
 var helper = require('../middleware/tools');
-var fhelp =memt;
+var spawnSync = require('child_process').spawnSync;
+//var fhelp =memt;
 function attach(node,exif){
 	node.detail=exif
-	return node	
+	return node
+}
+
+function attachall(nodes,cb){
+  //console.log(nodes);
+	let newnodes=nodes.map(node =>{
+	return exifp(node)})
+	//console.log(newnodes)
+	Promise.all(newnodes)
+	.then(r=>{
+	  //console.log('>>> promise all')
+	  //console.log('<<< promise all')
+	  cb(r)
+	})
+	.catch(e => console.log(e))
+}
+
+
+function exifp(node){
+	//console.log("!!!!!!"+node.hash)
+	return new Promise(resolve => {
+		Exif.find({hash:node.hash},'hash exif', (err, doc) => {
+			if (err) resolve(err)
+			if(doc.length!==0){
+				//console.log('>>>')
+				//console.log(doc)
+				//console.log('<<<')
+				resolve(attach(node,doc[0].exif))
+			}
+			else {
+				resolve(null)
+			}
+		})
+	})
 }
 
 // async function getexif(node){
 	
 // }
 
-async function getimageexifA(path){
+function getimageexifA(path){
 	return new Promise(resolve => {
 		new ExifImage({image:path}, function (error, exifData) {
+			let tmpobj={};
 			if (error){
-	            let tmpobj={};
 	            let tsize=spawnSync('gm',['identify','-format','%w,%h',path]).stdout.toString()
 				let fsize=tsize.split(',')
 				let theight=fsize[1].split("\n")
@@ -29,7 +63,7 @@ async function getimageexifA(path){
 	        }
 	        else
 	        {
-	            let tmpobj=exifData;
+	            tmpobj=exifData;
 	            if (tmpobj.exif.MakerNote!==undefined)tmpobj.exif.MakerNote="";
 	            if (tmpobj.exif.UserComment!==undefined)tmpobj.exif.UserComment="";
 	        }
@@ -38,7 +72,7 @@ async function getimageexifA(path){
 	})
 }
 
-async function getmusicexifA(path){
+function getmusicexifA(path){
 	return new Promise(resolve => {
 		id3.read(path, {
 		  onSuccess: function(tag) {
@@ -46,13 +80,14 @@ async function getmusicexifA(path){
 		    resolve(tmpobj)
 		  },
 		  onError: function(error) {
+		  	let tmpobj="";
 		    resolve(tmpobj)
 		  }
 		});
 	})
 }
 
-async function getvideoexifA(path){
+function getvideoexifA(path){
 	return new Promise(resolve => {
 		probe(path, function(err, probeData) {
 		    let tmpobj=probeData;
@@ -61,38 +96,55 @@ async function getvideoexifA(path){
 	})
 }
 
-async function getexif(node){
-	await Exif.find({hash:node.hash},'exif', (err, doc) => {
-		if(doc.length!==0){
-			return doc[0].exif
-		}
-	})
-	let path=fhelp.getpath(node.uuid)
+// function getexiffromdb(node){
+// 	return new Promise(resolve => {
+// 		Exif.find({hash:node.hash},'exif', (err, doc) => {
+// 			if(doc.length!==0){
+// 				resolve(doc[0].exif)
+// 			}
+// 		})
+// 	})
+// }
+
+async function getexifA(node){
+	//console.log('1')
+
+	//console.log('3')
+	let path=memt.getpath(node.uuid)
 	const buffer = readChunk.sync(path, 0, 262);
     let filetype = fileType(buffer);
+    let ext = 'unknown';
     try{
-		let ext = filetype.ext;
+		ext = filetype.ext;
 	}
 	catch(e){
-		let ext = 'unknown';
 	}
+	//console.log('4')
+	//console.log(IMAGE)
+	//console.log(ext)
+	let tmpobj='';
 	if (helper.contains(IMAGE,ext)){
-		let tmpobj=await getimageexifA(path);
+		//console.log('5')
+		//console.log(path)
+		tmpobj=await getimageexifA(path);
+
 	}
 	else if(helper.contains(MUSIC,ext)){
-		let tmpobj=await getmusicexifA(path);
+		//console.log('6')
+		tmpobj=await getmusicexifA(path);
 	}
 	else if(helper.contains(VIDEO,ext)){
-		let tmpobj=await getvideoexifA(path);
+		//console.log('7')
+		tmpobj=await getvideoexifA(path);
 	}
-	else{
-		let tmpobj='';
-	}
+	//console.log(tmpobj)
 	return tmpobj;
 }
 
 async function save(node){
-	let texif= await getexif(node);
+	//console.log("11")
+	let texif= await getexifA(node);
+	//console.log(                   22")
 	await Exif.find({hash:node.hash},'exif', (err, doc) => {
 		if(doc.length===0){
 			let newexif = new Exif({
@@ -104,8 +156,18 @@ async function save(node){
 		}
 	})
 }
+
+function getexif(node){
+	//console.log(1)
+	getexifA(node)
+	// console.log(2)
+	// console.log(tp)
+	// console.log(3)
+}
+
 export{
 	attach,
+	attachall,
 	save,
 	getexif
 }

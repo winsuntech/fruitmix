@@ -140,6 +140,9 @@ function Memtree() {
     this.getpath = function(key) {
         var realpath='';
         this.getpathobj(key).forEach(function(f){
+            // console.log("---------")
+            // console.log(f.uuid)
+            // console.log(f.attribute.name)
             realpath='/'+f.attribute.name+realpath;
         });
         return '/data/fruitmix'+realpath;
