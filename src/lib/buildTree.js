@@ -216,8 +216,6 @@ async function buildTreeAsync(root) {
   }
 
   await Promise.all(promises) 
-
-  console.log('tree build finished')
   return tree
 }
 

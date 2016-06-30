@@ -20,7 +20,7 @@ async function createfolders(rootpath) {
   console.log('prepare array')
   console.time('prepare_array')
 
-  let x1 = 'abcdefghijk'.split('')
+  let x1 = 'abcdefghij'.split('')
   let x2 = multiply(x1, x1)
   let x3 = multiply(x1, x2)
   let x4 = multiply(x1, x3)     
@@ -74,6 +74,7 @@ async function test() {
 test()
   .then(tree => {
     console.log(`tree map size: ${tree.uuidMap.size}`)
+    console.log(`resident set: ${process.memoryUsage().rss}`)
     done()
   })
   .catch(e => done(e))
