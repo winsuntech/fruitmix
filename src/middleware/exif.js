@@ -50,7 +50,13 @@ function exifp(node){
 				//console.log('>>>')
 				//console.log(doc)
 				//console.log('<<<')
-				resolve(attachdetail(node,doc[0].exif,{width:doc[0].exif.exif.ExifImageWidth,height:doc[0].exif.exif.ExifImageHeight}))
+				let size={width:200,height:200}
+				try{
+				var size={width:doc[0].exif.exif.ExifImageWidth,height:doc[0].exif.exif.ExifImageHeight}
+				}
+				catch(e){
+				}
+				resolve(attachdetail(node,doc[0].exif,size))
 			}
 			else {
 				console.log(node.hash)
@@ -72,8 +78,8 @@ function getimageexifA(path){
 	            let tsize=spawnSync('gm',['identify','-format','%w,%h',path]).stdout.toString()
 				let fsize=tsize.split(',')
 				let theight=fsize[1].split("\n")
-			    tmpobj.height=theight[0]
-			    tmpobj.width=fsize[0]
+			    tmpobj.exif.ExifImageWidth=theight[0]
+			    tmpobj.exif.ExifImageHeight=fsize[0]
 	        }
 	        else
 	        {
