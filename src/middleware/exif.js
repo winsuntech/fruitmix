@@ -78,6 +78,7 @@ function getimageexifA(path){
 	            let tsize=spawnSync('gm',['identify','-format','%w,%h',path]).stdout.toString()
 				let fsize=tsize.split(',')
 				let theight=fsize[1].split("\n")
+				tmpobj.exif="";
 			    tmpobj.exif.ExifImageWidth=theight[0]
 			    tmpobj.exif.ExifImageHeight=fsize[0]
 	        }
