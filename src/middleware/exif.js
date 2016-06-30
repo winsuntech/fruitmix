@@ -8,11 +8,22 @@ const fileType = require('file-type');
 var helper = require('../middleware/tools');
 var spawnSync = require('child_process').spawnSync;
 //var fhelp =memt;
-function attach(node,exif){
+function attachexif(node,exif){
 	node.detail=exif
 	return node
 }
 
+function attachsize(node,size){
+	node.height=size.height
+	node.width =size.width
+	return node
+}
+
+function attachdetail(node,exif,size){
+	node=attachsize(node,size)
+	node = attachexif(node,exif)
+	return node
+}
 //
 
 function attachall(nodes,cb){
@@ -39,11 +50,11 @@ function exifp(node){
 				//console.log('>>>')
 				//console.log(doc)
 				//console.log('<<<')
-				resolve(attach(node,doc[0].exif))
+				resolve(attachdetail(node,doc[0].exif,{width:doc[0].exif.exif.ExifImageWidth,height:doc[0].exif.exif.ExifImageHeight}))
 			}
 			else {
 				console.log(node.hash)
-				resolve(attach(node,{}))
+				resolve(attachdetail(node,{},{width:200,height:200}))
 			}
 		})
 	})
@@ -172,7 +183,6 @@ async function save(node){
 // }
 
 export{
-	attach,
 	attachall,
 	save
 }
