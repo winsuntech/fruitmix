@@ -42,6 +42,7 @@ var Versionlink = require('./models/versionlink');
 var Comment = require('./models/comment');
 var Udbindling = require('./models/udbinding');
 var Librarylist = require('./models/librarylist');
+var Exif = require('./models/exif')
 //var Group = require('./models/group');
 var Config = require('./models/config');
 /** Authentication **/
