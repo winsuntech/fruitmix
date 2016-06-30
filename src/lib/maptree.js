@@ -1,5 +1,7 @@
 let debug = true
 
+import os from 'os'
+
 class Node {
 
 /**
@@ -140,6 +142,11 @@ class MapTree {
     node.attach(parent)
     this.uuidMap.set(node.uuid, node)
     this.hashMapSet(node)      
+
+    if (this.uuidMap.size % 10000 === 0) {
+      console.log(os.freemem())
+      console.log(this.uuidMap.size)
+    }
     return node
   }
 

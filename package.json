@@ -7,6 +7,7 @@
     "build": "babel src --out-dir build",
     "devel": "nodemon --exec babel-node src/app.js",
     "test": "mocha --compilers js:babel-core/register --recursive test",
+    "perf": "mocha --compilers js:babel-core/register --recursive perf",
     "test-server": "NODE_PATH=. NODE_ENV=test nodemon ./bin/www",
     "unit": "NODE_PATH=. mocha test/unit --recursive --es_staging",
     "agent": "NODE_PATH=. NODE_ENV=test mocha test/api --recursive --es_staging",

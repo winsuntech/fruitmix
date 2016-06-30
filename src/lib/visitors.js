@@ -4,7 +4,6 @@ import path from 'path'
 import { fsStatAsync, fsReaddirAsync } from './tools'
 
 const visit = (dir, dirContext, func, done) => { 
-
   fs.readdir(dir, (err, entries) => {
     if (err || entries.length === 0) return done()
     
@@ -13,7 +12,7 @@ const visit = (dir, dirContext, func, done) => {
 
       func(dir, dirContext, entry, (entryContext) => {
         if (entryContext) {
-          console.log('entering entering')
+          // console.log('entering entering')
           visit(path.join(dir, entry), entryContext, func, () => {
             count--
             if (count === 0) done()

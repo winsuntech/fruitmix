@@ -2,7 +2,7 @@ import path from 'path'
 
 
 import { readXstatAsync } from './xstat'
-import { fsStatAsync, fsMkdirAsync } from './tools'
+import { fsStatAsync, fsMkdirAsync, mapXstatToObject } from './tools'
 
 class Repo {
 
@@ -30,8 +30,7 @@ class Repo {
     return this.abspath(node) 
   }
 
-  /** create **/
-
+  /** create drive **/
   async createDriveAsync(userUUID)  { 
 
     let dirpath = path.join(this.abspath(this.driveDirNode), userUUID)
@@ -43,14 +42,26 @@ class Repo {
       forceWritelist: [],
       forceReadlist: []
     })   
+    
+    if (xstat instanceof Error) {
+      await rimrafAsync(dirpath)
+      return xstat
+    }
+
+    let node = this.tree.createNode(this.driveDirNode, mapXstatToObject(xstat))
+    if (node instanceof Error) {
+      await rimrafAsync(dirpath)
+    }
+    return node 
   }
 
   createDrive(userUUID, callback) {
     this.createDriveAsync(userUUID)
-      .then(r => callback(r)) // TODO OK?
+      .then(r => (r instanceof Error) ? callback(r) : callback(null, r)) 
       .catch(e => callback(e))      
   } 
 
+  /** create library **/
   async createLibraryAsync(userUUID, libraryUUID) {
 
     let dirpath = path.join(this.abspath(this.libraryDirNode), libraryUUID)

@@ -81,8 +81,8 @@ export const mapXstatToObject = (xstat) => {
       name: name,     
     },
     hash: xstat.hash,
-    path: null, // TODO to be removed
-    detail: null, // TODO to be removed 
+//    path: null, // TODO to be removed
+//    detail: null, // TODO to be removed 
   }
 }
 

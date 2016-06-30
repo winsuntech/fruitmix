@@ -57,7 +57,7 @@ describe('buildTree', function() {
     })
   })
 
-  describe('Empty Root', function() {
+  describe('empty root', function() {
     
     before(function(done) {
       setupRoot().then(r => done(r)).catch(e => done(e))

@@ -161,6 +161,11 @@ async function visitorAsync(dir, dirContext, entry) {
   return { tree, node: entryNode, owner }
 }
 
+function promisifyVisit(dir, dirContext, visitor) {
+
+  return new Promise(resolve => visit(dir, dirContext, visitor, () => resolve()))
+}
+
 async function dirToNode(dir, tree, parent) {
 
   let xstat = await readXstatAsync(dir)
@@ -196,7 +201,8 @@ async function buildTreeAsync(root) {
   for (let i = 0; i < valid.length; i++) {
     dir = path.join(drivedir, valid[i].entry)
     node = await dirToNode(dir, tree, driveDirNode)
-    promises.push(visitAsync(dir, {tree, node, owner: node.permission.owner}, visitorAsync))
+    // promises.push(visitAsync(dir, {tree, node, owner: node.permission.owner}, visitorAsync))
+    promises.push(new Promise(resolve => visit(dir, {tree, node, owner: node.permission.owner}, visitor, () => resolve())))
   } 
 
   // libraries
@@ -210,6 +216,8 @@ async function buildTreeAsync(root) {
   }
 
   await Promise.all(promises) 
+
+  console.log('tree build finished')
   return tree
 }
 

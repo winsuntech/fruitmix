@@ -125,6 +125,8 @@ async function xattrGetOrDefault(path, attr, defVal) {
 
 // this function returns extended stats, 
 // i.e, merged stats and extended attributes, with hash timestamp verified
+
+/**
 async function readXstatAsync(path, opts) {
 
   let props = {
@@ -187,35 +189,129 @@ async function readXstatAsync(path, opts) {
 
   return Object.assign(stats, props, { abspath: path })
 
-/*
-  let defVal = defaultXattrVal()
-
-  let stats = await fsStatAsync(path)
-  if (stats instanceof Error) return stats
-
-  let attr = await xattrGetOrDefault(path, 'user.fruitmix', defVal)
-  if (attr instanceof Error) return attr
-
-  // verify hash timestamp
-  if (attr.htime !== stats.mtime.getTime()) {
-     attr.hash = null 
-  } 
-
-  // remove htime
-  delete attr.htime
-
-  return Object.assign(stats, attr, {
-    abspath: path
-  })
-*/
+//  let defVal = defaultXattrVal()
+//
+//  let stats = await fsStatAsync(path)
+//  if (stats instanceof Error) return stats
+//
+//  let attr = await xattrGetOrDefault(path, 'user.fruitmix', defVal)
+//  if (attr instanceof Error) return attr
+//
+//  // verify hash timestamp
+//  if (attr.htime !== stats.mtime.getTime()) {
+//     attr.hash = null 
+//  } 
+//
+//  // remove htime
+//  delete attr.htime
+//
+//  return Object.assign(stats, attr, {
+//    abspath: path
+//  })
 }
 
+**/
+
+async function readXstatAsync(path, opts) {
+
+  return new Promise(resolve => {
+    let callback = (err, xstat) => err ? resolve(err) : resolve(xstat)
+    opts ? readXstat(path, opts, callback) : readXstat(path, callback)
+  })
+}
+
+// performance critical version
+function readXstat(path, opts, callback) {
+
+  if (typeof opts === 'function') {
+    callback = opts
+    opts = null
+  }
+
+  let props = {
+    uuid: UUID.v4(),
+    owner: null,
+    writelist: null,
+    readlist: null,
+    hash: null,
+    htime: -1
+  }
+
+  fs.stat(path, (err, stats) => {
+
+    if (err) return callback(err)
+    xattr.get(path, 'user.fruitmix', (err, attr) => {
+
+      let parsed
+
+      // err, not non-exist
+      if (err && err.code !== 'ENODATA') return callback(err)
+
+      // try parse attr if no error
+      if (!err) parsed = parseJSON(attr) 
+      
+      // non-exist, or json invalid
+      if (err || !parsed) {
+        if (opts) {
+          if (opts.forceOwner) props.owner = opts.forceOwner
+          else if (opts.owner) props.owner = opts.owner
+
+          if (opts.forceWritelist) props.writelist = opts.forceWritelist
+          else if (opts.writelist) props.writelist = opts.writelist
+
+          if (opts.forceReadlist) props.readlist = opts.forceReadlist
+          else if (opts.readlist) props.readlist = opts.readlist
+        }   
+
+        xattr.set(path, 'user.fruitmix', JSON.stringify(props), err => {
+          if (err) return callback(err)
+          return callback(null, Object.assign(stats, props, { abspath: path }))
+        })
+        return // !
+      }   
+
+      // xattr exist and valid
+      props.uuid = parsed.uuid
+
+      if (opts && opts.forceOwner) props.owner = opts.forceOwner
+      else if (opts && opts.owner && !parsed.owner) props.owner = opts.owner
+      else if (parsed.owner) props.owner = parsed.owner
+
+      if (opts && opts.forceWritelist) props.writelist = opts.writelist
+      else if (opts && opts.writelist && !parsed.writelist) props.writelist = opts.writelist
+      else if (parsed.writelist) props.writelist = parsed.writelist
+
+      if (opts && opts.forceReadlist) props.readlist = opts.readlist
+      else if (opts && opts.readlist && !parsed.readlist) props.readlist= opts.readlist
+      else if (parsed.readlist) props.readlist = parsed.readlist
+
+
+      if (parsed.htime === stats.mtime.getTime()) {
+        props.hash = parsed.hash
+        props.htime = parsed.htime
+      }
+
+      if (!shallowequal(props, parsed)) {
+        xattr.set(path, 'user.fruitmix', JSON.stringify(props), err => {
+          if (err) return callback(err) 
+          return callback(null, Object.assign(stats, props, { abspath: path }))
+        })
+      } 
+
+      callback(null, Object.assign(stats, props, { abspath: path }))
+      
+    }) // xattr.get
+  })
+}
+
+/**
 function readXstat(path, callback) {
 
   readXstatAsync(path)
     .then(r => (r instanceof Error) ? callback(r) : callback(null, r))
     .catch(e => callback(e))
 }
+**/
 
 async function updateXattrPermissionAsync(path, permission) {
   
@@ -233,6 +329,8 @@ async function updateXattrPermissionAsync(path, permission) {
   let err = await xattrSetAsync(path, 'user.fruitmix', JSON.stringify(newattr))
   return err
 }
+
+
 
 async function updateXattrHashAsync(path, hash, htime) {
   
