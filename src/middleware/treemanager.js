@@ -140,6 +140,10 @@ function Memtree() {
     this.getpath = function(key) {
         var realpath='';
         this.getpathobj(key).forEach(function(f){
+            //console.log("---------")
+            //console.log(f.uuid)
+            //console.log(f.attribute.name)
+            //console.log("---------")
             realpath='/'+f.attribute.name+realpath;
         });
         return '/data/fruitmix'+realpath;
@@ -356,6 +360,7 @@ function ischild(key,value){
 }
 
 function createpathobj(key,array){
+    console.log(key)
     if(key!==memt.getroot()){
         array.push(memt.get(key));
         createpathobj(memt.getparent(key),array);

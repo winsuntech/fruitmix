@@ -15,6 +15,7 @@ var multer  = require('multer')
 var upload = multer({ dest: '/data/fruitmix/uploads/' })
 var helper = require('../middleware/tools');
 var adapter = require('../middleware/adapter');
+var exif = require('../middleware/exif');
 var gm = require('gm');
 var jobq = [];
 var path = require('path');
@@ -22,6 +23,7 @@ var mime = require('../middleware/mime').types;
 var debug =false
 const readChunk = require('read-chunk');
 const fileType = require('file-type');
+
 
 router.get('/*',auth.jwt(), (req, res) => {
   var pathname = url.parse(req.url).pathname;
@@ -200,7 +202,10 @@ router.get('/*',auth.jwt(), (req, res) => {
       // tmparray.forEach(function(f){
       //   console.log(f.createtime);
       // })
-      return res.status(200).json(tmparray);
+      exif.attachall(tmparray,r=>{
+        
+        return res.status(200).json(r);
+      })
     }
     else{
       var bln =false;

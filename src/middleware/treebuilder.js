@@ -6,6 +6,7 @@ var socket = require('socket.io-client')('http://localhost:10086');
 var dmap1 = new Map();
 var helper = require('../middleware/tools');
 var adapter = require('../middleware/adapter');
+var exif = require('../middleware/exif');
 var MTOpermission = require('../middleware/mtopermission');
 var MTOattribute = require('../middleware/mtoattribute');
 var MTObj = require('../middleware/memtree');
@@ -73,7 +74,8 @@ function commoncheck(f){
       //console.log("ttttt")
       //console.log(mtobj.uid);
       memt.add(mtobj.uid,memobj);
-      var a =helper.pastedetail(mtobj.path,mtobj.uid);
+      //var a =helper.pastedetail(mtobj.path,mtobj.uid);
+      exif.save(memt.get(mtobj.uid));
       //console.log(msg.uid);
       //console.log(msg.path);
     }
@@ -95,9 +97,19 @@ function cronjob(tpath){
   var newlist = globby.sync([tpath]);
   newlist.forEach(function(f){
     // console.log("----")
-    // console.log(f)
+    console.log(f)
     // console.log("----")
     var tf=f.split('/');
+    if(f==='/data/fruitmix'){
+      try{
+        var puuid=xattr.getSync(f,'user.uuid');
+      }
+      catch(e){
+        var puuid=uuid.v4()
+        xattr.setSync(f,'user.uuid',puuid);
+      }
+      memt.setroot(puuid);
+    }
     if(f==='/data/fruitmix'||helper.contains(tf,'library')||helper.contains(tf,'drive')){
       commoncheck(f);
     }
