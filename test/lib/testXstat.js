@@ -10,6 +10,7 @@ import validator from 'validator'
 
 import {
   readTimeStampAsync,
+  readXstat2,
   readXstatAsync,
   updateXattrPermissionAsync,
   updateXattrHashAsync,
@@ -27,6 +28,8 @@ const uuid6 = 'bd00ee56-0468-4723-b18b-94ca7e6c87c1'
 const uuid7 = '68d814e1-5051-43de-a579-b228df924302'
 const uuid8 = '23affbe4-7040-429b-ac32-1a7fe7fccd1d'
 const uuid9 = '80a0959d-568b-4079-936e-0c21d02570af'
+
+const sha256_1 = "2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824"
 
 const defaultXattr = {
   uuid: uuid1,
@@ -73,125 +76,355 @@ describe('xstat', function() {
     })
   })
 
+  describe('readXstat2', function() {
 
-  describe('readXstatAsync 01', function(){
-
-    before(function(done) {
-
-      let uuid = UUID.v4()
+    it('should readback definition for empty xattr', function(done) {
       rimraf('tmptest', err => {
         if (err) return done(err)
         mkdirp('tmptest', err => {
-          if (err) return done(err)
-          xattr.set(fpath, 'user.fruitmix', JSON.stringify(defaultXattr), err => {
-            done(err) 
+          if (err) return done(err) 
+          readXstat2('tmptest', { owner: [uuid1] }, (err, xstat) => {
+            if (err) return done(err)   
+            expect(validator.isUUID(xstat.uuid)).to.be.true
+            expect(xstat.owner).to.deep.equal([uuid1]) 
+            expect(xstat.writelist).to.be.null
+            expect(xstat.readlist).to.be.null
+            expect(xstat.hash).to.be.null
+            expect(xstat.htime).to.equal(-1)
+            done() 
           })
         })
-      })  
-    })
+      })
+    }) 
 
-    it('should readback preset xattrs, with null hash', function(done) {
-      readXstatAsync(fpath)
-        .then(r => {
-          expect(r.abspath).to.equal(fpath) 
-          expect(r.uuid).to.equal(uuid1)
-          expect(r.owner[0]).to.equal(uuid2)
-          expect(r.writelist[0]).to.equal(uuid3)
-          expect(r.readlist[0]).to.equal(uuid4)
-          expect(r.hash).to.be.null    // IMPORTANT!
-          done() 
-        })
-        .catch(e => done(e))
-    })
-  })
-
-  describe('readXstatAsync 02', function(){
-
-    before(function(done) {
-
-      let uuid = UUID.v4()
+    it('should return error if owner not provided', function(done) {
       rimraf('tmptest', err => {
         if (err) return done(err)
         mkdirp('tmptest', err => {
-          done(err) 
+          if (err) return done(err) 
+          readXstat2('tmptest', {}, (err, xstat) => {
+            expect(err).to.be.an('error')
+            done() 
+          })
         })
-      })  
-    })
+      })
+    }) 
 
-    it('should readback default xattrs, with null hash', function(done) {
-      readXstatAsync(fpath)
-        .then(r => {
-          expect(r.abspath).to.equal(fpath)
-          expect(validator.isUUID(r.uuid)).to.be.true
-          expect(r.owner).to.be.null
-          expect(r.writelist).to.be.null
-          expect(r.readlist).to.be.null
-          expect(r.hash).to.be.null    // IMPORTANT!
-          done() 
-        })
-        .catch(e => done(e))
-    })
-  })
-
-/** this test case removed 
-  describe('readXstatAsync 02.01', function(){
-
-    before(function(done) {
-
-      let uuid = UUID.v4()
+    it('should return preset valid xattr (without hash)', function(done) {
       rimraf('tmptest', err => {
         if (err) return done(err)
         mkdirp('tmptest', err => {
-          done(err) 
-        })
-      })  
-    })
-
-    it('should readback default xattrs, with null hash and given owner', function(done) {
-      readXstatAsync(fpath, { owner: [uuid9] })
-        .then(r => {
-          expect(r.abspath).to.equal(fpath)
-          expect(validator.isUUID(r.uuid)).to.be.true
-          expect(r.owner[0]).to.equal(uuid9) // given owner 
-          expect(r.writelist).to.be.null
-          expect(r.readlist).to.be.null
-          expect(r.hash).to.be.null    // IMPORTANT!
-          done() 
-        })
-        .catch(e => done(e))
-    })
-  })
-**/
-
-  describe('readXstatAsync 03', function(){
-
-    before(function(done) {
-
-      let uuid = UUID.v4()
-      rimraf('tmptest', err => {
-        if (err) return done(err)
-        mkdirp('tmptest', err => {
-          if (err) return done(err)
-          fs.stat('tmptest', (err, stats) => {
+          if (err) return done(err) 
+          xattr.set('tmptest', 'user.fruitmix', JSON.stringify({
+            uuid: uuid3,
+            owner: [uuid2],
+            writelist: [uuid5],
+            readlist: [uuid6],
+            hash: null,
+            htime: -1 
+          }), err => {
             if (err) return done(err)
-            let attr = Object.assign({}, defaultXattr, { 
-              htime: stats.mtime.getTime() 
+            readXstat2('tmptest', { owner: [uuid8] }, (err, xstat) => {
+              if (err) return done(err)
+              expect(xstat.uuid).to.equal(uuid3)
+              expect(xstat.owner).to.deep.equal([uuid2])
+              expect(xstat.writelist).to.deep.equal([uuid5])
+              expect(xstat.readlist).to.deep.equal([uuid6])
+              expect(xstat.hash).to.be.null
+              expect(xstat.htime).to.equal(-1)
+              done() 
             })
-            xattr.set(fpath, 'user.fruitmix', JSON.stringify(attr), err => {
-              done(err)      
-            })
-          }) 
+          })
         })
-      })  
+      })
     })
 
-    it('should readback preset xattrs, with good hash', function(done) {
-      readXstatAsync(fpath)
-        .then(r => {
-          expect(r.hash).to.equal(uuid5)
-          done() 
+    it('should return preset valid xattr (with outdated timestamp), with null hash', function(done) {
+      rimraf('tmptest', err => {
+        if (err) return done(err)
+        mkdirp('tmptest', err => {
+          if (err) return done(err) 
+          xattr.set('tmptest', 'user.fruitmix', JSON.stringify({
+            uuid: uuid3,
+            owner: [uuid2],
+            writelist: [uuid5],
+            readlist: [uuid6],
+            hash: sha256_1,
+            htime: -1 
+          }), err => {
+            if (err) return done(err)
+            readXstat2('tmptest', { owner: [uuid8] }, (err, xstat) => {
+              if (err) return done(err)
+              expect(xstat.uuid).to.equal(uuid3)
+              expect(xstat.owner).to.deep.equal([uuid2])
+              expect(xstat.writelist).to.deep.equal([uuid5])
+              expect(xstat.readlist).to.deep.equal([uuid6])
+              expect(xstat.hash).to.be.null
+              expect(xstat.htime).to.equal(-1)
+              done() 
+            })
+          })
         })
-        .catch(e => done(e))
+      })
+    })
+
+    it('should return preset valid xattr (with correct timestamp), with good hash', function(done) {
+      rimraf('tmptest', err => {
+        if (err) return done(err)
+        mkdirp('tmptest', err => {
+          if (err) return done(err) 
+          fs.stat('tmptest', (err, stat) => {
+            if (err) return done(err)
+
+            xattr.set('tmptest', 'user.fruitmix', JSON.stringify({
+              uuid: uuid3,
+              owner: [uuid2],
+              writelist: [uuid5],
+              readlist: [uuid6],
+              hash: sha256_1,
+              htime: stat.mtime.getTime()
+            }), err => {
+              if (err) return done(err)
+              readXstat2('tmptest', { owner: [uuid8] }, (err, xstat) => {
+                if (err) return done(err)
+                expect(xstat.uuid).to.equal(uuid3)
+                expect(xstat.owner).to.deep.equal([uuid2])
+                expect(xstat.writelist).to.deep.equal([uuid5])
+                expect(xstat.readlist).to.deep.equal([uuid6])
+                expect(xstat.hash).to.be.sha256_1
+                expect(xstat.htime).to.equal(stat.mtime.getTime())
+                done() 
+              })
+            })
+          })
+        })
+      })
+    })
+
+    it('should discard xattr with invalid uuid, create new one', function(done) {
+      rimraf('tmptest', err => {
+        if (err) return done(err)
+        mkdirp('tmptest', err => {
+          if (err) return done(err) 
+          fs.stat('tmptest', (err, stat) => {
+            if (err) return done(err)
+
+            xattr.set('tmptest', 'user.fruitmix', JSON.stringify({
+              uuid: 'hello',
+              owner: [uuid1],
+              writelist: [uuid2],
+              readlist: [uuid3],
+              hash: sha256_1,
+              htime: stat.mtime.getTime()
+            }), err => {
+              if (err) return done(err)
+              readXstat2('tmptest', { 
+                owner: [uuid4],
+                writelist: [uuid5],
+                readlist: [uuid6]
+              }, (err, xstat) => {
+                if (err) return done(err)
+                expect(validator.isUUID(xstat.uuid)).to.be.true
+                expect(xstat.owner).to.deep.equal([uuid4])
+                expect(xstat.writelist).to.deep.equal([uuid5])
+                expect(xstat.readlist).to.deep.equal([uuid6])
+                expect(xstat.hash).to.be.null // hash discarded
+                expect(xstat.htime).to.equal(-1)
+                done() 
+              })
+            })
+          })
+        })
+      })
+    })
+
+    it('should fix bad xattr with undefined owner, using default', function(done) {
+      rimraf('tmptest', err => {
+        if (err) return done(err)
+        mkdirp('tmptest', err => {
+          if (err) return done(err) 
+          fs.stat('tmptest', (err, stat) => {
+            if (err) return done(err)
+
+            xattr.set('tmptest', 'user.fruitmix', JSON.stringify({
+              uuid: uuid1,
+              writelist: [uuid2],
+              readlist: [uuid3],
+              hash: sha256_1,
+              htime: stat.mtime.getTime()
+            }), err => {
+              if (err) return done(err)
+              readXstat2('tmptest', { 
+                owner: [uuid4],
+                writelist: [uuid5],
+                readlist: [uuid6]
+              }, (err, xstat) => {
+                if (err) return done(err)
+
+                expect(xstat.uuid).to.equal(uuid1)
+                expect(xstat.owner).to.deep.equal([uuid4])
+                expect(xstat.writelist).to.deep.equal([uuid2])
+                expect(xstat.readlist).to.deep.equal([uuid3])
+                expect(xstat.hash).to.be.sha256_1 // hash discarded
+                expect(xstat.htime).to.equal(stat.mtime.getTime())
+                done() 
+              })
+            })
+          })
+        })
+      })
+    })
+
+    it('should fix xattr with bad owner, using default', function(done) {
+      rimraf('tmptest', err => {
+        if (err) return done(err)
+        mkdirp('tmptest', err => {
+          if (err) return done(err) 
+          fs.stat('tmptest', (err, stat) => {
+            if (err) return done(err)
+
+            xattr.set('tmptest', 'user.fruitmix', JSON.stringify({
+              uuid: uuid1,
+              owner: ['hello'],
+              writelist: [uuid2],
+              readlist: [uuid3],
+              hash: sha256_1,
+              htime: stat.mtime.getTime()
+            }), err => {
+              if (err) return done(err)
+              readXstat2('tmptest', { 
+                owner: [uuid4],
+                writelist: [uuid5],
+                readlist: [uuid6]
+              }, (err, xstat) => {
+                if (err) return done(err)
+
+                expect(xstat.uuid).to.equal(uuid1)
+                expect(xstat.owner).to.deep.equal([uuid4])
+                expect(xstat.writelist).to.deep.equal([uuid2])
+                expect(xstat.readlist).to.deep.equal([uuid3])
+                expect(xstat.hash).to.be.sha256_1 // hash discarded
+                expect(xstat.htime).to.equal(stat.mtime.getTime())
+                done() 
+              })
+            })
+          })
+        })
+      })
+    })
+
+    it('should fix xattr with bad writer', function(done) {
+      rimraf('tmptest', err => {
+        if (err) return done(err)
+        mkdirp('tmptest', err => {
+          if (err) return done(err) 
+          fs.stat('tmptest', (err, stat) => {
+            if (err) return done(err)
+
+            xattr.set('tmptest', 'user.fruitmix', JSON.stringify({
+              uuid: uuid1,
+              owner: [uuid1],
+              writelist: ['hello'],
+              readlist: [uuid3],
+              hash: sha256_1,
+              htime: stat.mtime.getTime()
+            }), err => {
+              if (err) return done(err)
+              readXstat2('tmptest', { 
+                owner: [uuid4],
+                writelist: [uuid5],
+                readlist: [uuid6]
+              }, (err, xstat) => {
+                if (err) return done(err)
+
+                expect(xstat.uuid).to.equal(uuid1)
+                expect(xstat.owner).to.deep.equal([uuid1])
+                expect(xstat.writelist).to.deep.equal([])
+                expect(xstat.readlist).to.deep.equal([uuid3])
+                expect(xstat.hash).to.be.sha256_1
+                expect(xstat.htime).to.equal(stat.mtime.getTime())
+                done() 
+              })
+            })
+          })
+        })
+      })
+    })
+
+    it('should fix xattr with bad reader', function(done) {
+      rimraf('tmptest', err => {
+        if (err) return done(err)
+        mkdirp('tmptest', err => {
+          if (err) return done(err) 
+          fs.stat('tmptest', (err, stat) => {
+            if (err) return done(err)
+
+            xattr.set('tmptest', 'user.fruitmix', JSON.stringify({
+              uuid: uuid1,
+              owner: [uuid1],
+              writelist: [uuid2],
+              readlist: ['hello'],
+              hash: sha256_1,
+              htime: stat.mtime.getTime()
+            }), err => {
+              if (err) return done(err)
+              readXstat2('tmptest', { 
+                owner: [uuid4],
+                writelist: [uuid5],
+                readlist: [uuid6]
+              }, (err, xstat) => {
+                if (err) return done(err)
+
+                expect(xstat.uuid).to.equal(uuid1)
+                expect(xstat.owner).to.deep.equal([uuid1])
+                expect(xstat.writelist).to.deep.equal([uuid2])
+                expect(xstat.readlist).to.deep.equal([])
+                expect(xstat.hash).to.be.sha256_1
+                expect(xstat.htime).to.equal(stat.mtime.getTime())
+                done() 
+              })
+            })
+          })
+        })
+      })
+    })
+
+    it('should format explicit rw from null to []', function(done) {
+      rimraf('tmptest', err => {
+        if (err) return done(err)
+        mkdirp('tmptest', err => {
+          if (err) return done(err) 
+          fs.stat('tmptest', (err, stat) => {
+            if (err) return done(err)
+
+            xattr.set('tmptest', 'user.fruitmix', JSON.stringify({
+              uuid: uuid1,
+              owner: [uuid1],
+              writelist: [uuid2],
+              readlist: null,
+              hash: sha256_1,
+              htime: stat.mtime.getTime()
+            }), err => {
+              if (err) return done(err)
+              readXstat2('tmptest', { 
+                owner: [uuid4],
+                writelist: [uuid5],
+                readlist: [uuid6]
+              }, (err, xstat) => {
+                if (err) return done(err)
+
+                expect(xstat.uuid).to.equal(uuid1)
+                expect(xstat.owner).to.deep.equal([uuid1])
+                expect(xstat.writelist).to.deep.equal([uuid2])
+                expect(xstat.readlist).to.deep.equal([])
+                expect(xstat.hash).to.be.sha256_1
+                expect(xstat.htime).to.equal(stat.mtime.getTime())
+                done() 
+              })
+            })
+          })
+        })
+      })
     })
   })
 

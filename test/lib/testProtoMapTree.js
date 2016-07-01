@@ -1,12 +1,18 @@
 import { expect } from 'chai'
 
-import { Node, MapTree } from '../../src/lib/maptree'
+import { protoNode, ProtoMapTree } from '../../src/lib/protoMapTree'
 
 const testData1 = () => {
 
   let arr = 'abcdefghijklmnopqrstuvwxyz'
     .split('')
-    .map(c => new Node({ name: c }))
+    .map(c => {
+      let node = Object.create(protoNode)
+      node.parent = null
+      node.name = c
+      return node
+    })
+//    .map(c => new Node({ name: c }))
 
   let object = {
     a:          null,
@@ -40,7 +46,7 @@ const testData1 = () => {
   return arr
 }
 
-describe('maptree', function() {
+describe('protoMapTree', function() {
   
   describe('path', function() { 
     it('nodeK path should be a h j k', function(done) { 
