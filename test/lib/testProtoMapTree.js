@@ -12,7 +12,6 @@ const testData1 = () => {
       node.name = c
       return node
     })
-//    .map(c => new Node({ name: c }))
 
   let object = {
     a:          null,
@@ -42,7 +41,6 @@ const testData1 = () => {
     }
   } 
 
-  // arr[0].preVisit(node => console.log(node.name))
   return arr
 }
 

@@ -10,6 +10,7 @@ import validator from 'validator'
 
 import {
   readTimeStampAsync,
+  readXattr,
   readXstat2,
   readXstatAsync,
   updateXattrPermissionAsync,
@@ -39,6 +40,67 @@ const defaultXattr = {
   hash: uuid5,
   htime: -1
 }
+
+describe('xattr', function() {
+
+  let cwd = process.cwd()
+  let fpath = path.join(cwd, 'tmptest')
+
+  it('should return null if xattr non-exist', function(done) {
+    rimraf('tmptest', err => {
+      if (err) return done(err)
+      mkdirp('tmptest', err => {
+        if (err) return done(err)
+
+        readXattr(fpath, (err, attr) => {
+          if (err) return done(err)
+          expect(attr).to.be.null
+          done()
+        })
+      })
+    })
+  })
+
+  it('should return null if xattr is not valid josn', function(done) {
+    rimraf('tmptest', err => {
+      if (err) return done(err)
+      mkdirp('tmptest', err => {
+        if (err) return done(err)
+        xattr.set(fpath, 'user.fruitmix', 'hello', err => {
+          if (err) return done(err)
+          readXattr(fpath, (err, attr) => {
+            if (err) return done(err)
+            expect(attr).to.be.null
+            done()
+          })
+        })
+      })
+    })
+  }) 
+
+  it('should return preset object', function(done) {
+    rimraf('tmptest', err => {
+      if (err) return done(err)
+      mkdirp('tmptest', err => {
+        if (err) return done(err)
+        xattr.set(fpath, 'user.fruitmix', JSON.stringify({
+          x: 'hello',
+          y: 'world'
+        }), err => {
+          if (err) return done(err)
+
+          readXattr(fpath, (err, attr) => {
+            if (err) return done(err)
+            
+            expect(attr.x).to.equal('hello')
+            expect(attr.y).to.equal('world')
+            done()
+          })
+        })
+      })
+    })
+  })
+})
 
 describe('xstat', function() {
 

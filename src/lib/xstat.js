@@ -13,7 +13,7 @@ function parseJSON(string) {
     return json
   }
   catch (e) {
-    return
+    return null
   }
 }
 
@@ -319,6 +319,15 @@ function newXattr(owner, writelist, readlist) {
 }
 
 
+function readXattr(path, callback) {
+
+  xattr.get(path, 'user.fruitmix', (err, attr) => {
+    if (err && err.code === 'ENODATA') return callback(null, null)
+    else if (err) return callback(err)
+    else callback(null, parseJSON(attr))
+  })
+}
+
 // performance critical version
 function readXstat2(path, perm, callback) {
 
@@ -520,6 +529,7 @@ let testing = {
 
 export { 
   readTimeStampAsync,
+  readXattr,
   readXstat,
   readXstat2,
   readXstatAsync,
