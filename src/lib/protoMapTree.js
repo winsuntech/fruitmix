@@ -261,31 +261,6 @@ function createProtoMapTreeV1(rootpath, type, callback) {
 
 const createProtoMapTree = createProtoMapTreeV1
 
-/**
-const driveVisitor2 = (dir, dirContext, entry, callback) => {
-
-  let entrypath = path.join(dir, entry)
-  readXstat2(entrypath, {
-    owner: dirContext.tree.root.owner
-  }, (err, xstat) => {
-
-    if (err) return callback()
-    if (!xstat.isDirectory() && !xstat.isFile()) return callback()
-
-    let { tree, node, owner } = dirContext
-    let object = mapXstatToObject(xstat)
-
-    // createNode do no check
-    let entryNode = tree.createNode(node, object) 
-
-    if (!xstat.isDirectory()) return callback()  
-
-    // now it's directory
-    callback({ tree, node: entryNode })
-  })
-}
-**/
-
 const driveVisitor = (dir, node, entry, callback) => {
 
   let entrypath = path.join(dir, entry)
@@ -323,13 +298,6 @@ const libraryVisitor = (dir, node, entry, callback) => {
     return callback()
   })
 }
-
-/** deprecated
-function scanLibraryTree(libraryTree, callback) {
-
-  visit(libraryTree.rootpath, libraryTree.root, libraryVisitor, () => callback())
-}
-**/
 
 const driveTreeMethods = {
 
@@ -387,6 +355,5 @@ const libraryTreeMethods = {
   }
 }
 
-
-export { protoNode, ProtoMapTree, createProtoMapTree, scanLibraryTree } 
+export { protoNode, ProtoMapTree, createProtoMapTree } 
 

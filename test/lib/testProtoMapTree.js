@@ -11,8 +11,6 @@ import {
   protoNode, 
   ProtoMapTree, 
   createProtoMapTree, 
-  scanDriveTree,
-  scanLibraryTree
 } from '../../src/lib/protoMapTree'
 
 const testData1 = () => {
@@ -271,9 +269,6 @@ describe('scan', function() {
                 if (err) return done(err)
                 // scanLibraryTree(tree, () => {
                 tree.scan(() => {
-                  console.log('>>>>')
-                  console.log(tree)
-                  console.log(tree.root)
 
                   let children = tree.root.getChildren()
                   let child = children[0]
