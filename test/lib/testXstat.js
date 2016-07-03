@@ -41,69 +41,6 @@ const defaultXattr = {
   htime: -1
 }
 
-describe('xstat1', function() {
-
-  let cwd = process.cwd()
-  let fpath = path.join(cwd, 'tmptest')
-
-  it('should return null if xattr non-exist', function(done) {
-    rimraf('tmptest', err => {
-      if (err) return done(err)
-      mkdirp('tmptest', err => {
-        if (err) return done(err)
-
-        readXstatAnyway(fpath, (err, attr) => {
-          if (err) return done(err)
-          expect(attr).to.be.null
-          done()
-        })
-      })
-    })
-  })
-
-  it('should return null if xattr is not valid josn', function(done) {
-    rimraf('tmptest', err => {
-      if (err) return done(err)
-      mkdirp('tmptest', err => {
-        if (err) return done(err)
-        xattr.set(fpath, 'user.fruitmix', 'hello', err => {
-          if (err) return done(err)
-          readXstatAnyway(fpath, (err, attr) => {
-            if (err) return done(err)
-            expect(attr).to.be.null
-            done()
-          })
-        })
-      })
-    })
-  }) 
-
-  it('should return preset object', function(done) {
-    rimraf('tmptest', err => {
-      if (err) return done(err)
-      mkdirp('tmptest', err => {
-        if (err) return done(err)
-        xattr.set(fpath, 'user.fruitmix', JSON.stringify({
-          x: 'hello',
-          y: 'world'
-        }), err => {
-          if (err) return done(err)
-
-          readXstatAnyway(fpath, (err, attr) => {
-            if (err) return done(err)
-            
-            expect(attr.x).to.equal('hello')
-            expect(attr.y).to.equal('world')
-            expect(attr.isDirectory()).to.be.true
-            expect(attr.abspath).to.equal(fpath)
-            done()
-          })
-        })
-      })
-    })
-  })
-})
-
 describe('xstat', function() {
 
   let cwd = process.cwd()
@@ -137,6 +74,69 @@ describe('xstat', function() {
           done() 
         })
         .catch(e => done(e))
+    })
+  })
+
+  describe('readXstatAnyway', function() {
+
+    let cwd = process.cwd()
+    let fpath = path.join(cwd, 'tmptest')
+
+    it('should return null if xattr non-exist', function(done) {
+      rimraf('tmptest', err => {
+        if (err) return done(err)
+        mkdirp('tmptest', err => {
+          if (err) return done(err)
+
+          readXstatAnyway(fpath, (err, attr) => {
+            if (err) return done(err)
+            expect(attr).to.be.null
+            done()
+          })
+        })
+      })
+    })
+
+    it('should return null if xattr is not valid josn', function(done) {
+      rimraf('tmptest', err => {
+        if (err) return done(err)
+        mkdirp('tmptest', err => {
+          if (err) return done(err)
+          xattr.set(fpath, 'user.fruitmix', 'hello', err => {
+            if (err) return done(err)
+            readXstatAnyway(fpath, (err, attr) => {
+              if (err) return done(err)
+              expect(attr).to.be.null
+              done()
+            })
+          })
+        })
+      })
+    }) 
+
+    it('should return preset object', function(done) {
+      rimraf('tmptest', err => {
+        if (err) return done(err)
+        mkdirp('tmptest', err => {
+          if (err) return done(err)
+          xattr.set(fpath, 'user.fruitmix', JSON.stringify({
+            x: 'hello',
+            y: 'world'
+          }), err => {
+            if (err) return done(err)
+
+            readXstatAnyway(fpath, (err, attr) => {
+              if (err) return done(err)
+              
+              expect(attr.x).to.equal('hello')
+              expect(attr.y).to.equal('world')
+              expect(attr.isDirectory()).to.be.true
+              expect(attr.abspath).to.equal(fpath)
+              done()
+            })
+          })
+        })
+      })
     })
   })
 

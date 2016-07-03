@@ -9,7 +9,6 @@ import UUID from 'node-uuid'
 
 import { testing as xstatTesting } from '../../src/lib/xstat'
 import { rimrafAsync, mkdirpAsync, fsReaddirAsync, fsStatAsync } from '../../src/lib/tools'
-import { buildTreeAsync } from '../../src/lib/buildTree'
 import { createRepo } from '../../src/lib/repo'
 
 const { xattrGetRaw } = xstatTesting
@@ -60,15 +59,13 @@ describe('repo', function() {
           if (err) return done(err)
           xattr.set(dpath, 'user.fruitmix', JSON.stringify(preset), err => {
             if (err) return done(err)
-
             createRepo(rootpath, (err, repo) => {
               if (err) return done(err)
-
-              repo.scan()
-              expect(repo.rootpath).to.equal(rootpath)
-              expect(repo.drives.length).to.equal(1)
-              done()
-
+              repo.scan(() => {
+                expect(repo.rootpath).to.equal(rootpath)
+                expect(repo.drives.length).to.equal(1)
+                done()
+              })
             })
           })
         })

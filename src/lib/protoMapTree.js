@@ -254,7 +254,6 @@ function createProtoMapTreeV1(rootpath, type, callback) {
     
     // proto is different from protoObj passed into tree constructor
     tree.proto.tree = tree
-
     callback(null, tree)
   })
 }
@@ -352,6 +351,9 @@ const libraryTreeMethods = {
 
   scan: function(callback) {
     visit(this.rootpath, this.root, libraryVisitor, () => callback())
+  },
+
+  importFile: function(srcpath, callback) {
   }
 }
 

@@ -26,25 +26,38 @@ class Repo {
     return path.join(this.rootpath, 'library')
   }
 
-   
+  scanDrives(callback) {
+    fs.readdir(this.driveDirPath(), (err, entries) => {
+      if (err) callback(err)
+      if (entries.length === 0) return callback(null)      
+      let count = entries.length
+      entries.forEach(entry => {
+        createProtoMapTree(path.join(this.driveDirPath(), entry), 'drive', (err, tree) => {
+          if (!err) this.drives.push(tree)
+          if (!--count) callback()
+        })
+      })      
+    }) 
+  } 
 
-  async scanDriveAsync() {
-    
-    mkdirpAsync(this.driveDirPath())
-
-    let entries = fsReaddirAsync(this.driveDirPath())
-    if (entries instanceof Error) return entries
-
-    // only uuid
-    entries = entries.filter(ent => validator.isUUID(ent))    
-
-    // let tree = createProtoMapTree(
+  scanLibraries(callback) {
+    fs.readdir(this.libraryDirPath(), (err, entries) => {
+      if (err) callback(err)
+      if (entries.length === 0) return callback(null)
+      let count = entries.length
+      entries.forEach(entry => {
+        createProtoMapTree(path.join(this.libraryDirPath(), entry), 'library', (err, tree) => {
+          if (!err) this.libraries.push(tree)
+          if (!--count) callback()
+        })
+      })
+    })
   }
 
   scan(callback) {
-    // traverse and build 
-
-    
+    let count = 2
+    this.scanDrives(() => !--count && callback())
+    this.scanLibraries(() => !--count && callback())
   }
 
   abspath(node) {
@@ -178,3 +191,4 @@ function createRepo(rootpath, callback) {
 }
 
 export { createRepo }
+
