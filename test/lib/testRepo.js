@@ -24,16 +24,18 @@ describe('repo', function() {
       rimraf('tmptest', err => {
         if (err) return done(err)
         mkdirp('tmptest', err => {
-          if (err) return done(err)
-          
-          let repo = createRepo(rootpath)
-          expect(repo.rootpath).to.equal(rootpath)
-          expect(repo.drives).to.deep.equal([])
-          expect(repo.libraries).to.deep.equal([])
-          done()
+          if (err) return done(err) 
+          createRepo(rootpath, (err, repo) => {
+            expect(repo.rootpath).to.equal(rootpath)
+            expect(repo.drives).to.deep.equal([])
+            expect(repo.libraries).to.deep.equal([])
+            done()
+          })
         })
       }) 
     })
+
+    // TODO negative case
   })
 
   describe('repo scan', function() {
@@ -59,56 +61,89 @@ describe('repo', function() {
           xattr.set(dpath, 'user.fruitmix', JSON.stringify(preset), err => {
             if (err) return done(err)
 
-            let repo = createRepo(rootpath)
-            repo.scan()
-            
-            expect(repo.rootpath).to.equal(rootpath)
-            expect(repo.drives.length).to.equal(1)
-            done()
+            createRepo(rootpath, (err, repo) => {
+              if (err) return done(err)
+
+              repo.scan()
+              expect(repo.rootpath).to.equal(rootpath)
+              expect(repo.drives.length).to.equal(1)
+              done()
+
+            })
           })
         })
       })
     }) 
   })
-   /** 
-    it('should create new folder, with proper xattr, as well as tree node,  if not existing', function(done) {  
+
+  describe('create drive', function() {
+
+    let userUUID1 = UUID.v4()
+ 
+    it('should create drive folder, with proper name and xattr, as well as tree', function(done) {  
 
       rimraf('tmptest', err => {
-        if (err) wrn done(err)
+        if (err) return done(err)
         mkdirp('tmptest', err => {
           if (err) return done(err)
 
-          
+          let repopath = path.join(process.cwd(), 'tmptest')
+          createRepo(repopath, (err, repo) => {
+
+            repo.createDrive(userUUID1, (err, tree) => {
+              if (err) return done(err) 
+
+              let dirpath = path.join(repopath, 'drive', userUUID1)
+              xattrGetRaw(dirpath, 'user.fruitmix', (err, xattr) => { 
+                if (err) return done(err)
+
+                let folderUUID = xattr.uuid
+                expect(validator.isUUID(folderUUID)).to.be.true
+                expect(xattr.owner).to.deep.equal([userUUID1])
+                expect(xattr.writelist).to.deep.equal([])
+                expect(xattr.readlist).to.deep.equal([])
+                expect(xattr.hash).to.be.null
+                expect(xattr.htime).to.equal(-1)
+
+/**
+ProtoMapTree {
+  root: 
+   { uuid: 'e70553ba-799c-4cef-86e9-0ffeec6076fc',
+     type: 'folder',
+     writelist: [],
+     readlist: [],
+     name: '8ed85af7-c769-4580-a71a-45598fdb5be2' },
+  proto: 
+   { owner: [ '8ed85af7-c769-4580-a71a-45598fdb5be2' ],
+     writelist: null,
+     readlist: null,
+     tree: [Circular] },
+  uuidMap: 
+   Map {
+     _c: Map { 'e70553ba-799c-4cef-86e9-0ffeec6076fc' => [Object] } },
+  hashMap: Map { _c: Map {} },
+  type: 'drive',
+  rootpath: '/home/xenial/Projects/fruitmix/tmptest/drive/8ed85af7-c769-4580-a71a-45598fdb5be2' }
+**/
+                expect(tree.type).to.equal('drive')
+                expect(tree.rootpath).to.equal(dirpath)
+                expect(tree.root.name).to.equal(userUUID1)
+                expect(tree.root.uuid).to.equal(folderUUID)
+                expect(tree.root.owner).to.deep.equal([userUUID1])
+                expect(tree.proto.owner).to.deep.equal([userUUID1])
+                done()
+              })
+            })
+          })
         })
       })  
-
-
-      repo.createDrive(userUUID1, (err, newNode) => {
-        if (err) return done(err) 
-
-        let dirpath = path.join(root, 'drive', userUUID1)
-        xattrGetRaw(dirpath, 'user.fruitmix', (err, xattr) => { 
-          if (err) return done(err)
-
-          let folderUUID = xattr.uuid
-          expect(validator.isUUID(folderUUID)).to.be.true
-
-          expect(xattr.owner).to.deep.equal([userUUID1])
-          expect(xattr.writelist).to.deep.equal([])
-          expect(xattr.readlist).to.deep.equal([])
-
-          expect(xattr.hash).to.be.null
-          expect(xattr.htime).to.equal(-1)
-
-          expect(newNode.parent).to.equal(repo.driveDirNode)
-          expect(newNode.uuid).to.equal(folderUUID)
-          expect(newNode.type).to.equal('folder')
-          expect(newNode.permission.owner).to.equal(xattr.owner[0]) // TODO
-          expect(newNode.attribute.name).to.equal(userUUID1)
-          done()
-        })
-      })
     })
+  })
+
+
+
+
+/**
 
     it('shold NOT create new folder if already existing', function(done) {
       repo.createDrive(userUUID2, (err, result) => {

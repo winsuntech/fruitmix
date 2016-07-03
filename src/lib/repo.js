@@ -1,33 +1,38 @@
 import path from 'path'
+import fs from 'fs'
 
-
-import { readXstatAsync } from './xstat'
-import { fsStatAsync, fsMkdirAsync, mapXstatToObject } from './tools'
+import { readXstat2 } from './xstat'
+import { mkdirpAsync, fsStatAsync, fsMkdirAsync, mapXstatToObject } from './tools'
+import { createProtoMapTree } from './protoMapTree'
 
 class Repo {
 
   constructor(rootpath) {
 
     this.rootpath = rootpath
-    this.prepend = path.resolve(rootpath, '..')
-
-    this.driveDirPath = path.join(rootpath, 'drive')
-    this.libraryDirPath = path.join(rootpath, 'library')
-
     this.drives = []
     this.libraries = []
   }
 
-  scanDrive(driveTree, callback) {
-
- 
+  prepend() {
+    return path.resolve(this.rootpath, '..')
   }
+
+  driveDirPath() {
+    return path.join(this.rootpath, 'drive')
+  }
+
+  libraryDirPath() {
+    return path.join(this.rootpath, 'library')
+  }
+
+   
 
   async scanDriveAsync() {
     
-    mkdirpAsync(this.driveDirPath)
+    mkdirpAsync(this.driveDirPath())
 
-    let entries = fsReaddirAsync(this.driveDirPath)
+    let entries = fsReaddirAsync(this.driveDirPath())
     if (entries instanceof Error) return entries
 
     // only uuid
@@ -41,8 +46,6 @@ class Repo {
 
     
   }
-
-
 
   abspath(node) {
     let arr = node.nodepath().map(n => n.attribute.name)
@@ -58,7 +61,7 @@ class Repo {
 
   createDrive(userUUID, callback) {
   
-    let dirpath = path.join(this.driveDirPath, userUUID)
+    let dirpath = path.join(this.driveDirPath(), userUUID)
     fs.mkdir(dirpath, err => {
 
       if (err) return callback(err)
@@ -71,10 +74,10 @@ class Repo {
       readXstat2(dirpath, perm, (err, xstat) => {
         if (err) return callback(err)
 
-        createProtoMapTreeV1(dirpath, 'drive', (err, tree) => {
+        createProtoMapTree(dirpath, 'drive', (err, tree) => {
           if (err) return callback(err)
-
-          this.drives.push(tree)          
+          this.drives.push(tree)
+          callback(null, tree)    
         }) 
       })
     })
@@ -160,9 +163,18 @@ class Repo {
   }
 }
 
-function createRepo(rootpath) {
-  
+async function createRepoAsync(rootpath) {
+
+  mkdirpAsync(path.join(rootpath, 'drive'))
+  mkdirpAsync(path.join(rootpath, 'library'))
   return new Repo(rootpath)
+}
+
+function createRepo(rootpath, callback) {  
+
+  createRepoAsync(rootpath)
+    .then(repo => callback(null, repo))
+    .catch(e => callback(e))
 }
 
 export { createRepo }
