@@ -1,4 +1,5 @@
 import path from 'path'
+import fs from 'fs'
 
 import UUID from 'node-uuid'
 import rimraf from 'rimraf'
@@ -6,7 +7,13 @@ import mkdirp from 'mkdirp'
 import xattr from 'fs-xattr'
 import { expect } from 'chai'
 
-import { protoNode, ProtoMapTree, createProtoMapTree, scanDriveTree } from '../../src/lib/protoMapTree'
+import { 
+  protoNode, 
+  ProtoMapTree, 
+  createProtoMapTree, 
+  scanDriveTree,
+  scanLibraryTree
+} from '../../src/lib/protoMapTree'
 
 const testData1 = () => {
 
@@ -67,100 +74,120 @@ describe('protoMapTree', function() {
       done()
     })
   })
+})
 
-  describe('createProtoMapTree', function() {
+describe('createProtoMapTree', function() {
 
-    let cwd = process.cwd()
-    let tpath = path.join(cwd, 'tmptest')
+  let cwd = process.cwd()
+  let tpath = path.join(cwd, 'tmptest')
 
-    describe('create drive tree', function() {
+  describe('create drive tree', function() {
 
-      it('should create a drive tree', function(done) { 
-        rimraf('tmptest', err => {
+    it('should create a drive tree', function(done) { 
+
+      let driveUUID = UUID.v4()
+      let drivepath = path.join(cwd, `tmptest/${driveUUID}`)
+
+      rimraf('tmptest', err => {
+        if (err) return done(err)
+        mkdirp(`tmptest/${driveUUID}`, err => {
           if (err) return done(err)
-          mkdirp('tmptest', err => {
-            if (err) return done(err)
 
-            let preset = {
-              uuid: UUID.v4(),
-              owner: [UUID.v4()],
-              writelist: [UUID.v4()],
-              readlist: [],
-              hash: null,
-              htime: -1
-            }
+          let preset = {
+            uuid: UUID.v4(),
+            owner: [driveUUID],
+            writelist: [UUID.v4()],
+            readlist: [],
+            hash: null,
+            htime: -1
+          }
 
-            xattr.set(tpath, 'user.fruitmix', JSON.stringify(preset), err => {
+          xattr.set(drivepath, 'user.fruitmix', JSON.stringify(preset), err => {
 
-              createProtoMapTree(tpath, 'drive', (err, tree) => {
-                if (err) return done(err)
+            createProtoMapTree(drivepath, 'drive', (err, tree) => {
+              if (err) return done(err)
 
-                expect(tree.type).to.equal('drive')
+              expect(tree.type).to.equal('drive')
+              expect(tree.uuid).to.equal(driveUUID)
+              expect(tree.rootpath).to.equal(drivepath)
+              expect(tree.proto.tree).to.equal(tree)
+              expect(tree.proto.owner).to.deep.equal(preset.owner)
+              expect(tree.proto.writelist).to.be.null
+              expect(tree.proto.readlist).to.be.null
 
-                expect(tree.rootpath).to.equal(tpath)
-                expect(tree.proto.tree).to.equal(tree)
-                expect(tree.proto.owner).to.deep.equal(preset.owner)
-                expect(tree.proto.writelist).to.be.null
-                expect(tree.proto.readlist).to.be.null
+              expect(tree.root.owner).to.deep.equal(preset.owner)
+              expect(tree.root.writelist).to.deep.equal(preset.writelist)
+              expect(tree.root.readlist).to.deep.equal(preset.readlist)
 
-                expect(tree.root.owner).to.deep.equal(preset.owner)
-                expect(tree.root.writelist).to.deep.equal(preset.writelist)
-                expect(tree.root.readlist).to.deep.equal(preset.readlist)
-
-                done()
-              })
+              done()
             })
-          })        
-        })
+          })
+        })        
       })
+    })
+  })
 
-      it('should create a library tree', function(done) {
-        rimraf('tmptest', err => {
+  describe('create library tree', function(done) {
+
+    it('should create a library tree', function(done) {
+
+      let libraryUUID = UUID.v4()
+      let libraryPath = path.join(cwd, `tmptest/${libraryUUID}`)
+
+      rimraf('tmptest', err => {
+        if (err) return done(err)
+        mkdirp(`tmptest/${libraryUUID}`, err => {
           if (err) return done(err)
-          mkdirp('tmptest', err => {
+          
+          let preset = {
+            uuid: UUID.v4(),
+            owner: [UUID.v4()],
+            writelist: [UUID.v4()],
+            readlist: [UUID.v4()],
+            hash: null,
+            htime: -1
+          }
+
+          xattr.set(libraryPath, 'user.fruitmix', JSON.stringify(preset), err => {
             if (err) return done(err)
             
-            let preset = {
-              uuid: UUID.v4(),
-              owner: [UUID.v4()],
-              writelist: [UUID.v4()],
-              readlist: [UUID.v4()],
-              hash: null,
-              htime: -1
-            }
-
-            xattr.set(tpath, 'user.fruitmix', JSON.stringify(preset), err => {
+            createProtoMapTree(libraryPath, 'library', (err, tree) => {
               if (err) return done(err)
-              
-              createProtoMapTree(tpath, 'library', (err, tree) => {
 
-                expect(tree.type).to.equal('library')
-                expect(tree.rootpath).to.equal(tpath)
-                expect(tree.proto.tree).to.equal(tree)
-                expect(tree.proto.owner).to.deep.equal(preset.owner)
-                expect(tree.proto.writelist).to.deep.equal([])
-                expect(tree.proto.readlist).to.deep.equal(preset.readlist)
+              expect(tree.type).to.equal('library')
+              expect(tree.uuid).to.equal(libraryUUID)
+              expect(tree.rootpath).to.equal(libraryPath)
 
-                expect(tree.root.owner).to.deep.equal(preset.owner)
-                expect(tree.root.writelist).to.deep.equal([])
-                expect(tree.root.readlist).to.deep.equal(preset.readlist)
+              expect(tree.proto.tree).to.equal(tree)
+              expect(tree.proto.owner).to.deep.equal(preset.owner)
+              expect(tree.proto.writelist).to.deep.equal([])
+              expect(tree.proto.readlist).to.deep.equal(preset.readlist)
 
-                done()
-              }) 
-            })
+              expect(tree.root.owner).to.deep.equal(preset.owner)
+              expect(tree.root.writelist).to.deep.equal([])
+              expect(tree.root.readlist).to.deep.equal(preset.readlist)
+
+              done()
+            }) 
           })
         })
       })
     })
   })
+})
+
+describe('scan', function() {
 
   describe('scan drive', function() {
+
+  // tmptest/${userUUID}/hello
+  //          preset       preset2
      
     let userUUID = UUID.v4()
     let drivepath = path.join(process.cwd(), `tmptest/${userUUID}`)
     let hellopath = path.join(drivepath, 'hello')
 
-    it('should a single folder', function(done) {
+    it('should scan a single folder', function(done) {
 
       let preset = {
         uuid: UUID.v4(),
@@ -188,11 +215,10 @@ describe('protoMapTree', function() {
             if (err) return done(err)
             xattr.set(hellopath, 'user.fruitmix', JSON.stringify(preset2), err => {
               if (err) return done(err) 
-
               createProtoMapTree(drivepath, 'drive', (err, tree) => {
                 if (err) return done(err)
-                scanDriveTree(tree, () => {
-                
+                // scanDriveTree(tree, () => {
+                tree.scan(() => {  
                   let children = tree.root.getChildren() 
                   let child = children[0]
                   expect(children.length).to.equal(1)
@@ -204,13 +230,165 @@ describe('protoMapTree', function() {
                   done()
                 })
               })
-
             })
           })
         })
       })
     })
   })
+
+  describe('scan library', function() {
+
+    // tmptest/${libraryUUID}/hello <- is a file
+  
+    let userUUID = UUID.v4()
+    let libraryUUID = UUID.v4()
+    let libraryPath = path.join(process.cwd(), `tmptest/${libraryUUID}`)
+    let filepath = path.join(libraryPath, 'hello')
+
+    it('should scan a single file in library', function(done) {
+    
+      let preset = {
+        uuid: UUID.v4(), // folder uuid
+        owner: [userUUID],
+        writelist: [],
+        readlist: [],
+        hash: null,
+        htime: -1 
+      }
+
+      let preset2 = {}
+
+      rimraf('tmptest', err => {
+        if (err) return done(err)
+        mkdirp(`tmptest/${libraryUUID}`, err => {
+          if (err) return done(err)
+          xattr.set(libraryPath, 'user.fruitmix', JSON.stringify(preset), err => {
+            if (err) return done(err)
+            fs.writeFile(filepath, 'world', err => {
+              if (err) return done(err) 
+              createProtoMapTree(libraryPath, 'library', (err, tree) => {
+                if (err) return done(err)
+                // scanLibraryTree(tree, () => {
+                tree.scan(() => {
+                  console.log('>>>>')
+                  console.log(tree)
+                  console.log(tree.root)
+
+                  let children = tree.root.getChildren()
+                  let child = children[0]
+
+                  expect(children.length).to.equal(1)
+                  expect(child.type === 'file')
+                  expect(child.name === 'hello')
+                   
+                  done()
+                })
+              }) 
+            }) 
+          })
+        })
+      })
+    })  
+  })
 })
 
+describe('drive file operation', function() {
 
+  describe('import drive file', function() {
+    // tmptest/${userUUID}/ <- target folder
+    // tmptest/hello <- file to be moved
+
+    let userUUID1 = UUID.v4()
+    let drivepath = path.join(process.cwd(), `tmptest/${userUUID1}`)
+    let srcpath = path.join(process.cwd(), 'tmptest', 'hello')
+
+    it('should import a file into given drive folder', function(done) {
+
+      rimraf('tmptest', err => {
+        if (err) return done(err)
+        mkdirp(`tmptest/${userUUID1}`, err => {
+          if (err) return done(err)
+          let preset = {
+            uuid: UUID.v4(),
+            owner: [UUID.v4()],
+            writelist: [UUID.v4()],
+            readlist: [UUID.v4()],
+            hash: null,
+            htime: -1
+          }
+
+          xattr.set(drivepath, 'user.fruitmix', JSON.stringify(preset), err => {
+            if (err) return done(err)
+            fs.writeFile('tmptest/hello', 'world', err => {
+              if (err) return done(err) 
+              createProtoMapTree(drivepath, 'drive', (err, tree) => {
+                if (err) return done(err)
+
+                tree.importFile(srcpath, tree.root, 'hello', (err, node) => {
+                  if (err) return done(err) 
+                  fs.stat(path.join(drivepath, 'hello'), (err, stat) => {
+                    if (err) return done(err)
+
+                    let children = tree.root.children
+                    let child = children[0]
+                    expect(children.length).to.equal(1)
+                    expect(child.type).to.equal('file')
+                    expect(child.name).to.equal('hello')
+                    done()
+                  })
+                })
+              })
+            })
+          })
+        })
+      }) 
+    })
+
+    it('should import a file into drive non-root folder', function(done) {
+
+      rimraf('tmptest', err => {
+        if (err) return done(err)
+        mkdirp(`tmptest/${userUUID1}/world`, err => {
+          if (err) return done(err)
+          let preset = {
+            uuid: UUID.v4(),
+            owner: [UUID.v4()],
+            writelist: [UUID.v4()],
+            readlist: [UUID.v4()],
+            hash: null,
+            htime: -1
+          }
+
+          xattr.set(drivepath, 'user.fruitmix', JSON.stringify(preset), err => {
+            if (err) return done(err)
+            fs.writeFile('tmptest/hello', 'world', err => {
+              if (err) return done(err) 
+              createProtoMapTree(drivepath, 'drive', (err, tree) => {
+                if (err) return done(err)
+                tree.scan(() => {
+
+                  tree.importFile(srcpath, tree.root.children[0], 'hello', (err, node) => {
+                    if (err) return done(err) 
+                    fs.stat(path.join(drivepath, 'world', 'hello'), (err, stat) => {
+                      if (err) return done(err)
+
+                      let children = tree.root.children[0].children
+                      let child = children[0]
+                      expect(children.length).to.equal(1)
+                      expect(child.type).to.equal('file')
+                      expect(child.name).to.equal('hello')
+                      done()
+                    })
+                  })
+                })
+              })
+            })
+          })
+        })
+      }) 
+    })
+
+
+  }) // end of create drive file 
+})

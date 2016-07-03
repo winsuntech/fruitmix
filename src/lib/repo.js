@@ -98,10 +98,10 @@ class Repo {
       readXstat2(dirpath, perm, (err, xstat) => {
         if (err) return callback(err)
 
-        createProtoMapTreeV1(dirpath, 'library', (err, tree) => { 
+        createProtoMapTree(dirpath, 'library', (err, tree) => { 
           if (err) return callback(err)
-
           this.libraries.push(tree)
+          callback(null, tree)
         })
       })
     })

@@ -86,45 +86,24 @@ describe('repo', function() {
         if (err) return done(err)
         mkdirp('tmptest', err => {
           if (err) return done(err)
-
           let repopath = path.join(process.cwd(), 'tmptest')
           createRepo(repopath, (err, repo) => {
-
+            if (err) return done(err)
             repo.createDrive(userUUID1, (err, tree) => {
               if (err) return done(err) 
-
               let dirpath = path.join(repopath, 'drive', userUUID1)
               xattrGetRaw(dirpath, 'user.fruitmix', (err, xattr) => { 
                 if (err) return done(err)
-
                 let folderUUID = xattr.uuid
+                // TODO to much expectations !!!
                 expect(validator.isUUID(folderUUID)).to.be.true
                 expect(xattr.owner).to.deep.equal([userUUID1])
                 expect(xattr.writelist).to.deep.equal([])
                 expect(xattr.readlist).to.deep.equal([])
                 expect(xattr.hash).to.be.null
                 expect(xattr.htime).to.equal(-1)
-
-/**
-ProtoMapTree {
-  root: 
-   { uuid: 'e70553ba-799c-4cef-86e9-0ffeec6076fc',
-     type: 'folder',
-     writelist: [],
-     readlist: [],
-     name: '8ed85af7-c769-4580-a71a-45598fdb5be2' },
-  proto: 
-   { owner: [ '8ed85af7-c769-4580-a71a-45598fdb5be2' ],
-     writelist: null,
-     readlist: null,
-     tree: [Circular] },
-  uuidMap: 
-   Map {
-     _c: Map { 'e70553ba-799c-4cef-86e9-0ffeec6076fc' => [Object] } },
-  hashMap: Map { _c: Map {} },
-  type: 'drive',
-  rootpath: '/home/xenial/Projects/fruitmix/tmptest/drive/8ed85af7-c769-4580-a71a-45598fdb5be2' }
-**/
+                expect(repo.drives.length).to.equal(1)
+                expect(repo.drives[0]).to.equal(tree)
                 expect(tree.type).to.equal('drive')
                 expect(tree.rootpath).to.equal(dirpath)
                 expect(tree.root.name).to.equal(userUUID1)
@@ -140,7 +119,43 @@ ProtoMapTree {
     })
   })
 
+/**
+  describe('create drive file', function() {
 
+    // tmptest/${userUUID}/ <- target folder
+    // tmptest2/hello <- file to be moved
+
+    let userUUID1 = UUID.v4()
+    let drivepath = path.join(process.cwd(), `tmptest/${userUUID1}`)
+    let srcpath = path.join(process.cwd(), 'tmptest', 'hello')
+
+    it('should import a file into given drive folder', function(done) {
+
+      rimraf('tmptest', err => {
+        if (err) return done(err)
+        mkdirp(`tmptest/${userUUID1}`, err => {
+          if (err) return done(err)
+          mkdirp('tmptest2', err => {
+            if (err) return done(err)
+            fs.writeFile('tmptest2/hello', 'world', err => {
+              
+            })
+          })
+
+          let repopath = path.join(process.cwd(), 'tmptest')
+          createRepo(repopath, (err, repo) => {
+            if (err) return done(err)
+            repo.createDrive(userUUID1, (err, tree) => {
+              if (err) return done(err) 
+              done() 
+            })
+          })
+
+
+        })
+      }) 
+    })
+  })  
 
 
 /**

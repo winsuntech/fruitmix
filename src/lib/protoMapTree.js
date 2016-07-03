@@ -1,6 +1,8 @@
 import path from 'path'
+import fs from 'fs'
 
 import deepEqual from 'deep-equal'
+import validator from 'validator'
 
 import { readXstatAnyway, readXstat2 } from './xstat'
 import { mapXstatToObject } from './tools'
@@ -44,6 +46,10 @@ const protoNode = {
   upEach(func) {
     let node = this
     while (node !== null) {
+      if (node.parent === undefined) {
+        console.log(node)
+        console.log(node.tree)
+      }
       func(node)
       node = node.parent
     }
@@ -125,8 +131,6 @@ class ProtoMapTree {
     }
   }
 
-  
-
   createNode(parent, flatObject) {
   
     let node = Object.create(this.proto)
@@ -139,6 +143,7 @@ class ProtoMapTree {
     }
 
     if (parent === null) {
+      node.parent = null // TODO: should have a test case for this !!! this may crash forEach
       this.root = node
     }
     else {
@@ -178,6 +183,10 @@ class ProtoMapTree {
   }
 }
 
+// create proto tree for either drive or library
+// for drive, folder name is considered to be drive uuid
+// for library, folder name is considered to be library uuid
+
 function createProtoMapTreeV1(rootpath, type, callback) {
 
   if (!(typeof rootpath === 'string')) return callback(new Error('rootpath must be a string'))
@@ -186,8 +195,10 @@ function createProtoMapTreeV1(rootpath, type, callback) {
   if (type !== 'drive' && type !== 'library') return callback(new Error('type must be drive or library'))
 
   let split = rootpath.split('/')
-  let name = split.pop()
-  if (!name.length) name = split.pop() // cope with trailing slash
+  let dirname = split.pop()
+  if (!dirname.length) dirname = split.pop() // cope with trailing slash
+
+  if (!validator.isUUID(dirname)) return callback(new Error('folder name must be valid uuid'))
 
   readXstatAnyway(rootpath, (err, xstat) => {
 
@@ -226,8 +237,20 @@ function createProtoMapTreeV1(rootpath, type, callback) {
     let rootObj = mapXstatToObject(xstat)
     let root = tree.createNode(null, rootObj)
 
+    tree.uuid = dirname
     tree.type = type
     tree.rootpath = rootpath
+    
+    switch (type) {
+    case 'drive':
+      Object.assign(tree, driveTreeMethods)
+      break
+    case 'library':
+      Object.assign(tree, libraryTreeMethods)
+      break
+    default:
+      throw new Error('type must be drive or library')
+    }
     
     // proto is different from protoObj passed into tree constructor
     tree.proto.tree = tree
@@ -238,7 +261,8 @@ function createProtoMapTreeV1(rootpath, type, callback) {
 
 const createProtoMapTree = createProtoMapTreeV1
 
-const driveVisitor = (dir, dirContext, entry, callback) => {
+/**
+const driveVisitor2 = (dir, dirContext, entry, callback) => {
 
   let entrypath = path.join(dir, entry)
   readXstat2(entrypath, {
@@ -260,17 +284,109 @@ const driveVisitor = (dir, dirContext, entry, callback) => {
     callback({ tree, node: entryNode })
   })
 }
+**/
 
-function scanDriveTree(driveTree, callback) {
+const driveVisitor = (dir, node, entry, callback) => {
 
-  let rootContext = {
-    tree: driveTree,
-    node: driveTree.root,
+  let entrypath = path.join(dir, entry)
+  readXstat2(entrypath, {
+    owner: node.tree.root.owner
+  }, (err, xstat) => {
+
+    if (err) return callback()
+    if (!xstat.isDirectory() && !xstat.isFile()) return callback()
+
+    let object = mapXstatToObject(xstat)
+    let entryNode = node.tree.createNode(node, object) 
+    if (!xstat.isDirectory()) return callback()  
+    callback(entryNode)
+  })
+}
+
+// never return entryContext
+const libraryVisitor = (dir, node, entry, callback) => {
+
+  let entrypath = path.join(dir, entry)
+  readXstat2(entrypath, {
+    owner: node.tree.root.owner
+  }, (err, xstat) => {
+
+    if (err) return callback()
+    if (!xstat.isFile()) return callback()
+
+    xstat.owner = node.tree.root.owner
+    xstat.writelist = null
+    xstat.readlist = null
+
+    let object = mapXstatToObject(xstat)
+    let entryNode = node.tree.createNode(node.tree.root, object) 
+    return callback()
+  })
+}
+
+/** deprecated
+function scanLibraryTree(libraryTree, callback) {
+
+  visit(libraryTree.rootpath, libraryTree.root, libraryVisitor, () => callback())
+}
+**/
+
+const driveTreeMethods = {
+
+  abspath: function(node) {
+
+    let nodepath = node.nodepath().map(n => n.name)
+    let prepend = path.resolve(this.rootpath, '..')
+    nodepath.unshift(prepend)
+    return path.join(...nodepath)
+  },
+
+  scan: function(callback) {
+    visit(this.rootpath, this.root, driveVisitor, () => callback())    
+  },
+
+  importFile: function (srcpath, targetNode, filename, callback) {
+
+    let targetpath = path.join(this.abspath(targetNode), filename) 
+
+    fs.rename(srcpath, targetpath, err => {
+      if (err) return callback(err)
+      readXstat2(targetpath, { owner: targetNode.tree.root.owner }, (err, xstat) => {
+        if (err) return callback(err) // FIXME should fake xstat
+        let obj = mapXstatToObject(xstat)
+        let node = targetNode.tree.createNode(targetNode, obj)
+        callback(null, node) 
+      })
+    })
+  },
+
+  createFolder: function (targetNode, folderName, callback) {
+    
+    let nodepath = targetNode.nodepaht().map(n => n.name)
+    let prepend = path.resolve(targetNode.tree.rootpath, '..')
+    nodepath.unshift(prepend)
+    nodepath.push(folderName)
+    let targetpath = path.join(...nodepath)
+
+    fs.mkdir(targetpath, err => {
+      if (err) return callback(err)
+      readXstat2(targetpath, { owner: targetNode.tree.root.owner }, (err, xstat) => {
+        if (err) return callback(err) // FIXME 
+        let obj = mapXstatToObject(xstat)
+        let node = targetNode.tree.createNode(targetNode, obj)
+        callback(null, node)
+      })
+    })
   }
+}
 
-  visit(driveTree.rootpath, rootContext, driveVisitor, () => callback())
+const libraryTreeMethods = {
+
+  scan: function(callback) {
+    visit(this.rootpath, this.root, libraryVisitor, () => callback())
+  }
 }
 
 
-export { protoNode, ProtoMapTree, createProtoMapTree, scanDriveTree } 
+export { protoNode, ProtoMapTree, createProtoMapTree, scanLibraryTree } 
 
