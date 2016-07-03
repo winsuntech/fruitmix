@@ -1,3 +1,10 @@
+import path from 'path'
+
+import deepEqual from 'deep-equal'
+
+import { readXstatAnyway, readXstat2 } from './xstat'
+import { mapXstatToObject } from './tools'
+import { visit } from './visitors'
 
 const protoNode = {
 
@@ -118,17 +125,20 @@ class ProtoMapTree {
     }
   }
 
+  
+
   createNode(parent, flatObject) {
   
     let node = Object.create(this.proto)
     for (let prop in flatObject) {
-      if (flatObject.hasOwnProperty(prop) && flatObject[prop] !== this.proto[prop]) { // FIXME 
+      if (flatObject.hasOwnProperty(prop) && 
+          !deepEqual(flatObject[prop], this.proto[prop])) {
+
         node[prop] = flatObject[prop]
       }
     }
 
     if (parent === null) {
-      // this.root = Object.assign(Object.create(this.proto), flatObject)
       this.root = node
     }
     else {
@@ -168,5 +178,99 @@ class ProtoMapTree {
   }
 }
 
-export { protoNode, ProtoMapTree } 
+function createProtoMapTreeV1(rootpath, type, callback) {
+
+  if (!(typeof rootpath === 'string')) return callback(new Error('rootpath must be a string'))
+  if (!rootpath.startsWith('/')) return callback(new Error('rootpath must be absolute path'))
+  if (rootpath === '/') return callback(new Error('/ can\'t be rootpath'))
+  if (type !== 'drive' && type !== 'library') return callback(new Error('type must be drive or library'))
+
+  let split = rootpath.split('/')
+  let name = split.pop()
+  if (!name.length) name = split.pop() // cope with trailing slash
+
+  readXstatAnyway(rootpath, (err, xstat) => {
+
+    if (err) return callback(err)
+    if (!xstat.isDirectory()) 
+      return callback(new Error('rootpath must be a directory')) 
+
+    if (!xstat.uuid)
+      return callback(new Error('drive root must have a uuid'))
+
+    if (!xstat.owner || xstat.owner.length === 0) 
+      return callback(new Error('drive root must have owner')) 
+
+    let proto = {}
+    proto.owner = xstat.owner
+
+    switch (type) {
+    case 'drive':
+      proto.writelist = null
+      proto.readlist = null
+      if (xstat.writelist === null) xstat.writelist = []
+      if (xstat.readlist === null) xstat.readlist = []
+      break
+
+    case 'library':
+      proto.writelist = []
+      proto.readlist = xstat.readlist
+      xstat.writelist = proto.writelist
+      xstat.readlist = proto.readlist
+      break
+    default:
+      throw new Error('type must be drive or library')
+    }
+
+    let tree = new ProtoMapTree(proto)
+    let rootObj = mapXstatToObject(xstat)
+    let root = tree.createNode(null, rootObj)
+
+    tree.type = type
+    tree.rootpath = rootpath
+    
+    // proto is different from protoObj passed into tree constructor
+    tree.proto.tree = tree
+
+    callback(null, tree)
+  })
+}
+
+const createProtoMapTree = createProtoMapTreeV1
+
+const driveVisitor = (dir, dirContext, entry, callback) => {
+
+  let entrypath = path.join(dir, entry)
+  readXstat2(entrypath, {
+    owner: dirContext.tree.root.owner
+  }, (err, xstat) => {
+
+    if (err) return callback()
+    if (!xstat.isDirectory() && !xstat.isFile()) return callback()
+
+    let { tree, node, owner } = dirContext
+    let object = mapXstatToObject(xstat)
+
+    // createNode do no check
+    let entryNode = tree.createNode(node, object) 
+
+    if (!xstat.isDirectory()) return callback()  
+
+    // now it's directory
+    callback({ tree, node: entryNode })
+  })
+}
+
+function scanDriveTree(driveTree, callback) {
+
+  let rootContext = {
+    tree: driveTree,
+    node: driveTree.root,
+  }
+
+  visit(driveTree.rootpath, rootContext, driveVisitor, () => callback())
+}
+
+
+export { protoNode, ProtoMapTree, createProtoMapTree, scanDriveTree } 
 

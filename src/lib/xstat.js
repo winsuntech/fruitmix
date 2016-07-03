@@ -108,103 +108,6 @@ async function xattrGetOrDefault(path, attr, defVal) {
   return parsed
 }
 
-//
-// opts
-//
-// forceOwner: if exists, overwrite existing
-// defaultOwner: 
-// forcePermission: 
-// defaultPermission:
-
-// this function returns extended stats, 
-// i.e, merged stats and extended attributes, with hash timestamp verified
-
-/**
-async function readXstatAsync(path, opts) {
-
-  let props = {
-    uuid: UUID.v4(),
-    owner: null,
-    writelist: null,
-    readlist: null,
-    hash: null,
-    htime: -1 // epoch time value, i.e. Date object.getTime()
-  }
-
-  let stats = await fsStatAsync(path)
-  if (stats instanceof Error) return stats
-
-  let attr = await xattrGetAsync(path, 'user.fruitmix')
-  if (attr instanceof Error && attr.code !== 'ENODATA') return attr
-
-  if (attr instanceof Error) { // ENODATA
-
-    if (opts) {
-      if (opts.forceOwner) props.owner = opts.forceOwner
-      else if (opts.owner) props.owner = opts.owner
-
-      if (opts.forceWritelist) props.writelist = opts.forceWritelist
-      else if (opts.writelist) props.writelist = opts.writelist
-
-      if (opts.forceReadlist) props.readlist = opts.forceReadlist
-      else if (opts.readlist) props.readlist = opts.readlist
-    }   
-
-    await xattrSetAsync(path, 'user.fruitmix', JSON.stringify(props)) 
-    return Object.assign(stats, props, { abspath: path})
-  }
-
-  // DANGER! FIXME
-  attr = parseJSON(attr)
-
-  if (opts && opts.forceOwner) props.owner = opts.forceOwner
-  else if (opts && opts.owner && !attr.owner) props.owner = opts.owner
-  else if (attr.owner) props.owner = attr.owner
-
-  if (opts && opts.forceWritelist) props.writelist = opts.writelist
-  else if (opts && opts.writelist && !attr.writelist) props.writelist = opts.writelist
-  else if (attr.writelist) props.writelist = attr.writelist
-
-  if (opts && opts.forceReadlist) props.readlist = opts.readlist
-  else if (opts && opts.readlist && !attr.readlist) props.readlist= opts.readlist
-  else if (attr.readlist) props.readlist = attr.readlist
-
-  props.uuid = attr.uuid
-
-  if (attr.htime === stats.mtime.getTime()) {
-    props.hash = attr.hash
-    props.htime = attr.htime
-  }
-
-  if (!shallowequal(props, attr)) {
-    await xattrSetAsync(path, 'user.fruitmix', JSON.stringify(props))
-  } 
-
-  return Object.assign(stats, props, { abspath: path })
-
-//  let defVal = defaultXattrVal()
-//
-//  let stats = await fsStatAsync(path)
-//  if (stats instanceof Error) return stats
-//
-//  let attr = await xattrGetOrDefault(path, 'user.fruitmix', defVal)
-//  if (attr instanceof Error) return attr
-//
-//  // verify hash timestamp
-//  if (attr.htime !== stats.mtime.getTime()) {
-//     attr.hash = null 
-//  } 
-//
-//  // remove htime
-//  delete attr.htime
-//
-//  return Object.assign(stats, attr, {
-//    abspath: path
-//  })
-}
-
-**/
-
 async function readXstatAsync(path, opts) {
 
   return new Promise(resolve => {
@@ -213,12 +116,13 @@ async function readXstatAsync(path, opts) {
   })
 }
 
-function validateRWList(list) {
+function validateUUID(uuid) {
 
-  if (list === null) return true
-  if (!Array.isArray(list)) return false
-  if (list.length === 0) return true
-  return list.every(l => typeof l === 'string' && validator.isUUID(l))
+  if (!uuid) return false
+  if (!(typeof uuid === 'string')) return false
+  if (!validator.isUUID(uuid)) return false
+
+  return true
 }
 
 function validateOwner(owner) {
@@ -228,6 +132,14 @@ function validateOwner(owner) {
   if (typeof owner[0] !== 'string') return false
   if (!validator.isUUID(owner[0])) return false
   return true
+}
+
+function validateRWList(list) {
+
+  if (list === null) return true
+  if (!Array.isArray(list)) return false
+  if (list.length === 0) return true
+  return list.every(l => typeof l === 'string' && validator.isUUID(l))
 }
 
 function validateHash(hash) {
@@ -240,9 +152,7 @@ function validateHash(hash) {
 
 function validateXattr(attr) {
 
-  if (!attr.uuid) return false
-  if (!(typeof attr.uuid === 'string')) return false
-  if (!validator.isUUID(attr.uuid)) return false
+  if (!validateUUID(attr.uuid)) return false
 
   if (!attr.owner || !validateOwner(attr.owner)) return false
   if (!attr.writelist || !validateRWList(attr.writelist)) return false
@@ -254,35 +164,23 @@ function validateXattr(attr) {
   return true 
 }
 
-
 function filterUUIDList(list) {
   return list.filter(u => typeof u === 'string' && validator.isUUID(u))
 }
 
-function fixBadXattr(attr, owner) {
+// format means each field is either valid, or null, but no other things
+function formatXattr(attr) {
 
-  if (!owner) throw new Error('owner must be provided for fixBadXattr')
+  if (!validateUUID(attr.uuid)) attr.uuid = null
 
-  if (!attr.uuid) return null
-  if (!(typeof attr.uuid === 'string')) return null
-  if (!validator.isUUID(attr.uuid)) return null
+  if (!attr.owner || !Array.isArray(attr.owner)) attr.owner = null
+  else attr.owner = filterUUIDList(attr.owner)
 
-  if (!attr.owner || !Array.isArray(owner))
-    attr.owner = owner
-  else {
-    attr.owner = filterUUIDList(attr.owner)
-    if (attr.owner.length === 0) attr.owner = owner
-  }
+  if (!attr.writelist || !Array.isArray(attr.writelist)) attr.writelist = null
+  else attr.writelist = filterUUIDList(attr.writelist)
 
-  if (!attr.writelist || !Array.isArray(attr.writelist)) 
-    attr.writelist = null
-  else  
-    attr.writelist = filterUUIDList(attr.writelist)
-
-  if (!attr.readlist || !Array.isArray(attr.readlist))
-    attr.readlist = null
-  else
-    attr.readlist = filterUUIDList(attr.readlist)
+  if (!attr.readlist || !Array.isArray(attr.readlist)) attr.readlist = null
+  else attr.readlist = filterUUIDList(attr.readlist)
 
   if (attr.writelist || attr.readlist) {
     if (attr.writelist === null) attr.writelist = []
@@ -291,40 +189,37 @@ function fixBadXattr(attr, owner) {
 
   if (!validateHash(attr.hash) || !(typeof attr.htime === 'number')) {
     attr.hash = null
-    attr.htime = -1 
+    attr.htime = -1
   }
 
   return attr
 }
 
-function newXattr(owner, writelist, readlist) {
+function fixBadXattr(attr, owner) {
 
-  if (!validateRWList(writelist)) throw new Error('writelist invalid')
-  if (!validateRWList(readlist)) throw new Error('readlist invalid')
-  if (!validateOwner(owner)) throw new Error('owner invalid') 
+  if (!owner) throw new Error('owner must be provided for fixBadXattr')
 
-  if (writelist || readlist) {
-    if (writelist === null) writelist = []
-    if (readlist === null) readlist = []
-  }
+  attr = formatXattr(attr)
+  if (!attr.uuid) return null
 
-  return {
-    uuid: UUID.v4(),
-    owner: owner,
-    writelist: writelist,
-    readlist: readlist,
-    hash: null,
-    htime: -1
-  }
+  if (!attr.owner) attr.owner = owner
+  else if (attr.owner.length === 0) attr.owner = owner
+
+  return attr
 }
 
+function readXstatAnyway(path, callback) {
 
-function readXattr(path, callback) {
+  fs.stat(path, (err, stats) => {
+    if (err) return callback(err)
+    xattr.get(path, 'user.fruitmix', (err, attr) => {
+      if (err && err.code === 'ENODATA') return callback(null, null)
+      else if (err) return callback(err)
 
-  xattr.get(path, 'user.fruitmix', (err, attr) => {
-    if (err && err.code === 'ENODATA') return callback(null, null)
-    else if (err) return callback(err)
-    else callback(null, parseJSON(attr))
+      let parsed = parseJSON(attr)
+      if (!parsed) return callback(null, null)
+      callback(null, Object.assign(stats, formatXattr(parsed), { abspath: path }))
+    })
   })
 }
 
@@ -470,15 +365,6 @@ function readXstat(path, opts, callback) {
   })
 }
 
-/**
-function readXstat(path, callback) {
-
-  readXstatAsync(path)
-    .then(r => (r instanceof Error) ? callback(r) : callback(null, r))
-    .catch(e => callback(e))
-}
-**/
-
 async function updateXattrPermissionAsync(path, permission) {
   
   let defVal = defaultXattrVal()
@@ -529,9 +415,9 @@ let testing = {
 
 export { 
   readTimeStampAsync,
-  readXattr,
   readXstat,
   readXstat2,
+  readXstatAnyway,
   readXstatAsync,
   updateXattrPermissionAsync,
   updateXattrHashAsync,

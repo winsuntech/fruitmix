@@ -6,17 +6,43 @@ import { fsStatAsync, fsMkdirAsync, mapXstatToObject } from './tools'
 
 class Repo {
 
-  constructor(rootpath, tree) {
+  constructor(rootpath) {
 
     this.rootpath = rootpath
-    this.tree = tree
     this.prepend = path.resolve(rootpath, '..')
-    this.driveDirNode = tree.root.children.find(node => node.attribute.name === 'drive')
-    if (!this.driveDirNode) throw new Error('tree root has no drive dir node')
 
-    this.libraryDirNode = tree.root.children.find(node => node.attribute.name === 'library')
-    if (!this.libraryDirNode) throw new Error('tree root has no library dir node')
+    this.driveDirPath = path.join(rootpath, 'drive')
+    this.libraryDirPath = path.join(rootpath, 'library')
+
+    this.drives = []
+    this.libraries = []
   }
+
+  scanDrive(driveTree, callback) {
+
+ 
+  }
+
+  async scanDriveAsync() {
+    
+    mkdirpAsync(this.driveDirPath)
+
+    let entries = fsReaddirAsync(this.driveDirPath)
+    if (entries instanceof Error) return entries
+
+    // only uuid
+    entries = entries.filter(ent => validator.isUUID(ent))    
+
+    // let tree = createProtoMapTree(
+  }
+
+  scan(callback) {
+    // traverse and build 
+
+    
+  }
+
+
 
   abspath(node) {
     let arr = node.nodepath().map(n => n.attribute.name)
@@ -30,62 +56,62 @@ class Repo {
     return this.abspath(node) 
   }
 
-  /** create drive **/
-  async createDriveAsync(userUUID)  { 
-
-    let dirpath = path.join(this.abspath(this.driveDirNode), userUUID)
-    let err =  await fsMkdirAsync(dirpath)
-    if (err instanceof Error) return err
-
-    let xstat = await readXstatAsync(dirpath, {
-      forceOwner: [userUUID],
-      forceWritelist: [],
-      forceReadlist: []
-    })   
-    
-    if (xstat instanceof Error) {
-      await rimrafAsync(dirpath)
-      return xstat
-    }
-
-    let node = this.tree.createNode(this.driveDirNode, mapXstatToObject(xstat))
-    if (node instanceof Error) {
-      await rimrafAsync(dirpath)
-    }
-    return node 
-  }
-
   createDrive(userUUID, callback) {
-    this.createDriveAsync(userUUID)
-      .then(r => (r instanceof Error) ? callback(r) : callback(null, r)) 
-      .catch(e => callback(e))      
-  } 
+  
+    let dirpath = path.join(this.driveDirPath, userUUID)
+    fs.mkdir(dirpath, err => {
 
-  /** create library **/
-  async createLibraryAsync(userUUID, libraryUUID) {
+      if (err) return callback(err)
+      let perm = {
+        owner: [userUUID],
+        writelist: [],
+        readlist: []
+      }
 
-    let dirpath = path.join(this.abspath(this.libraryDirNode), libraryUUID)
-    let err = await fsMkdirAsync(dirpath)
-    if (err instanceof Error) return err
-    
-    let xstat = await readXstatAsync(dirpath, {
-      forceOwner: [userUUID],
-      forceWritelist: [],
-      forceReadlist: []
+      readXstat2(dirpath, perm, (err, xstat) => {
+        if (err) return callback(err)
+
+        createProtoMapTreeV1(dirpath, 'drive', (err, tree) => {
+          if (err) return callback(err)
+
+          this.drives.push(tree)          
+        }) 
+      })
     })
-  }
-    
+  } 
+   
   createLibrary(userUUID, libraryUUID, callback) {
-    this.createLibraryAsync(userUUID, libraryUUID) 
-      .then(r => callback(r)) // OK? TODO
-      .catch(e => callback(e))
+    
+    let dirpath = path.join(this.libraryDirPath, libraryUUID)
+    fs.mkdir(dirpath, err => {
+      if (err) return callback(err)
+
+      let perm = {
+        owner: [userUUID],
+        writelist: [],
+        readlist: []
+      }
+
+      readXstat2(dirpath, perm, (err, xstat) => {
+        if (err) return callback(err)
+
+        createProtoMapTreeV1(dirpath, 'library', (err, tree) => { 
+          if (err) return callback(err)
+
+          this.libraries.push(tree)
+        })
+      })
+    })
   }
 
   // import, actually
   createDriveFile(userUUID, extpath, targetDirUUID, filename) {
-    // check this is a file
-    // mv file, system api rename
-    //
+
+    let node = this.drives.find(drv => {
+      drv.tree.uuidMap.get(targetDirUUID)
+    }) 
+
+    
   }
 
   createDriveFolder(userUUID, folderName, targetDirUUID) {
@@ -134,4 +160,9 @@ class Repo {
   }
 }
 
-export default Repo
+function createRepo(rootpath) {
+  
+  return new Repo(rootpath)
+}
+
+export { createRepo }

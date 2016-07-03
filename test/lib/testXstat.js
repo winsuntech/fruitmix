@@ -10,8 +10,8 @@ import validator from 'validator'
 
 import {
   readTimeStampAsync,
-  readXattr,
   readXstat2,
+  readXstatAnyway,
   readXstatAsync,
   updateXattrPermissionAsync,
   updateXattrHashAsync,
@@ -41,7 +41,7 @@ const defaultXattr = {
   htime: -1
 }
 
-describe('xattr', function() {
+describe('xstat1', function() {
 
   let cwd = process.cwd()
   let fpath = path.join(cwd, 'tmptest')
@@ -52,7 +52,7 @@ describe('xattr', function() {
       mkdirp('tmptest', err => {
         if (err) return done(err)
 
-        readXattr(fpath, (err, attr) => {
+        readXstatAnyway(fpath, (err, attr) => {
           if (err) return done(err)
           expect(attr).to.be.null
           done()
@@ -68,7 +68,7 @@ describe('xattr', function() {
         if (err) return done(err)
         xattr.set(fpath, 'user.fruitmix', 'hello', err => {
           if (err) return done(err)
-          readXattr(fpath, (err, attr) => {
+          readXstatAnyway(fpath, (err, attr) => {
             if (err) return done(err)
             expect(attr).to.be.null
             done()
@@ -89,11 +89,13 @@ describe('xattr', function() {
         }), err => {
           if (err) return done(err)
 
-          readXattr(fpath, (err, attr) => {
+          readXstatAnyway(fpath, (err, attr) => {
             if (err) return done(err)
             
             expect(attr.x).to.equal('hello')
             expect(attr.y).to.equal('world')
+            expect(attr.isDirectory()).to.be.true
+            expect(attr.abspath).to.equal(fpath)
             done()
           })
         })

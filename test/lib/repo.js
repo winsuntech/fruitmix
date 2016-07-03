@@ -1,5 +1,8 @@
 import path from 'path'
 
+import rimraf from 'rimraf'
+import mkdirp from 'mkdirp'
+import xattr from 'fs-xattr'
 import { expect } from 'chai'
 import validator from 'validator'
 import UUID from 'node-uuid'
@@ -7,45 +10,79 @@ import UUID from 'node-uuid'
 import { testing as xstatTesting } from '../../src/lib/xstat'
 import { rimrafAsync, mkdirpAsync, fsReaddirAsync, fsStatAsync } from '../../src/lib/tools'
 import { buildTreeAsync } from '../../src/lib/buildTree'
-import Repo from '../../src/lib/repo'
+import { createRepo } from '../../src/lib/repo'
 
 const { xattrGetRaw } = xstatTesting
 
-describe('test repo', function() {
+describe('repo', function() {
 
-  describe('create drive', function() {
+  describe('create repo', function() {
 
-    let root = path.join(process.cwd(), 'tmptest') 
-    let userUUID1 = UUID.v4()
-    let userUUID2 = UUID.v4()
-    let repo
-
-    async function setup(root) {
-
-      let r
-      r = await rimrafAsync('tmptest')
-      if (r instanceof Error) return r
+    let rootpath = path.join(process.cwd(), 'tmptest') 
+    it('should create a new repo for given folder', function(done) {
       
-      r = await mkdirpAsync('tmptest')
-      if (r instanceof Error) return r
-
-      r = await mkdirpAsync(`tmptest/drive/${userUUID2}`)
-      if (r instanceof Error) return r
-
-      return await buildTreeAsync(path.join(root))
-    }
-
-    before(function(done) {
-      setup(root)
-        .then(tree => {
-          if (tree instanceof Error) return done(r)
-          repo = new Repo(root, tree)
+      rimraf('tmptest', err => {
+        if (err) return done(err)
+        mkdirp('tmptest', err => {
+          if (err) return done(err)
+          
+          let repo = createRepo(rootpath)
+          expect(repo.rootpath).to.equal(rootpath)
+          expect(repo.drives).to.deep.equal([])
+          expect(repo.libraries).to.deep.equal([])
           done()
-        }) 
-        .catch(e => done(e))
-    })   
- 
+        })
+      }) 
+    })
+  })
+
+  describe('repo scan', function() {
+
+    let rootpath = path.join(process.cwd(), 'tmptest')
+    it('should scan uuid folders in drive and library folder', function(done) {
+
+      let userUUID = UUID.v4()
+      let dpath = path.join(rootpath, 'drive', userUUID)
+      let preset = {
+        uuid: UUID.v4(),
+        owner: [userUUID],
+        writelist: [],
+        readlist: [],
+        hash: null,
+        htime: -1
+      }
+
+      rimraf('tmptest', err => {
+        if (err) return done(err)
+        mkdirp(dpath, err => {
+          if (err) return done(err)
+          xattr.set(dpath, 'user.fruitmix', JSON.stringify(preset), err => {
+            if (err) return done(err)
+
+            let repo = createRepo(rootpath)
+            repo.scan()
+            
+            expect(repo.rootpath).to.equal(rootpath)
+            expect(repo.drives.length).to.equal(1)
+            done()
+          })
+        })
+      })
+    }) 
+  })
+   /** 
     it('should create new folder, with proper xattr, as well as tree node,  if not existing', function(done) {  
+
+      rimraf('tmptest', err => {
+        if (err) wrn done(err)
+        mkdirp('tmptest', err => {
+          if (err) return done(err)
+
+          
+        })
+      })  
+
+
       repo.createDrive(userUUID1, (err, newNode) => {
         if (err) return done(err) 
 

@@ -43,15 +43,17 @@ describe('lib/tool functions', function() {
       expect(result.uuid).to.equal(xstat.uuid)
       expect(result.type).to.equal('folder')
 
-      expect(result.permission.owner).to.equal(xstat.owner[0])
-      xstat.writelist.forEach(w => expect(result.permission.writelist).to.include(w))
-      xstat.readlist.forEach(r => expect(result.permission.readlist).to.include(r))
+      expect(result.owner).to.deep.equal(xstat.owner)
+      xstat.writelist.forEach(w => expect(result.writelist).to.include(w))
+      xstat.readlist.forEach(r => expect(result.readlist).to.include(r))
 
-      expect(result.attribute.name).to.equal('tmptest')
-      expect(result.attribute.changetime.getTime()).to.equal(xstat.ctime.getTime())
-      expect(result.attribute.modifytime.getTime()).to.equal(xstat.mtime.getTime())      
-      expect(result.attribute.createtime.getTime()).to.equal(xstat.birthtime.getTime())
-      expect(result.attribute.size).to.equal(xstat.size)
+//      expect(result.attribute.name).to.equal('tmptest')
+      expect(result.name).to.equal('tmptest')
+//      expect(result.attribute.changetime.getTime()).to.equal(xstat.ctime.getTime())
+//      expect(result.attribute.modifytime.getTime()).to.equal(xstat.mtime.getTime())      
+//      expect(result.attribute.createtime.getTime()).to.equal(xstat.birthtime.getTime())
+//      expect(result.attribute.size).to.equal(xstat.size)
+      expect(result.size).to.be.undefined
       expect(result.hash).to.equal(xstat.hash)
 
       done()
@@ -69,15 +71,18 @@ describe('lib/tool functions', function() {
       expect(result.uuid).to.equal(xstat.uuid)
       expect(result.type).to.equal('file')
 
-      expect(result.permission.owner).to.equal(xstat.owner[0])
-      xstat.writelist.forEach(w => expect(result.permission.writelist).to.include(w))
-      xstat.readlist.forEach(r => expect(result.permission.readlist).to.include(r))
+      expect(result.owner).to.deep.equal(xstat.owner)
+      xstat.writelist.forEach(w => expect(result.writelist).to.include(w))
+      xstat.readlist.forEach(r => expect(result.readlist).to.include(r))
 
-      expect(result.attribute.name).to.equal('tmptest')
-      expect(result.attribute.changetime.getTime()).to.equal(xstat.ctime.getTime())
-      expect(result.attribute.modifytime.getTime()).to.equal(xstat.mtime.getTime())      
-      expect(result.attribute.createtime.getTime()).to.equal(xstat.birthtime.getTime())
-      expect(result.attribute.size).to.equal(xstat.size)
+//      expect(result.attribute.name).to.equal('tmptest')
+      expect(result.name).to.equal('tmptest')
+
+//      expect(result.attribute.changetime.getTime()).to.equal(xstat.ctime.getTime())
+//      expect(result.attribute.modifytime.getTime()).to.equal(xstat.mtime.getTime())      
+//      expect(result.attribute.createtime.getTime()).to.equal(xstat.birthtime.getTime())
+//      expect(result.attribute.size).to.equal(xstat.size)
+      expect(result.size).to.equal(xstat.size)
       expect(result.hash).to.equal(xstat.hash)
    
       done() 

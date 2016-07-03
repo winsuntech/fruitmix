@@ -65,14 +65,13 @@ export const mapXstatToObject = (xstat) => {
   else if (xstat.isFile()) type = 'file'
   else throw new Error('Only xstat with type of folder or file can be mapped')
 
-  return {
+  let obj = {
     uuid: xstat.uuid,
     type: type,
-    permission: {
-      owner: xstat.owner ? xstat.owner[0] : null,
-      writelist: xstat.writelist,
-      readlist: xstat.readlist,
-    },
+    owner: xstat.owner,
+    writelist: xstat.writelist,
+    readlist: xstat.readlist,
+/**
     attribute: {
       changetime: xstat.ctime,
       modifytime: xstat.mtime,
@@ -80,10 +79,13 @@ export const mapXstatToObject = (xstat) => {
       size: xstat.size,
       name: name,     
     },
+**/
+    name: name,
     hash: xstat.hash,
-//    path: null, // TODO to be removed
-//    detail: null, // TODO to be removed 
   }
+
+  if (obj.type === 'file') obj.size = xstat.size
+  return obj
 }
 
 
