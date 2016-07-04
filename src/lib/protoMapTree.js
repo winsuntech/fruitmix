@@ -84,6 +84,11 @@ const protoNode = {
   preVisitEol(func) {
     if (func(this) && this.children)
       this.children.forEach(child => child.preVisitEol(func))  
+  },
+
+  preVisitFind(func) {
+    if (func(this)) return this
+    return this.children.find(child => child.preVisitFind(func))
   }
 }
 
@@ -312,7 +317,7 @@ const driveTreeMethods = {
     visit(this.rootpath, this.root, driveVisitor, () => callback())    
   },
 
-  importFile: function (srcpath, targetNode, filename, callback) {
+  importFile: function(srcpath, targetNode, filename, callback) {
 
     let targetpath = path.join(this.abspath(targetNode), filename) 
 
@@ -327,7 +332,7 @@ const driveTreeMethods = {
     })
   },
 
-  createFolder: function (targetNode, folderName, callback) {
+  createFolder: function(targetNode, folderName, callback) {
     
     let nodepath = targetNode.nodepaht().map(n => n.name)
     let prepend = path.resolve(targetNode.tree.rootpath, '..')
@@ -344,6 +349,9 @@ const driveTreeMethods = {
         callback(null, node)
       })
     })
+  },
+
+  renameFileOrFolder: function(node, newName, callback) {
   }
 }
 

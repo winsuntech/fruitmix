@@ -26,6 +26,20 @@ class Repo {
     return path.join(this.rootpath, 'library')
   }
 
+  findNodeInDriveByUUID(uuid) {
+    for (let i = 0; i < drives.length; i++) {
+      let x = drives[i].uuidMap.get(uuid)
+      if (x) return x
+    }
+  }
+
+  findNodeInLibraryByUUID(uuid) {
+    for (let i = 0; i < libraries.length; i++) {
+      let x = libraries[i].uuidMap.get(uuid)
+      if (x) return x
+    }
+  }
+
   scanDrives(callback) {
     fs.readdir(this.driveDirPath(), (err, entries) => {
       if (err) callback(err)
@@ -60,18 +74,6 @@ class Repo {
     this.scanLibraries(() => !--count && callback())
   }
 
-  abspath(node) {
-    let arr = node.nodepath().map(n => n.attribute.name)
-    arr.unshift(this.prepend) // unshift returns array length, can't be chained
-    return path.join(...arr)
-  } 
-
-  abspathUUID(uuid) {
-    let node = this.tree.uuidMap.get(uuid)
-    if (!node) return null
-    return this.abspath(node) 
-  }
-
   createDrive(userUUID, callback) {
   
     let dirpath = path.join(this.driveDirPath(), userUUID)
@@ -98,7 +100,7 @@ class Repo {
    
   createLibrary(userUUID, libraryUUID, callback) {
     
-    let dirpath = path.join(this.libraryDirPath, libraryUUID)
+    let dirpath = path.join(this.libraryDirPath(), libraryUUID)
     fs.mkdir(dirpath, err => {
       if (err) return callback(err)
 
@@ -121,13 +123,14 @@ class Repo {
   }
 
   // import, actually
-  createDriveFile(userUUID, extpath, targetDirUUID, filename) {
+  createDriveFile(userUUID, srcpath, targetDirUUID, filename, callback) {
 
-    let node = this.drives.find(drv => {
-      drv.tree.uuidMap.get(targetDirUUID)
-    }) 
+    let node = findNodeInDriveByUUID(uuid)
+    if (!node) return callback(new Error('uuid not found')) 
 
-    
+    node.tree.importFile(srcpath, node, filename, (err, node) => {
+      err ? callback(err) : callback(null, node)
+    })
   }
 
   createDriveFolder(userUUID, folderName, targetDirUUID) {
@@ -144,6 +147,10 @@ class Repo {
 
   renameDriveFileOrFilder(uuid, newName) {
 
+    let node = findNodeInDriveByUUID(uuid)
+    if (!node) return callback(new Error('uuid not found'))
+
+    // TODO
   } 
 
   // overwrite
@@ -156,6 +163,7 @@ class Repo {
     
   }
 
+  // deprecated
   printTree(keys) {
 
     let queue = []

@@ -1,4 +1,5 @@
 import path from 'path'
+import fs from 'fs'
 
 import rimraf from 'rimraf'
 import mkdirp from 'mkdirp'
@@ -116,127 +117,70 @@ describe('repo', function() {
     })
   })
 
-/**
-  describe('create drive file', function() {
 
-    // tmptest/${userUUID}/ <- target folder
-    // tmptest2/hello <- file to be moved
+/** TODO
+
+    it('shold NOT create new folder if already existing', function(done) {
+      repo.createDrive(userUUID2, (err, result) => {
+        expect(err).to.be.an('error')
+        expect(err.code).to.equal('EEXIST')
+        done()
+      })
+    })
+
+**/
+
+  describe('create library', function() {
 
     let userUUID1 = UUID.v4()
-    let drivepath = path.join(process.cwd(), `tmptest/${userUUID1}`)
-    let srcpath = path.join(process.cwd(), 'tmptest', 'hello')
-
-    it('should import a file into given drive folder', function(done) {
+    let libraryUUID = UUID.v4()
+ 
+    it('should create library folder, with proper name and xattr, as well as tree', function(done) {  
 
       rimraf('tmptest', err => {
         if (err) return done(err)
-        mkdirp(`tmptest/${userUUID1}`, err => {
+        mkdirp('tmptest', err => {
           if (err) return done(err)
-          mkdirp('tmptest2', err => {
-            if (err) return done(err)
-            fs.writeFile('tmptest2/hello', 'world', err => {
-              
-            })
-          })
-
           let repopath = path.join(process.cwd(), 'tmptest')
           createRepo(repopath, (err, repo) => {
             if (err) return done(err)
-            repo.createDrive(userUUID1, (err, tree) => {
+
+            repo.createLibrary(userUUID1, libraryUUID, (err, tree) => {
               if (err) return done(err) 
-              done() 
+              let dirpath = path.join(repopath, 'library', libraryUUID)
+
+              xattrGetRaw(dirpath, 'user.fruitmix', (err, xattr) => { 
+                if (err) return done(err)
+
+                let folderUUID = xattr.uuid
+
+                expect(validator.isUUID(folderUUID)).to.be.true
+                expect(xattr.owner).to.deep.equal([userUUID1])
+                expect(xattr.writelist).to.deep.equal([])
+                expect(xattr.readlist).to.deep.equal([])
+                expect(xattr.hash).to.be.null
+                expect(xattr.htime).to.equal(-1)
+
+                expect(repo.libraries.length).to.equal(1)
+                expect(repo.libraries[0]).to.equal(tree)
+
+                expect(tree.type).to.equal('library')
+                expect(tree.rootpath).to.equal(dirpath)
+                expect(tree.root.name).to.equal(libraryUUID)
+                expect(tree.root.uuid).to.equal(folderUUID)
+                expect(tree.root.owner).to.deep.equal([userUUID1])
+                expect(tree.proto.owner).to.deep.equal([userUUID1])
+                done()
+              })
             })
           })
-
-
         })
-      }) 
-    })
-  })  
-
-
-/**
-
-    it('shold NOT create new folder if already existing', function(done) {
-      repo.createDrive(userUUID2, (err, result) => {
-        expect(err).to.be.an('error')
-        expect(err.code).to.equal('EEXIST')
-        done()
-      })
+      })  
     })
   })
 
-  /** create library **/
-  /**
-  describe('create library', function() {
-
-    let root = path.join(process.cwd(), 'tmptest') 
-    let userUUID1 = UUID.v4()
-    let userUUID2 = UUID.v4()
-    let libraryUUID1 = UUID.v4()
-    let repo
-
-    async function setup(root) {
-
-      let r
-      r = await rimrafAsync('tmptest')
-      if (r instanceof Error) return r
-      
-      r = await mkdirpAsync('tmptest')
-      if (r instanceof Error) return r
-
-      r = await mkdirpAsync(`tmptest/library/${userUUID2}`)
-      if (r instanceof Error) return r
-
-      return await buildTreeAsync(path.join(root))
-    }
-
-    before(function(done) {
-      setup(root)
-        .then(tree => {
-          if (tree instanceof Error) return done(r)
-          repo = new Repo(root, tree)
-          done()
-        }) 
-        .catch(e => done(e))
-    })   
- 
-    it('should create new library, with proper xattr, as well as tree node,  if not existing', function(done) {  
-      repo.createLibrary(userUUID1, libraryUUID1, (err, newNode) => {
-        if (err) return done(err) 
-
-        let dirpath = path.join(root, 'library', libraryUUID1)
-        xattrGetRaw(dirpath, 'user.fruitmix', (err, xattr) => { 
-          if (err) return done(err)
-
-          let folderUUID = xattr.uuid
-          expect(validator.isUUID(folderUUID)).to.be.true
-
-          expect(xattr.owner).to.deep.equal([userUUID1])
-          expect(xattr.writelist).to.deep.equal([])
-          expect(xattr.readlist).to.deep.equal([])
-
-          expect(xattr.hash).to.be.null
-          expect(xattr.htime).to.equal(-1)
-
-          expect(newNode.parent).to.equal(repo.driveDirNode)
-          expect(newNode.uuid).to.equal(folderUUID)
-          expect(newNode.type).to.equal('folder')
-          expect(newNode.permission.owner).to.equal(xattr.owner[0]) // TODO
-          expect(newNode.attribute.name).to.equal(userUUID1)
-          done()
-        })
-      })
-    })
-
-    it('shold NOT create new folder if already existing', function(done) {
-      repo.createDrive(userUUID2, (err, result) => {
-        expect(err).to.be.an('error')
-        expect(err.code).to.equal('EEXIST')
-        done()
-      })
-    })
-  })
-  **/ // end of test library
+  describe('create file in drive', function() {
+   
+  }
 })
 
