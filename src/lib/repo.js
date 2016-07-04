@@ -26,6 +26,14 @@ class Repo {
     return path.join(this.rootpath, 'library')
   }
 
+  findTreeInDriveByUUID(uuid) {
+    return this.drives.find(tree => tree.uuidMap.get(uuid))
+  }
+
+  findTreeInLibraryByUUID(uuid) {
+    return this.libraries.find(tree => tree.uuidMap.get(uuid))
+  }
+
   findNodeInDriveByUUID(uuid) {
     for (let i = 0; i < drives.length; i++) {
       let x = drives[i].uuidMap.get(uuid)
@@ -37,6 +45,21 @@ class Repo {
     for (let i = 0; i < libraries.length; i++) {
       let x = libraries[i].uuidMap.get(uuid)
       if (x) return x
+    }
+  }
+
+  // operation name, args ..., return true / false
+  permission(action) {
+    
+    switch(action.type) {
+    case 'DRV_CREATE_FILE_IN_FOLDER':
+      // requires user have at least write permission in folder, or, this is the drive he/she owns.
+      // requires action.userUUID, action.folderUUID
+       
+    
+      break
+    default:
+      return false
     }
   }
 
@@ -122,8 +145,10 @@ class Repo {
     })
   }
 
-  // import, actually
-  createDriveFile(userUUID, srcpath, targetDirUUID, filename, callback) {
+  createFileInDrive(userUUID, srcpath, targetDirUUID, filename, callback) {
+
+    let tree = findTreeInDriveByUUID(uuid)
+    if (!tree) return callback    
 
     let node = findNodeInDriveByUUID(uuid)
     if (!node) return callback(new Error('uuid not found')) 
