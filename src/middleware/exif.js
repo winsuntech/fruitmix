@@ -52,6 +52,10 @@ function exifp(node){
 				//console.log('<<<')
 				let size={width:200,height:200}
 				try{
+					// console.log("-------------")
+					// console.log(doc[0])
+					// console.log(doc[0].exif)
+					// console.log("-------------")
 				var size={width:doc[0].exif.exif.ExifImageWidth,height:doc[0].exif.exif.ExifImageHeight}
 				}
 				catch(e){
@@ -75,6 +79,7 @@ function getimageexifA(path){
 		new ExifImage({image:path}, function (error, exifData) {
 			let tmpobj={};
 			if (error){
+				console.log(2)
 	            let tsize=spawnSync('gm',['identify','-format','%w,%h',path]).stdout.toString()
 				let fsize=tsize.split(',')
 				let theight=fsize[1].split("\n")
@@ -85,8 +90,8 @@ function getimageexifA(path){
 	        else
 	        {
 	            tmpobj=exifData;
-	            if (tmpobj.exif.MakerNote!==undefined)tmpobj.exif.MakerNote="";
-	            if (tmpobj.exif.UserComment!==undefined)tmpobj.exif.UserComment="";
+	            //if (tmpobj.exif.MakerNote!==undefined)tmpobj.exif.MakerNote="";
+	            //if (tmpobj.exif.UserComment!==undefined)tmpobj.exif.UserComment="";
 	        }
 	        resolve(tmpobj)
 		})
@@ -128,13 +133,20 @@ function getvideoexifA(path){
 // }
 
 async function getexifA(node){
-	//console.log('1')
-	//console.log('3')
+	console.log('1')
+	// console.log('3')
+	// console.log(node)
+	// console.log(node.uuid)
+	try{
 	let path=memt.getpath(node.uuid)
-	console.log(">>>>>>>>>>>>>>>")
-	console.log(path)
-	console.log(node.hash)
-	console.log("<<<<<<<<<<<<<<<")
+	}
+	catch(e){
+		console.log(e)
+	}
+	let path=node.path
+	// console.log(">>>>>>>>>>>>>>>")
+	// console.log(path)
+	// console.log("<<<<<<<<<<<<<<<")
 	const buffer = readChunk.sync(path, 0, 262);
     let filetype = fileType(buffer);
     let ext = 'unknown';
@@ -166,19 +178,27 @@ async function getexifA(node){
 }
 
 async function save(node){
-	//console.log("11")
-	let texif= await getexifA(node);
-	//console.log(                   22")
+	// console.log("11")
+	// console.log(node.hash)
+	// console.log("--------------------")
+	//console.log(texif)
+	//console.log(                   22")	
+	var c=0
 	await Exif.find({hash:node.hash},'exif', (err, doc) => {
 		if(doc.length===0){
-			let newexif = new Exif({
-				hash:node.hash,
-				exif:texif
-			})
-
-			newexif.save();
+			c=1
 		}
 	})
+	if (c===0){
+	let texif= await getexifA(node);
+
+	let newexif = new Exif({
+		hash:node.hash,
+		exif:texif
+	})
+
+	newexif.save();
+	}
 }
 
 // function getexif(node){
