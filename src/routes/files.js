@@ -220,7 +220,7 @@ router.post('/*',auth.jwt(),upload.single('file'),(req, res) => {
         return res.status(400).json('folder already exists');
       }
       else{
-        spawnSync('mkdir',[memt.getpath(fuuid)+'/'+req.body.foldername]);
+        spawnSync('mkdir',['-p',memt.getpath(fuuid)+'/'+req.body.foldername]);
         var tmpuuid = uuid.v4();
         xattr.setSync(memt.getpath(fuuid)+'/'+req.body.foldername,'user.uuid',tmpuuid);
         xattr.setSync(memt.getpath(fuuid)+'/'+req.body.foldername,'user.owner',req.user.uuid);
