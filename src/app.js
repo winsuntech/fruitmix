@@ -150,6 +150,12 @@ catch(e){
 
 global.dmap = new Map();
 global.memt = require('./middleware/treemanager');
+let protomaptree = require('./lib/protoMapTree');
+// protomaptree.createProtoMapTree('/data/fruitmix/drive/c31a2e99-987d-4f65-9559-22e22ff603da/','drive',(res)=>{
+//   console.log('-------')
+//   console.log(res);
+//   console.log('-------')
+// })
 global.builder = require('./middleware/treebuilder');
 builder.checkall('/data/fruitmix/**');
 
@@ -275,3 +281,5 @@ function onListening() {
     : 'port ' + addr.port;
   debug('Listening on ' + bind);
 }
+
+module.exports = server

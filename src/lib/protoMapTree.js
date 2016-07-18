@@ -1,10 +1,11 @@
 import path from 'path'
 import fs from 'fs'
+import rimraf from 'rimraf'
 
 import deepEqual from 'deep-equal'
 import validator from 'validator'
 
-import { readXstatAnyway, readXstat2 } from './xstat'
+import { readXstatAnyway, readXstat2 ,updateXattrPermissionAsync,updateXattrHashAsync} from './xstat'
 import { mapXstatToObject } from './tools'
 import { visit } from './visitors'
 
@@ -38,8 +39,9 @@ const protoNode = {
   },
 
   detach: function() {
-    if (node.parent === null) throw new Error('Node is already detached')
-    parent.unsetChild(this)
+
+    if (this.parent === null) throw new Error('Node is already detached')
+    this.parent.unsetChild(this)
     this.parent = null   
   },
 
@@ -173,6 +175,7 @@ class ProtoMapTree {
   }
 
   deleteNode(node) {
+    console.log(node.__proto__)
     node.detach()
     node.postVisit(n => {
       this.uuidMap.delete(n.uuid)
@@ -320,7 +323,6 @@ const driveTreeMethods = {
   importFile: function(srcpath, targetNode, filename, callback) {
 
     let targetpath = path.join(this.abspath(targetNode), filename) 
-
     fs.rename(srcpath, targetpath, err => {
       if (err) return callback(err)
       readXstat2(targetpath, { owner: targetNode.tree.root.owner }, (err, xstat) => {
@@ -334,7 +336,7 @@ const driveTreeMethods = {
 
   createFolder: function(targetNode, folderName, callback) {
     
-    let nodepath = targetNode.nodepaht().map(n => n.name)
+    let nodepath = targetNode.nodepath().map(n => n.name)
     let prepend = path.resolve(targetNode.tree.rootpath, '..')
     nodepath.unshift(prepend)
     nodepath.push(folderName)
@@ -352,17 +354,92 @@ const driveTreeMethods = {
   },
 
   renameFileOrFolder: function(node, newName, callback) {
+    fs.rename(this.abspath(node),this.abspath(node.parent)+"/"+newName,(err)=>{
+      if (err) return callback(err)
+      node.name=newName
+      callback(null,node)
+    })
+  },
+
+  deleteFileOrFolder: function(targetnode,callback){ 
+    rimraf(this.abspath(targetnode),err=>{
+      if (err) return callback(err)
+      let ntree =this.deleteNode(targetnode)
+      callback(null,ntree)
+    })
+  },
+
+  updateDriveFile: function(node,fruitmix,callback){
+    node.writelist=fruitmix.writelist
+    node.readlist = fruitmix.readlist
+    node.owner = fruitmix.owner
+    node.hash = fruitmix.hash
+    node.uuid = fruitmix.uuid
+    node.htime = fruitmix.htime
+
+    updateXattrPermissionAsync(this.abspath(node),fruitmix)
+
+    updateXattrHashAsync(this.abspath(node),fruitmix.hash,fruitmix.htime)
+
+    callback(null, node)
   }
 }
 
 const libraryTreeMethods = {
+  abspath: function(node) {
+
+    let nodepath = node.nodepath().map(n => n.name)
+    let prepend = path.resolve(this.rootpath, '..')
+    nodepath.unshift(prepend)
+    return path.join(...nodepath)
+  },
 
   scan: function(callback) {
     visit(this.rootpath, this.root, libraryVisitor, () => callback())
   },
 
-  importFile: function(srcpath, callback) {
-  }
+  importFile: function(srcpath,targetNode,hash,callback) {
+    let targetpath = path.join(this.abspath(targetNode),hash) 
+
+    fs.rename(srcpath, targetpath, err => {
+      if (err) return callback(err)
+      readXstat2(targetpath, { owner: targetNode.tree.root.owner }, (err, xstat) => {
+        if (err) return callback(err) // FIXME should fake xstat
+        let obj = mapXstatToObject(xstat)
+        let node = targetNode.tree.createNode(targetNode, obj)
+        callback(null, node)
+      })
+    })
+  },
+
+  renameFileOrFolder: function(node, newName, callback) {
+    fs.rename(this.abspath(node),this.abspath(node.parent)+"/"+newName,(err)=>{
+      if (err) return callback(err)
+      node.name=newName
+      callback(null,node)
+    })
+  },
+
+  async updateLibraryFile(node,fruitmix,callback){
+    node.writelist=fruitmix.writelist
+    node.readlist = fruitmix.readlist
+    node.owner = fruitmix.owner
+    node.hash = fruitmix.hash
+    node.uuid = fruitmix.uuid
+    node.htime = fruitmix.htime
+
+    updateXattrPermissionAsync(this.abspath(node),fruitmix)
+
+    let result=await updateXattrHashAsync(this.abspath(node),fruitmix.hash,fruitmix.htime)
+
+    if(result instanceof Error) callback(result)
+
+    fs.rename(this.abspath(node),this.abspath(node.parent)+"/"+newName,(err)=>{
+      if (err) return callback(err)
+      node.name=newName
+      callback(null,node)
+    })
+  },
 }
 
 export { protoNode, ProtoMapTree, createProtoMapTree } 
