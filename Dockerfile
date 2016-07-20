@@ -67,8 +67,10 @@ RUN npm --registry http://registry.cnpmjs.org install -g babel-cli fs-xattr node
 RUN npm run build
 
 # deploy mongodb enviroment
-RUN mkdir /mongodb
-VOLUME /mongodb /data
+RUN mkdir /mongodb \
+ && mkdir /data \
+ && mkdir -p /var/log/supervisor
+VOLUME /mongodb /data /var/log/supervisor
 EXPOSE 80
 
 # install mongodb
@@ -78,8 +80,7 @@ RUN apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv EA312927 \
  && DEBIAN_FRONTEND=noninteractive apt-get install -y mongodb-org
 
 # configure supervisor for running mongodb & fruitmix both
-RUN mkdir -p /var/log/supervisor \
- && echo "[supervisord]" > /etc/supervisor/conf.d/supervisord.conf \
+RUN echo "[supervisord]" > /etc/supervisor/conf.d/supervisord.conf \
  && echo "nodaemon=true" >> /etc/supervisor/conf.d/supervisord.conf \
  && echo "" >> /etc/supervisor/conf.d/supervisord.conf \
  && echo "[program:mongod]" >> /etc/supervisor/conf.d/supervisord.conf \
