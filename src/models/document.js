@@ -1,7 +1,7 @@
 var mongoose = require('mongoose');
 var Schema = mongoose.Schema;
 
-var bcrypt = require('bcrypt');
+var bcrypt = require('bcryptjs');
 
 var DocumentSchema = new Schema({
   hash: { type: String, unique: true, required: true },
