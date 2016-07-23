@@ -40,6 +40,9 @@ router.post('/',auth.jwt(), (req, res) => {
     newuser.save((err) => {
       if (err) { return res.status(500).json(err); }
       spawnSync('mkdir',['-p','/data/fruitmix/drive/'+tmpuuid]);
+      let fm={}
+      fm.owner=tmpuuid
+      xattr.setSync('/data/fruitmix/drive/'+tmpuuid,'user.fruitmix',fm);
       xattr.setSync('/data/fruitmix/drive/'+tmpuuid,'user.owner',tmpuuid);
       builder.checkall('/data/fruitmix/drive/'+tmpuuid);
       return res.status(200).json(newuser);

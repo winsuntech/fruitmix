@@ -162,6 +162,9 @@ router.post('/*',auth.jwt(),upload.single('file'),(req, res) => {
         return res.status(500).json('failed to upload file');
       }
       var tmpuuid = uuid.v4();
+      let fm={}
+      fm.owner=tmpuuid
+      xattr.setSync(memt.getpath(fuuid)+'/'+req.file.originalname,'user.fruitmix',fm);
       xattr.setSync(memt.getpath(fuuid)+'/'+req.file.originalname,'user.uuid',tmpuuid);
       xattr.setSync(memt.getpath(fuuid)+'/'+req.file.originalname,'user.owner',req.user.uuid);
       builder.checkall(memt.getpath(fuuid)+'/'+req.file.originalname);
@@ -179,6 +182,9 @@ router.post('/*',auth.jwt(),upload.single('file'),(req, res) => {
       else{
         spawnSync('mkdir',[memt.getpath(fuuid)+'/'+req.body.foldername]);
         var tmpuuid = uuid.v4();
+        let fm={}
+        fm.owner=tmpuuid
+        xattr.setSync(memt.getpath(fuuid)+'/'+req.body.foldername,'user.fruitmix',fm);
         xattr.setSync(memt.getpath(fuuid)+'/'+req.body.foldername,'user.uuid',tmpuuid);
         xattr.setSync(memt.getpath(fuuid)+'/'+req.body.foldername,'user.owner',req.user.uuid);
         builder.checkall(memt.getpath(fuuid)+'/'+req.body.foldername);

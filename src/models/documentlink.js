@@ -1,7 +1,7 @@
 var mongoose = require('mongoose');
 var Schema = mongoose.Schema;
 
-var bcrypt = require('bcryptjs');
+var bcrypt = require('bcrypt');
 
 var DocumentlinkSchema = new Schema({
 	uuid: { type: String,unique: true, required: true},

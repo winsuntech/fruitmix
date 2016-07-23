@@ -63,3 +63,4 @@ const nodeUserReadable = (node, user) => {
   return readables.find(r => r === user) ? true : false
 }
 
+export { nodeUserReadable,nodeUserWritable}

@@ -209,7 +209,8 @@ function createProtoMapTreeV1(rootpath, type, callback) {
   if (!validator.isUUID(dirname)) return callback(new Error('folder name must be valid uuid'))
 
   readXstatAnyway(rootpath, (err, xstat) => {
-
+    console.log(xstat)
+    console.log('---------------')
     if (err) return callback(err)
     if (!xstat.isDirectory()) 
       return callback(new Error('rootpath must be a directory')) 
@@ -274,7 +275,7 @@ const driveVisitor = (dir, node, entry, callback) => {
   readXstat2(entrypath, {
     owner: node.tree.root.owner
   }, (err, xstat) => {
-
+    console.log(xstat)
     if (err) return callback()
     if (!xstat.isDirectory() && !xstat.isFile()) return callback()
 

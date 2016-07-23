@@ -151,7 +151,7 @@ catch(e){
 global.dmap = new Map();
 global.memt = require('./middleware/treemanager');
 let protomaptree = require('./lib/protoMapTree');
-// protomaptree.createProtoMapTree('/data/fruitmix/drive/c31a2e99-987d-4f65-9559-22e22ff603da/','drive',(res)=>{
+// protomaptree.createProtoMapTree('/data/fruitmix/drive/b0695859-fa4e-4eda-b1cf-296e470b70e0/','drive',(res)=>{
 //   console.log('-------')
 //   console.log(res);
 //   console.log('-------')

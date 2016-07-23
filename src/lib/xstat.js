@@ -209,18 +209,32 @@ function fixBadXattr(attr, owner) {
 }
 
 function readXstatAnyway(path, callback) {
-
+  console.log(111111111)
   fs.stat(path, (err, stats) => {
+    console.log(1111112222)
     if (err) return callback(err)
     xattr.get(path, 'user.fruitmix', (err, attr) => {
-      if (err && err.code === 'ENODATA') return callback(null, null)
+      console.log(111111133333)
+      if (err && err.code === 'ENODATA'){ 
+        console.log(111111114444)
+        readXstat2(path,{},(err,r)=>{
+          console.log(1111222333)
+          return callback(null, r)
+        })
+        console.log(412312321)
+        //return callback(null, null)
+        }
       else if (err) return callback(err)
-
+      console.log(path)
       let parsed = parseJSON(attr)
+      console.log(11111111155555)
       if (!parsed) return callback(null, null)
+      console.log('------------')
+      console.log(Object.assign(stats, formatXattr(parsed), { abspath: path }))
       callback(null, Object.assign(stats, formatXattr(parsed), { abspath: path }))
     })
   })
+  console.log(222222222)
 }
 
 // performance critical version
@@ -275,7 +289,8 @@ function readXstat2(path, perm, callback) {
           return callback(null, Object.assign(stats, good, { abspath: path }))
         })
       } 
-
+      console.log("---------")
+      console.log(Object.assign(stats, good, { abspath: path }))
       callback(null, Object.assign(stats, good, { abspath: path }))
     }) // xattr.get
   })
