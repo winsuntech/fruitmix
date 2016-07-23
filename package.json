@@ -36,7 +36,7 @@
     "jsmediatags": "^3.0.5",
     "jwt-simple": "^0.4.1",
     "mkdirp": "^0.5.1",
-    "mocha": "^2.4.5",
+    "mocha": "^2.5.3",
     "mongoose": "^4.4.6",
     "morgan": "~1.6.1",
     "multer": "^1.1.0",
