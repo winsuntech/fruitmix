@@ -38,6 +38,7 @@ node_modules
 # bundle file
 public/bundle.js
 
+tmptest/
 build/
 .DS_Store
 ._.DS_Store
