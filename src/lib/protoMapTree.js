@@ -175,7 +175,7 @@ class ProtoMapTree {
   }
 
   deleteNode(node) {
-    console.log(node.__proto__)
+    //console.log(node.__proto__)
     node.detach()
     node.postVisit(n => {
       this.uuidMap.delete(n.uuid)
@@ -209,7 +209,8 @@ function createProtoMapTreeV1(rootpath, type, callback) {
   if (!validator.isUUID(dirname)) return callback(new Error('folder name must be valid uuid'))
 
   readXstatAnyway(rootpath, (err, xstat) => {
-
+    console.log(xstat)
+    console.log('---------------')
     if (err) return callback(err)
     if (!xstat.isDirectory()) 
       return callback(new Error('rootpath must be a directory')) 
@@ -274,7 +275,7 @@ const driveVisitor = (dir, node, entry, callback) => {
   readXstat2(entrypath, {
     owner: node.tree.root.owner
   }, (err, xstat) => {
-
+    console.log(xstat)
     if (err) return callback()
     if (!xstat.isDirectory() && !xstat.isFile()) return callback()
 
@@ -399,8 +400,7 @@ const libraryTreeMethods = {
   },
 
   importFile: function(srcpath,targetNode,hash,callback) {
-    let targetpath = path.join(this.abspath(targetNode),hash) 
-
+    let targetpath = path.join(this.abspath(targetNode),hash)
     fs.rename(srcpath, targetpath, err => {
       if (err) return callback(err)
       readXstat2(targetpath, { owner: targetNode.tree.root.owner }, (err, xstat) => {
@@ -417,6 +417,14 @@ const libraryTreeMethods = {
       if (err) return callback(err)
       node.name=newName
       callback(null,node)
+    })
+  },
+
+  deleteFile: function(targetnode,callback){ 
+    rimraf(this.abspath(targetnode),err=>{
+      if (err) return callback(err)
+      let ntree =this.deleteNode(targetnode)
+      callback(null,ntree)
     })
   },
 

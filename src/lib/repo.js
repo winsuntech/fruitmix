@@ -4,6 +4,8 @@ import fs from 'fs'
 import { readXstat2 } from './xstat'
 import { mkdirpAsync, fsStatAsync, fsMkdirAsync, mapXstatToObject } from './tools'
 import { createProtoMapTree } from './protoMapTree'
+import {nodeUserReadable,nodeUserWritable} from './perm'
+
 
 class Repo {
 
@@ -27,6 +29,9 @@ class Repo {
   }
 
   findTreeInDriveByUUID(uuid) {
+    console.log("<<<<<<<<<<<<<<<<")
+    console.log(this.drives.find(tree => tree.uuidMap.get(uuid)))
+    console.log(this.drives.find({"uuid":uuid}))
     return this.drives.find(tree => tree.uuidMap.get(uuid))
   }
 
@@ -35,29 +40,57 @@ class Repo {
   }
 
   findNodeInDriveByUUID(uuid) {
-    for (let i = 0; i < drives.length; i++) {
-      let x = drives[i].uuidMap.get(uuid)
+    for (let i = 0; i < this.drives.length; i++) {
+      let x = this.drives[i].uuidMap.get(uuid)
       if (x) return x
     }
   }
 
   findNodeInLibraryByUUID(uuid) {
-    for (let i = 0; i < libraries.length; i++) {
-      let x = libraries[i].uuidMap.get(uuid)
+    for (let i = 0; i < this.libraries.length; i++) {
+      let x = this.libraries[i].uuidMap.get(uuid)
       if (x) return x
     }
   }
 
   // operation name, args ..., return true / false
-  permission(action) {
-    
+  permission(nodeuuid,useruuid,action) {
+    let node=null
     switch(action.type) {
-    case 'DRV_CREATE_FILE_IN_FOLDER':
+    case 'DRV_CREATE_FILE_OR_FOLDER':
+      node = findNodeInDriveByUUID(nodeuuid)
+      if (!node) return new Error('uuid not found')
+      return nodeUserWritable(node,useruuid)
       // requires user have at least write permission in folder, or, this is the drive he/she owns.
       // requires action.userUUID, action.folderUUID
-       
-    
-      break
+    case 'DRV_DELETE_FILE_OR_FOLDER':
+      node = findNodeInDriveByUUID(nodeuuid)
+      if (!node) return new Error('uuid not found')
+      return nodeUserWritable(node,useruuid)
+    case 'LIB_CREATE_FILE':
+      node = findNodeInLibraryByUUID(nodeuuid)
+      if (!node) return new Error('uuid not found')
+      return nodeUserWritable(node,useruuid)
+    case 'LIB_DELETE_FILE':
+      node = findNodeInLibraryByUUID(nodeuuid)
+      if (!node) return new Error('uuid not found')
+      return nodeUserWritable(node,useruuid)
+    case 'DRV_READ_FILE':
+      node = findNodeInDriveByUUID(nodeuuid)
+      if (!node) return new Error('uuid not found')
+      return nodeUserReadable(node,useruuid)
+    case 'LIB_READ_FILE':
+      node = findNodeInLibraryByUUID(nodeuuid)
+      if (!node) return new Error('uuid not found')
+      return nodeUserReadable(node,useruuid)
+    case 'DRV_READ_FILE':
+      node = findNodeInDriveByUUID(nodeuuid)
+      if (!node) return new Error('uuid not found')
+      return nodeUserWritable(node,useruuid)
+    case 'LIB_READ_FILE':
+      node = findNodeInLibraryByUUID(nodeuuid)
+      if (!node) return new Error('uuid not found')
+      return nodeUserWritable(node,useruuid)
     default:
       return false
     }
@@ -150,7 +183,7 @@ class Repo {
     //let tree = findTreeInDriveByUUID(userUUID)
     //if (!tree) return callback    
 
-    let node = findNodeInDriveByUUID(targetDirUUID)
+    let node = this.findNodeInDriveByUUID(targetDirUUID)
     if (!node) return callback(new Error('uuid not found')) 
 
     node.tree.importFile(srcpath, node, filename, (err, node) => {
@@ -158,23 +191,27 @@ class Repo {
     })
   }
 
-  createDriveFolder(userUUID, folderName, targetDirUUID) {
-    let tree = findTreeInDriveByUUID(userUUID)
-    if (!tree) return callback    
+  createDriveFolder(userUUID, folderName, targetDirUUID,callback) {
+    // console.log(">>>>>>>>>>>>>>>")
+    // console.log(userUUID)
+    // console.log(folderName)
+    // console.log(this.drives)
+    // let tree = this.findTreeInDriveByUUID(userUUID)
+    // if (!tree) return callback(new Error('tree not found')) 
 
-    let node = findNodeInDriveByUUID(targetDirUUID)
+    let node = this.findNodeInDriveByUUID(targetDirUUID)
     if (!node) return callback(new Error('uuid not found')) 
 
     node.tree.createFolder(node,folderName,(err,node) => {
-      err?callback(err) : callback(null,node)
+      err?callback(err) : callback(null,node) 
     })
   }  
 
-  createLibraryFile(userUUID, extpath, hash,targetLibraryUUID) {
-    let tree = findTreeInDriveByUUID(userUUID)
-    if (!tree) return callback    
+  createLibraryFile(userUUID, extpath, hash,targetLibraryUUID,callback) {
+    // let tree = this.findTreeInDriveByUUID(userUUID)
+    // if (!tree) return callback(new Error('uuid not found'))
 
-    let node = findNodeInDriveByUUID(targetLibraryUUID)
+    let node = this.findNodeInLibraryByUUID(targetLibraryUUID)
     if (!node) return callback(new Error('uuid not found')) 
 
     node.tree.importFile(extpath, node, hash, (err, node) => {
@@ -183,12 +220,25 @@ class Repo {
   } 
 
   /** read **/  
+  readDriveFileorFolderInfo(uuid){
+    let node = this.findNodeInDriveByUUID(uuid)
+    if (!node) return new Error('uuid not found')
+
+    return node
+  }
+
+  readLibraryFileInfo(uuid){
+    let node = this.findNodeInLibraryByUUID(uuid)
+    if (!node) return new Error('uuid not found')
+
+    return node
+  }
 
   /** update **/
 
-  renameDriveFileOrFilder(uuid, newName) {
+  renameDriveFileOrFolder(uuid, newName,callback) {
 
-    let node = findNodeInDriveByUUID(uuid)
+    let node = this.findNodeInDriveByUUID(uuid)
     if (!node) return callback(new Error('uuid not found'))
 
     node.tree.renameFileOrFolder(node,newName, (err,node)=>{
@@ -198,8 +248,8 @@ class Repo {
   } 
 
   // overwrite
-  updateDriveFile(targetDirUUID, xattr) {
-    let node = findNodeInDriveByUUID(targetDirUUID)
+  updateDriveFile(targetDirUUID, xattr,callback) {
+    let node = this.findNodeInDriveByUUID(targetDirUUID)
     if (!node) return callback(new Error('uuid not found'))
 
     node.tree.updateDriveFile(node,xattr,(err,node)=>{
@@ -208,11 +258,25 @@ class Repo {
   }
 
   /** delete **/
-  deleteDriveFolder(folderUUID) {
-    let node = findNodeInDriveByUUID(folderUUID)
+  deleteDriveFolder(folderUUID,callback) {
+    let node = this.findNodeInDriveByUUID(folderUUID)
     if (!node) return callback(new Error('uuid not found'))
 
     node.tree.deleteFileOrFolder(node,(err,node)=>{
+      err ? callback(err) : callback(null, node)
+    })
+  }
+
+  /** delete **/
+  deleteLibraryFile(fileUUID,callback) {
+    console.log("<<<<<<<<<<<<<")
+    console.log(this.libraries)
+    console.log(fileUUID)
+
+    let node = this.findNodeInLibraryByUUID(fileUUID)
+    if (!node) return callback(new Error('uuid not found'))
+
+    node.tree.deleteFile(node,(err,node)=>{
       err ? callback(err) : callback(null, node)
     })
   }
