@@ -175,7 +175,7 @@ class ProtoMapTree {
   }
 
   deleteNode(node) {
-    console.log(node.__proto__)
+    //console.log(node.__proto__)
     node.detach()
     node.postVisit(n => {
       this.uuidMap.delete(n.uuid)
@@ -400,8 +400,7 @@ const libraryTreeMethods = {
   },
 
   importFile: function(srcpath,targetNode,hash,callback) {
-    let targetpath = path.join(this.abspath(targetNode),hash) 
-
+    let targetpath = path.join(this.abspath(targetNode),hash)
     fs.rename(srcpath, targetpath, err => {
       if (err) return callback(err)
       readXstat2(targetpath, { owner: targetNode.tree.root.owner }, (err, xstat) => {
@@ -418,6 +417,14 @@ const libraryTreeMethods = {
       if (err) return callback(err)
       node.name=newName
       callback(null,node)
+    })
+  },
+
+  deleteFile: function(targetnode,callback){ 
+    rimraf(this.abspath(targetnode),err=>{
+      if (err) return callback(err)
+      let ntree =this.deleteNode(targetnode)
+      callback(null,ntree)
     })
   },
 

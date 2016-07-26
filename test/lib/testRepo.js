@@ -178,7 +178,7 @@ describe('repo', function() {
       })  
     })
   })
-
+//----------------------------------------------------
   describe('create folder in drive', function() {
     let userUUID1 = UUID.v4()
  
@@ -212,7 +212,8 @@ describe('repo', function() {
                 expect(tree.root.uuid).to.equal(folderUUID)
                 expect(tree.root.owner).to.deep.equal([userUUID1])
                 expect(tree.proto.owner).to.deep.equal([userUUID1])
-                createDriveFolder(userUUID1,"OYES",folderUUID,(err,r)=>{
+                repo.createDriveFolder(userUUID1,"OYES",folderUUID,(err,r)=>{
+                  if (err) return done(err)
                   expect(tree.root.children[0].name).to.equal("OYES")
                   expect(tree.root.children[0].type).to.equal("folder")
                   expect(tree.root.children[0].owner).deep.to.equal([userUUID1])
@@ -258,7 +259,7 @@ describe('repo', function() {
                 expect(tree.root.uuid).to.equal(folderUUID)
                 expect(tree.root.owner).to.deep.equal([userUUID1])
                 expect(tree.proto.owner).to.deep.equal([userUUID1])
-                createDriveFolder(userUUID1,"OYES",folderUUID,(err,r)=>{
+                repo.createDriveFolder(userUUID1,"OYES",folderUUID,(err,r)=>{
                   expect(tree.root.children[0].name).to.equal("OYES")
                   expect(tree.root.children[0].type).to.equal("folder")
                   expect(tree.root.children[0].owner).deep.to.equal([userUUID1])
@@ -274,12 +275,13 @@ describe('repo', function() {
 
   describe('create file in a drive folder', function() {
     let userUUID1 = UUID.v4()
-    fs.writeFileSync("tmptest/aba","11")
+
     it('should create drive folder', function(done) {  
       rimraf('tmptest', err => {
         if (err) return done(err)
         mkdirp('tmptest', err => {
           if (err) return done(err)
+          fs.writeFileSync("tmptest/aba","11")
           let repopath = path.join(process.cwd(), 'tmptest')
           createRepo(repopath, (err, repo) => {
             if (err) return done(err)
@@ -304,8 +306,9 @@ describe('repo', function() {
                 expect(tree.root.uuid).to.equal(folderUUID)
                 expect(tree.root.owner).to.deep.equal([userUUID1])
                 expect(tree.proto.owner).to.deep.equal([userUUID1])
-                createfileInDrive(userUUID1,"tmptest/aba",folderUUID,(err,r)=>{
-                  expect(tree.root.children[0].name).to.equal("aba")
+                let tmppath=path.join(repopath,'aba')
+                repo.createFileInDrive(userUUID1,tmppath,folderUUID,"cdc.txt",(err,r)=>{
+                  expect(tree.root.children[0].name).to.equal("cdc.txt")
                   expect(tree.root.children[0].type).to.equal("file")
                   expect(tree.root.children[0].owner).deep.to.equal([userUUID1])
                   done()
@@ -330,6 +333,7 @@ describe('repo', function() {
         mkdirp('tmptest', err => {
           if (err) return done(err)
           let repopath = path.join(process.cwd(), 'tmptest')
+          fs.writeFileSync("tmptest/aba","11")
           createRepo(repopath, (err, repo) => {
             if (err) return done(err)
 
@@ -358,8 +362,12 @@ describe('repo', function() {
                 expect(tree.root.uuid).to.equal(folderUUID)
                 expect(tree.root.owner).to.deep.equal([userUUID1])
                 expect(tree.proto.owner).to.deep.equal([userUUID1])
-
-                createfileInDrive(userUUID1,"tmptest/aba","12345ab",folderUUID,(err,r)=>{
+                let tmppath=path.join(repopath,'aba')
+                repo.createLibraryFile(userUUID1,tmppath,"12345ab",folderUUID,(err,r)=>{
+                  if (err) return done(err)
+                  console.log(">>>>>>>")
+                  console.log(r)
+                  console.log()
                   expect(tree.root.children[0].name).to.equal("12345ab")
                   expect(tree.root.children[0].type).to.equal("file")
                   expect(tree.root.children[0].owner).deep.to.equal([userUUID1])
@@ -375,12 +383,12 @@ describe('repo', function() {
 
  describe('rename file in a drive folder', function() {
     let userUUID1 = UUID.v4()
-    fs.writeFileSync("tmptest/aba","11")
     it('should rename file in a drive', function(done) {  
       rimraf('tmptest', err => {
         if (err) return done(err)
         mkdirp('tmptest', err => {
           if (err) return done(err)
+          fs.writeFileSync("tmptest/aba","11")
           let repopath = path.join(process.cwd(), 'tmptest')
           createRepo(repopath, (err, repo) => {
             if (err) return done(err)
@@ -405,11 +413,12 @@ describe('repo', function() {
                 expect(tree.root.uuid).to.equal(folderUUID)
                 expect(tree.root.owner).to.deep.equal([userUUID1])
                 expect(tree.proto.owner).to.deep.equal([userUUID1])
-                createfileInDrive(userUUID1,"tmptest/aba",folderUUID,(err,r)=>{
-                  expect(tree.root.children[0].name).to.equal("aba")
+                let tmppath=path.join(repopath,'aba')
+                repo.createFileInDrive(userUUID1,tmppath,folderUUID,"bcb",(err,r)=>{
+                  expect(tree.root.children[0].name).to.equal("bcb")
                   expect(tree.root.children[0].type).to.equal("file")
                   expect(tree.root.children[0].owner).deep.to.equal([userUUID1])
-                  renameDriveFileOrFolder(tree.root.children[0].uuid,"bcd",(err,r)=>{
+                  repo.renameDriveFileOrFolder(tree.root.children[0].uuid,"bcd",(err,r)=>{
                     expect(tree.root.children[0].name).to.equal("bcd")
                     expect(tree.root.children[0].type).to.equal("file")
                     expect(tree.root.children[0].owner).deep.to.equal([userUUID1])
@@ -426,12 +435,12 @@ describe('repo', function() {
 
  describe('rename folder in a drive folder', function() {
     let userUUID1 = UUID.v4()
-    fs.writeFileSync("tmptest/aba","11")
     it('should rename file in a drive', function(done) {  
       rimraf('tmptest', err => {
         if (err) return done(err)
         mkdirp('tmptest', err => {
           if (err) return done(err)
+          fs.writeFileSync("tmptest/aba","11")
           let repopath = path.join(process.cwd(), 'tmptest')
           createRepo(repopath, (err, repo) => {
             if (err) return done(err)
@@ -456,11 +465,12 @@ describe('repo', function() {
                 expect(tree.root.uuid).to.equal(folderUUID)
                 expect(tree.root.owner).to.deep.equal([userUUID1])
                 expect(tree.proto.owner).to.deep.equal([userUUID1])
-                createDriveFolder(userUUID1,"aba",folderUUID,(err,r)=>{
+
+                repo.createDriveFolder(userUUID1,"aba",folderUUID,(err,r)=>{
                   expect(tree.root.children[0].name).to.equal("aba")
                   expect(tree.root.children[0].type).to.equal("folder")
                   expect(tree.root.children[0].owner).deep.to.equal([userUUID1])
-                  renameDriveFileOrFolder(tree.root.children[0].uuid,"bcd",(err,r)=>{
+                  repo.renameDriveFileOrFolder(tree.root.children[0].uuid,"bcd",(err,r)=>{
                     expect(tree.root.children[0].name).to.equal("bcd")
                     expect(tree.root.children[0].type).to.equal("folder")
                     expect(tree.root.children[0].owner).deep.to.equal([userUUID1])
@@ -486,12 +496,12 @@ describe('repo', function() {
     }
 
     let userUUID1 = UUID.v4()
-    fs.writeFileSync("tmptest/aba","11")
     it('should rename file in a drive', function(done) {  
       rimraf('tmptest', err => {
         if (err) return done(err)
         mkdirp('tmptest', err => {
           if (err) return done(err)
+          fs.writeFileSync("tmptest/aba","11")
           let repopath = path.join(process.cwd(), 'tmptest')
           createRepo(repopath, (err, repo) => {
             if (err) return done(err)
@@ -516,12 +526,13 @@ describe('repo', function() {
                 expect(tree.root.uuid).to.equal(folderUUID)
                 expect(tree.root.owner).to.deep.equal([userUUID1])
                 expect(tree.proto.owner).to.deep.equal([userUUID1])
-                createfileInDrive(userUUID1,"tmptest/aba",folderUUID,(err,r)=>{
-                  expect(tree.root.children[0].name).to.equal("aba")
+                let tmppath=path.join(repopath,'aba')
+                repo.createFileInDrive(userUUID1,tmppath,folderUUID,"bcb",(err,r)=>{
+                  expect(tree.root.children[0].name).to.equal("bcb")
                   expect(tree.root.children[0].type).to.equal("file")
                   expect(tree.root.children[0].owner).deep.to.equal([userUUID1])
-                  updateDriveFile(tree.root.children[0].uuid,preset,(err,r)=>{
-                    expect(tree.root.children[0].name).to.equal("aba")
+                  repo.updateDriveFile(tree.root.children[0].uuid,preset,(err,r)=>{
+                    expect(tree.root.children[0].name).to.equal("bcb")
                     expect(tree.root.children[0].type).to.equal("file")
                     expect(tree.root.children[0].owner).deep.to.equal(["222222"])
                     expect(tree.root.children[0].writelist).deep.to.equal(["111111"])
@@ -572,11 +583,11 @@ describe('repo', function() {
                 expect(tree.root.uuid).to.equal(folderUUID)
                 expect(tree.root.owner).to.deep.equal([userUUID1])
                 expect(tree.proto.owner).to.deep.equal([userUUID1])
-                createDriveFolder(userUUID1,"aba",folderUUID,(err,r)=>{
+                repo.createDriveFolder(userUUID1,"aba",folderUUID,(err,r)=>{
                   expect(tree.root.children[0].name).to.equal("aba")
                   expect(tree.root.children[0].type).to.equal("folder")
                   expect(tree.root.children[0].owner).deep.to.equal([userUUID1])
-                  deleteDriveFolder(tree.root.children[0].uuid,(err,r)=>{
+                  repo.deleteDriveFolder(tree.root.children[0].uuid,(err,r)=>{
                     expect(tree.root.children.length).to.equal(0)
                     done()
                   })
@@ -591,12 +602,12 @@ describe('repo', function() {
 
   describe('delete file form a drive folder', function() {
     let userUUID1 = UUID.v4()
-    fs.writeFileSync("tmptest/aba","11")
     it('should delete file from a drive', function(done) {  
       rimraf('tmptest', err => {
         if (err) return done(err)
         mkdirp('tmptest', err => {
           if (err) return done(err)
+          fs.writeFileSync("tmptest/aba","11")
           let repopath = path.join(process.cwd(), 'tmptest')
           createRepo(repopath, (err, repo) => {
             if (err) return done(err)
@@ -621,11 +632,13 @@ describe('repo', function() {
                 expect(tree.root.uuid).to.equal(folderUUID)
                 expect(tree.root.owner).to.deep.equal([userUUID1])
                 expect(tree.proto.owner).to.deep.equal([userUUID1])
-                createfileInDrive(userUUID1,"tmptest/aba",folderUUID,(err,r)=>{
-                  expect(tree.root.children[0].name).to.equal("aba")
+                let tmppath=path.join(repopath,'aba')
+                repo.createFileInDrive(userUUID1,tmppath,folderUUID,"bcb",(err,r)=>{
+                  expect(tree.root.children[0].name).to.equal("bcb")
                   expect(tree.root.children[0].type).to.equal("file")
                   expect(tree.root.children[0].owner).deep.to.equal([userUUID1])
-                  deleteDriveFolder(tree.root.children[0].uuid,(err,r)=>{
+                  repo.deleteDriveFolder(tree.root.children[0].uuid,(err,r)=>{
+                    if (err) return done(err)
                     expect(tree.root.children.length).to.equal(0)
                     done()
                   })
@@ -640,18 +653,19 @@ describe('repo', function() {
 
   describe('delete file form a library folder', function() {
     let userUUID1 = UUID.v4()
-    fs.writeFileSync("tmptest/aba","11")
+    let libraryUUID1 = UUID.v4()
     it('should delete file from a drive', function(done) {  
       rimraf('tmptest', err => {
         if (err) return done(err)
         mkdirp('tmptest', err => {
           if (err) return done(err)
+          fs.writeFileSync("tmptest/aba","11")
           let repopath = path.join(process.cwd(), 'tmptest')
           createRepo(repopath, (err, repo) => {
             if (err) return done(err)
-            repo.createDrive(userUUID1, (err, tree) => {
+            repo.createLibrary(userUUID1,libraryUUID1, (err, tree) => {
               if (err) return done(err) 
-              let dirpath = path.join(repopath, 'drive', userUUID1)
+              let dirpath = path.join(repopath, 'library', libraryUUID1)
               xattrGetRaw(dirpath, 'user.fruitmix', (err, xattr) => { 
                 if (err) return done(err)
                 let folderUUID = xattr.uuid
@@ -662,19 +676,24 @@ describe('repo', function() {
                 expect(xattr.readlist).to.deep.equal([])
                 expect(xattr.hash).to.be.null
                 expect(xattr.htime).to.equal(-1)
-                expect(repo.drives.length).to.equal(1)
-                expect(repo.drives[0]).to.equal(tree)
-                expect(tree.type).to.equal('drive')
+                expect(repo.libraries.length).to.equal(1)
+                expect(repo.libraries[0]).to.equal(tree)
+                expect(tree.type).to.equal('library')
                 expect(tree.rootpath).to.equal(dirpath)
-                expect(tree.root.name).to.equal(userUUID1)
+                expect(tree.root.name).to.equal(libraryUUID1)
                 expect(tree.root.uuid).to.equal(folderUUID)
                 expect(tree.root.owner).to.deep.equal([userUUID1])
                 expect(tree.proto.owner).to.deep.equal([userUUID1])
-                createfileInDrive(userUUID1,"tmptest/aba",folderUUID,(err,r)=>{
-                  expect(tree.root.children[0].name).to.equal("aba")
+                let tmppath=path.join(repopath,'aba')
+                repo.createLibraryFile(userUUID1,tmppath,"12345ab",folderUUID,(err,r)=>{
+                  expect(tree.root.children[0].name).to.equal("12345ab")
                   expect(tree.root.children[0].type).to.equal("file")
                   expect(tree.root.children[0].owner).deep.to.equal([userUUID1])
-                  deletelibraryFile(tree.root.children[0].uuid,(err,r)=>{
+                  expect(tree.root.children.length).to.equal(1)
+                  console.log(">>>>>>>>>>>>")
+                  console.log(tree.root.children)
+                  repo.deleteLibraryFile(tree.root.children[0].uuid,(err,r)=>{
+                    if (err) return done(err)
                     expect(tree.root.children.length).to.equal(0)
                     done()
                   })
@@ -720,8 +739,8 @@ describe('repo', function() {
                 expect(tree.root.uuid).to.equal(folderUUID)
                 expect(tree.root.owner).to.deep.equal([userUUID1])
                 expect(tree.proto.owner).to.deep.equal([userUUID1])
-                let nodeinfo = readdrivefileorfolderinfo(folderUUID)
-                expect(nodeinfo.name).deep.to.equal(folderUUID)
+                let nodeinfo = repo.readDriveFileorFolderInfo(folderUUID)
+                expect(nodeinfo.name).deep.to.equal(userUUID1)
                 expect(nodeinfo.type).to.equal("folder")
                 expect(nodeinfo.owner).deep.to.equal([userUUID1])
                 done()
@@ -735,12 +754,12 @@ describe('repo', function() {
 
   describe('read file info from a drive folder', function() {
     let userUUID1 = UUID.v4()
-    fs.writeFileSync("tmptest/aba","11")
     it('should read file info from a drive', function(done) {  
       rimraf('tmptest', err => {
         if (err) return done(err)
         mkdirp('tmptest', err => {
           if (err) return done(err)
+            fs.writeFileSync("tmptest/aba","11")
           let repopath = path.join(process.cwd(), 'tmptest')
           createRepo(repopath, (err, repo) => {
             if (err) return done(err)
@@ -765,12 +784,13 @@ describe('repo', function() {
                 expect(tree.root.uuid).to.equal(folderUUID)
                 expect(tree.root.owner).to.deep.equal([userUUID1])
                 expect(tree.proto.owner).to.deep.equal([userUUID1])
-                createfileInDrive(userUUID1,"tmptest/aba",folderUUID,(err,r)=>{
-                  expect(tree.root.children[0].name).to.equal("aba")
+                let tmppath=path.join(repopath,'aba')
+                repo.createFileInDrive(userUUID1,tmppath,folderUUID,"bcb",(err,r)=>{
+                  expect(tree.root.children[0].name).to.equal("bcb")
                   expect(tree.root.children[0].type).to.equal("file")
                   expect(tree.root.children[0].owner).deep.to.equal([userUUID1])
-                  let nodeinfo = readdrivefileorfolderinfo(folderUUID)
-                  expect(nodeinfo.name).deep.to.equal("aba")
+                  let nodeinfo = repo.readDriveFileorFolderInfo(r.uuid)
+                  expect(nodeinfo.name).deep.to.equal("bcb")
                   expect(nodeinfo.type).to.equal("file")
                   expect(nodeinfo.owner).deep.to.equal([userUUID1])
                   done()
@@ -794,6 +814,7 @@ describe('repo', function() {
         if (err) return done(err)
         mkdirp('tmptest', err => {
           if (err) return done(err)
+          fs.writeFileSync("tmptest/aba","11")
           let repopath = path.join(process.cwd(), 'tmptest')
           createRepo(repopath, (err, repo) => {
             if (err) return done(err)
@@ -813,7 +834,6 @@ describe('repo', function() {
                 expect(xattr.readlist).to.deep.equal([])
                 expect(xattr.hash).to.be.null
                 expect(xattr.htime).to.equal(-1)
-
                 expect(repo.libraries.length).to.equal(1)
                 expect(repo.libraries[0]).to.equal(tree)
 
@@ -823,12 +843,13 @@ describe('repo', function() {
                 expect(tree.root.uuid).to.equal(folderUUID)
                 expect(tree.root.owner).to.deep.equal([userUUID1])
                 expect(tree.proto.owner).to.deep.equal([userUUID1])
-
-                createfileInDrive(userUUID1,"tmptest/aba","12345ab",folderUUID,(err,r)=>{
+                let tmppath=path.join(repopath,'aba')
+                repo.createLibraryFile(userUUID1,tmppath,"12345ab",folderUUID,(err,r)=>{
+                  if (err) return done(err) 
                   expect(tree.root.children[0].name).to.equal("12345ab")
                   expect(tree.root.children[0].type).to.equal("file")
                   expect(tree.root.children[0].owner).deep.to.equal([userUUID1])
-                  let nodeinfo = readlibraryfileinfo(folderUUID)
+                  let nodeinfo = repo.readLibraryFileInfo(r.uuid)
                   expect(nodeinfo.name).deep.to.equal("12345ab")
                   expect(nodeinfo.type).to.equal("file")
                   expect(nodeinfo.owner).deep.to.equal([userUUID1])

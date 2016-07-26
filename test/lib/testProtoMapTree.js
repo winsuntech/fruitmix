@@ -245,15 +245,6 @@ describe('scan', function() {
     let filepath = path.join(libraryPath, 'hello')
 
     it('should scan a single file in library', function(done) {
-    
-      let preset = {
-        uuid: UUID.v4(), // folder uuid
-        owner: [userUUID],
-        writelist: [],
-        readlist: [],
-        hash: null,
-        htime: -1 
-      }
 
       let preset2 = {}
 
