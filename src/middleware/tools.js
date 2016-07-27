@@ -145,6 +145,14 @@ function fileformatedetail(uuid){
 	}
 }
 
+function initfolders(name){
+	if(!fs.existsSync('/data/fruitmix/'+name)){
+	  spawnSync('mkdir',['/data/fruitmix/'+name]);
+	}
+
+	xattr.setSync('/data/fruitmix/'+name,'user.owner','')
+}
+
 function tattoo(f){
 	var fstat=fs.statSync(f);
 	//console.log(1)
