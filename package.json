@@ -5,7 +5,7 @@
   "scripts": {
     "start": "node build/app.js",
     "build": "babel src --out-dir build",
-    "devel": "nodemon --exec babel-node src/app.js",
+    "devel": "nodemon --exec babel-node src/main.js",
     "test": "mocha --compilers js:babel-core/register --recursive test",
     "perf": "mocha --compilers js:babel-core/register --recursive perf",
     "test-server": "NODE_PATH=. NODE_ENV=test nodemon ./bin/www",

@@ -69,7 +69,6 @@ describe('xstat', function() {
     it('should read timestamp', function(done) {
       readTimeStampAsync(fpath)
         .then(r => {
-          // console.log(r)
           expect(r).to.equal(timestamp)
           done() 
         })

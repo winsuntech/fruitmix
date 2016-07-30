@@ -29,9 +29,9 @@ class Repo {
   }
 
   findTreeInDriveByUUID(uuid) {
-    console.log("<<<<<<<<<<<<<<<<")
-    console.log(this.drives.find(tree => tree.uuidMap.get(uuid)))
-    console.log(this.drives.find({"uuid":uuid}))
+    // console.log("<<<<<<<<<<<<<<<<")
+    // console.log(this.drives.find(tree => tree.uuidMap.get(uuid)))
+    // console.log(this.drives.find({"uuid":uuid}))
     return this.drives.find(tree => tree.uuidMap.get(uuid))
   }
 
@@ -269,9 +269,9 @@ class Repo {
 
   /** delete **/
   deleteLibraryFile(fileUUID,callback) {
-    console.log("<<<<<<<<<<<<<")
-    console.log(this.libraries)
-    console.log(fileUUID)
+    // console.log("<<<<<<<<<<<<<")
+    // console.log(this.libraries)
+    // console.log(fileUUID)
 
     let node = this.findNodeInLibraryByUUID(fileUUID)
     if (!node) return callback(new Error('uuid not found'))

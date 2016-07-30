@@ -365,9 +365,6 @@ describe('repo', function() {
                 let tmppath=path.join(repopath,'aba')
                 repo.createLibraryFile(userUUID1,tmppath,"12345ab",folderUUID,(err,r)=>{
                   if (err) return done(err)
-                  console.log(">>>>>>>")
-                  console.log(r)
-                  console.log()
                   expect(tree.root.children[0].name).to.equal("12345ab")
                   expect(tree.root.children[0].type).to.equal("file")
                   expect(tree.root.children[0].owner).deep.to.equal([userUUID1])
@@ -690,8 +687,6 @@ describe('repo', function() {
                   expect(tree.root.children[0].type).to.equal("file")
                   expect(tree.root.children[0].owner).deep.to.equal([userUUID1])
                   expect(tree.root.children.length).to.equal(1)
-                  console.log(">>>>>>>>>>>>")
-                  console.log(tree.root.children)
                   repo.deleteLibraryFile(tree.root.children[0].uuid,(err,r)=>{
                     if (err) return done(err)
                     expect(tree.root.children.length).to.equal(0)

@@ -48,10 +48,6 @@ const protoNode = {
   upEach(func) {
     let node = this
     while (node !== null) {
-      if (node.parent === undefined) {
-        console.log(node)
-        console.log(node.tree)
-      }
       func(node)
       node = node.parent
     }
@@ -175,7 +171,6 @@ class ProtoMapTree {
   }
 
   deleteNode(node) {
-    //console.log(node.__proto__)
     node.detach()
     node.postVisit(n => {
       this.uuidMap.delete(n.uuid)
@@ -209,8 +204,6 @@ function createProtoMapTreeV1(rootpath, type, callback) {
   if (!validator.isUUID(dirname)) return callback(new Error('folder name must be valid uuid'))
 
   readXstatAnyway(rootpath, (err, xstat) => {
-    console.log(xstat)
-    console.log('---------------')
     if (err) return callback(err)
     if (!xstat.isDirectory()) 
       return callback(new Error('rootpath must be a directory')) 
@@ -275,7 +268,6 @@ const driveVisitor = (dir, node, entry, callback) => {
   readXstat2(entrypath, {
     owner: node.tree.root.owner
   }, (err, xstat) => {
-    console.log(xstat)
     if (err) return callback()
     if (!xstat.isDirectory() && !xstat.isFile()) return callback()
 

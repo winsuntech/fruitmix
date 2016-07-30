@@ -1,77 +1,74 @@
+import path from 'path'
+import fs from 'fs'
 
-
-
-var express = require('express');
-var mongoose = require('mongoose');
-var path = require('path');
-var favicon = require('serve-favicon');
-var logger = require('morgan');
-var bodyParser = require('body-parser');
+import express from 'express'
+import favicon from 'serve-favicon'
+import logger from 'morgan'
+import bodyParser from 'body-parser'
 // var mime=require('config/mime');
-var xattr = require('fs-xattr');
-const uuid = require('node-uuid');
-var schedule = require('node-schedule');
-var MediaObj = require('./middleware/mediaobj');
-var spawnSync = require('child_process').spawnSync;
-var fs = require("fs");
-var multer = require('multer');
 
+import xattr from 'fs-xattr'
+// var schedule = require('node-schedule');
+var MediaObj = require('./middleware/mediaobj');
+// var spawnSync = require('child_process').spawnSync;
+import multer from 'multer'
+import mongoose from 'mongoose'
 
 /** Express **/
-var app = express();
+let app = express()
 //var timeout =require('connect-timeout');
 //app.use(timeout('10000s'));
+
 /** Database Connection **/
-var env = app.get('env');
+let env = app.get('env')
 if (env !== 'production' && env !== 'development' && env !== 'test') {
-  console.log('Unrecognized NODE_ENV string: ' + env);
-  console.log('exit');
-  process.exit(1);
+  console.log('Unrecognized NODE_ENV string: ' + env)
+  console.log('exit')
+  process.exit(1)
 } else {
-  console.log('NODE_ENV is set to ' + env);
+  console.log('NODE_ENV is set to ' + env)
 }
 
-var dbUrl = require('./config/database').database[env];
-console.log('Database url: ' + dbUrl);
-
+var dbUrl = require('./config/database').database[env]
+console.log('Database url: ' + dbUrl)
 mongoose.connect(dbUrl, err => { if (err) throw err; });
 
 /** Model Initialization **/
-var User = require('./models/user');
-var Version = require('./models/version');
-var Versionlink = require('./models/versionlink');
-var Comment = require('./models/comment');
-var Udbindling = require('./models/udbinding');
-var Librarylist = require('./models/librarylist');
+var User = require('./models/user')
+var Version = require('./models/version')
+var Versionlink = require('./models/versionlink')
+var Comment = require('./models/comment')
+var Udbindling = require('./models/udbinding')
+var Librarylist = require('./models/librarylist')
 var Exif = require('./models/exif')
-var Config = require('./models/config');
-var auth = require('./middleware/auth');
-var helper = require('./middleware/tools');
+var Config = require('./models/config')
+var auth = require('./middleware/auth')
+var helper = require('./middleware/tools')
 
 // uncomment after placing your favicon in /public
 //app.use(favicon(path.join(__dirname, 'public', 'favicon.ico')));
 
-app.use(logger('dev'));
-app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: false }));
-app.use(auth.init());
+app.use(logger('dev'))
+app.use(bodyParser.json())
+app.use(bodyParser.urlencoded({ extended: false }))
+app.use(auth.init())
 
 /** Routeing Begins **/
-app.use(express.static(path.join(__dirname, 'public')));
-app.use('/', require('./routes/index'));
-app.use('/init', require('./routes/init'));
-app.use('/login', require('./routes/login'));
-app.use('/token', require('./routes/token'));
-app.use('/users', require('./routes/users'));
-app.use('/files',require('./routes/files'));
-app.use('/media',require('./routes/media'));
+app.use(express.static(path.join(__dirname, 'public')))
+app.use('/', require('./routes/index'))
+app.use('/init', require('./routes/init'))
+app.use('/login', require('./routes/login'))
+app.use('/token', require('./routes/token'))
+app.use('/users', require('./routes/users'))
+app.use('/files',require('./routes/files'))
+app.use('/media',require('./routes/media'))
 
-app.use('/authtest', require('./routes/authtest'));
-app.use('/library',require('./routes/library'));
-app.use('/mediashare',require('./routes/mediashare'));
+app.use('/authtest', require('./routes/authtest'))
+app.use('/library',require('./routes/library'))
+app.use('/mediashare',require('./routes/mediashare'))
+
 /** Routing Ends **/
-
-app.use(multer({ dest:"/data/fruitmix/files" }).any());
+app.use(multer({ dest:"/data/fruitmix/files" }).any())
 
 /****
 spawnSync('rm',['-rf','/data/fruitmix/uploads']);
@@ -131,12 +128,12 @@ helper.buildmediamap();
 
 ****/
 
-console.log('app starts')
-
+console.log('app started')
+/**
 var rule = new schedule.RecurrenceRule();
 rule.second = 0;
 schedule.scheduleJob(rule, function(){ });
-
+**/
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {
   var err = new Error('Not Found');
@@ -151,94 +148,5 @@ app.use(function(err, req, res, next) {
   res.send(err.status + ' ' + err.message);
 });
 
-// module.exports = app;
-/**
- * Module dependencies.
- */
+module.exports = app;
 
-// var app = require('../build/app');
-var debug = require('debug')('myapp:server');
-var http = require('http');
-
-/**
- * Get port from environment and store in Express.
- */
-
-var port = normalizePort(process.env.PORT || '80');
-app.set('port', port);
-
-/**
- * Create HTTP server.
- */
-
-var server = http.createServer(app);
-
-/**
- * Listen on provided port, on all network interfaces.
- */
-
-server.listen(port);
-server.on('error', onError);
-server.on('listening', onListening);
-server.timeout = 100000000000;
-/**
- * Normalize a port into a number, string, or false.
- */
-
-function normalizePort(val) {
-  var port = parseInt(val, 10);
-
-  if (isNaN(port)) {
-    // named pipe
-    return val;
-  }
-
-  if (port >= 0) {
-    // port number
-    return port;
-  }
-
-  return false;
-}
-
-/**
- * Event listener for HTTP server "error" event.
- */
-
-function onError(error) {
-  if (error.syscall !== 'listen') {
-    throw error;
-  }
-
-  var bind = typeof port === 'string'
-    ? 'Pipe ' + port
-    : 'Port ' + port;
-
-  // handle specific listen errors with friendly messages
-  switch (error.code) {
-    case 'EACCES':
-      console.error(bind + ' requires elevated privileges');
-      process.exit(1);
-      break;
-    case 'EADDRINUSE':
-      console.error(bind + ' is already in use');
-      process.exit(1);
-      break;
-    default:
-      throw error;
-  }
-}
-
-/**
- * Event listener for HTTP server "listening" event.
- */
-
-function onListening() {
-  var addr = server.address();
-  var bind = typeof addr === 'string'
-    ? 'pipe ' + addr
-    : 'port ' + addr.port;
-  debug('Listening on ' + bind);
-}
-
-module.exports = server
