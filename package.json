@@ -10,7 +10,7 @@
     "perf": "mocha --compilers js:babel-core/register --recursive perf",
     "test-server": "NODE_PATH=. NODE_ENV=test nodemon ./bin/www",
     "unit": "NODE_PATH=. mocha test/unit --recursive --es_staging",
-    "agent": "NODE_PATH=. NODE_ENV=test mocha test/api --recursive --es_staging",
+    "agent": "NODE_PATH=. NODE_ENV=test mocha --compilers js:babel-core/register --recursive agent",
     "production": "NODE_PATH=. NODE_ENV=production node ./bin/www"
   },
   "dependencies": {},
@@ -55,6 +55,7 @@
     "sinon": "^1.17.3",
     "supertest": "^1.2.0",
     "tingodb": "^0.4.2",
+    "tungus": "0.0.5",
     "validator": "^5.1.0"
   }
 }

@@ -1,10 +1,9 @@
-
 var expect = require('chai').expect;
 var assert = require('chai').assert;
 
 var request = require('supertest');
 
-var app = require('app');
+var app = require('src/app');
 var User = require('mongoose').model('User');
 
 describe("test init when no user exists (first time)", function() {
