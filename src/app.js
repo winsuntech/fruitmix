@@ -1,6 +1,8 @@
 import path from 'path'
 import fs from 'fs'
 
+import Promise from 'bluebird'
+
 import express from 'express'
 import favicon from 'serve-favicon'
 import logger from 'morgan'
@@ -9,11 +11,12 @@ import bodyParser from 'body-parser'
 
 import xattr from 'fs-xattr'
 // var schedule = require('node-schedule');
-var MediaObj = require('./middleware/mediaobj');
+// var MediaObj = require('./middleware/mediaobj');
 // var spawnSync = require('child_process').spawnSync;
 import multer from 'multer'
-import mongoose from 'mongoose'
 
+import mongoose from 'mongoose'
+mongoose.Promise = Promise
 /** Express **/
 let app = express()
 //var timeout =require('connect-timeout');
@@ -48,7 +51,7 @@ var helper = require('./middleware/tools')
 // uncomment after placing your favicon in /public
 //app.use(favicon(path.join(__dirname, 'public', 'favicon.ico')));
 
-app.use(logger('dev'))
+if (env !== 'test') app.use(logger('dev'))
 app.use(bodyParser.json())
 app.use(bodyParser.urlencoded({ extended: false }))
 app.use(auth.init())
