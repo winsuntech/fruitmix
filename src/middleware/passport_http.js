@@ -1,7 +1,7 @@
-var passport = require('passport');
-var BasicStrategy = require('passport-http').BasicStrategy;
+var passport = require('passport')
+var BasicStrategy = require('passport-http').BasicStrategy
 
-var User = require('mongoose').model('User');
+var User = require('mongoose').model('User')
 
 module.exports = (passport) => {
 
@@ -9,19 +9,19 @@ module.exports = (passport) => {
 
     User.findOne({ uuid: username }, (err, user) => {
 
-      if (err) { return done(err); }
-      if (!user) { return done(null, false); }
+      if (err) { return done(err) }
+      if (!user) { return done(null, false) }
 
       user.verifyPassword(password, (err, isMatch) => {
 
-        if (err) { return done(err); }
-        if (!isMatch) { return done(null, false); }
-        return done(null, user);
-      });
-    });
-  };
+        if (err) { return done(err) }
+        if (!isMatch) { return done(null, false) }
+        return done(null, user)
+      })
+    })
+  }
 
-  passport.use(new BasicStrategy(verify));
-};
+  passport.use(new BasicStrategy(verify))
+}
 
 

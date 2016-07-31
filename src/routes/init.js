@@ -1,6 +1,6 @@
-const User = require('mongoose').model('User');
-const router = require('express').Router();
-const uuid = require('node-uuid');
+const User = require('mongoose').model('User')
+const router = require('express').Router()
+const uuid = require('node-uuid')
 // var spawnSync = require('child_process').spawnSync;
 // var xattr = require('fs-xattr');
 /*
@@ -10,9 +10,9 @@ router.post('/', (req, res) => {
 
   User.count({}, function (err, count) {
     // internal error
-    if (err) { return res.status(500).json(null); }
+    if (err) { return res.status(500).json(null) }
     // user already exists, should be a 403. TODO
-    else if (count) { return res.status(403).json(null); }
+    else if (count) { return res.status(403).json(null) }
     // invalide username or password
     else if (typeof req.body.username === 'undefined' ||
       typeof req.body.username !== 'string' ||
@@ -20,7 +20,7 @@ router.post('/', (req, res) => {
       typeof req.body.password === 'undefined' ||
       typeof req.body.password !== 'string' ||
       req.body.password.length === 0) {
-      return res.status(400).json({ message: 'invalid username or password' });
+      return res.status(400).json({ message: 'invalid username or password' })
     }
     else {
       // create first user
@@ -33,10 +33,10 @@ router.post('/', (req, res) => {
         isAdmin: true,
         isFirstUser: true,
         type: 'user',
-      });
+      })
 
       firstUser.save((err) => {
-        if (err) { return res.status(500).json(null); }
+        if (err) { return res.status(500).json(null) }
 /*** FIXME
         spawnSync('mkdir',['-p','/data/fruitmix/drive/'+tmpuuid]);
         let fm={}
@@ -45,12 +45,12 @@ router.post('/', (req, res) => {
         xattr.setSync('/data/fruitmix/drive/'+tmpuuid,'user.owner',tmpuuid);
         builder.checkall('/data/fruitmix/drive/'+tmpuuid);
 ***/
-        return res.status(200).json(null);
-      });
+        return res.status(200).json(null)
+      })
     }
-  });
-});
+  })
+})
 
-module.exports = router;
+module.exports = router
 
 

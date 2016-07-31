@@ -1,7 +1,7 @@
-var mongoose = require('mongoose');
-var Schema = mongoose.Schema;
+var mongoose = require('mongoose')
+var Schema = mongoose.Schema
 
-var bcrypt = require('bcryptjs');
+var bcrypt = require('bcryptjs')
 
 var UserSchema = new Schema({
 
@@ -17,44 +17,44 @@ var UserSchema = new Schema({
 
   // user, device, etc.
   type: { type: String, required: true },
-});
+})
 
 /*
  * Arrow function cannot be used here!
  */
 UserSchema.pre('save', function(next) {
 
-  var user = this;
+  var user = this
 
   if (this.isNew || this.isModified('password')) {
 
     bcrypt.genSalt(10, (err, salt) => {
 
-      if (err) return next(err);
+      if (err) return next(err)
       bcrypt.hash(user.password, salt, (err, hash) => {
 
-        if (err) return next(err);        
-        user.password = hash;
-        return next(); 
-      });
-    });
+        if (err) return next(err)        
+        user.password = hash
+        return next() 
+      })
+    })
   }
   else {
-    return next();
+    return next()
   }
-});
+})
 
 UserSchema.methods.verifyPassword = function(password, cb) {
 
-    bcrypt.compare(password, this.password, (err, isMatch) => {
+  bcrypt.compare(password, this.password, (err, isMatch) => {
 
-        if (err) {
-            return cb(err);
-        }
-        cb(null, isMatch);
-    });
-};
+    if (err) {
+      return cb(err)
+    }
+    cb(null, isMatch)
+  })
+}
 
-module.exports = mongoose.model('User', UserSchema);
+module.exports = mongoose.model('User', UserSchema)
 
 

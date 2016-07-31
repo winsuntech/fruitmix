@@ -347,7 +347,7 @@ const driveTreeMethods = {
   },
 
   renameFileOrFolder: function(node, newName, callback) {
-    fs.rename(this.abspath(node),this.abspath(node.parent)+"/"+newName,(err)=>{
+    fs.rename(this.abspath(node),this.abspath(node.parent)+'/'+newName,(err)=>{
       if (err) return callback(err)
       node.name=newName
       callback(null,node)
@@ -405,7 +405,7 @@ const libraryTreeMethods = {
   },
 
   renameFileOrFolder: function(node, newName, callback) {
-    fs.rename(this.abspath(node),this.abspath(node.parent)+"/"+newName,(err)=>{
+    fs.rename(this.abspath(node),this.abspath(node.parent)+'/'+newName,(err)=>{
       if (err) return callback(err)
       node.name=newName
       callback(null,node)
@@ -434,7 +434,7 @@ const libraryTreeMethods = {
 
     if(result instanceof Error) callback(result)
 
-    fs.rename(this.abspath(node),this.abspath(node.parent)+"/"+newName,(err)=>{
+    fs.rename(this.abspath(node),this.abspath(node.parent)+'/'+newName,(err)=>{
       if (err) return callback(err)
       node.name=newName
       callback(null,node)

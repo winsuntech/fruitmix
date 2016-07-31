@@ -1,7 +1,7 @@
-var mongoose = require('mongoose');
-var Schema = mongoose.Schema;
+var mongoose = require('mongoose')
+var Schema = mongoose.Schema
 
-var bcrypt = require('bcryptjs');
+var bcrypt = require('bcryptjs')
 
 var VersionSchema = new Schema({
   docversion:{type:String},
@@ -14,8 +14,8 @@ var VersionSchema = new Schema({
   tags:{type: Array},
   contents: { type: Array},
   mtime:{type:Number}
-});
+})
 
-module.exports = mongoose.model('Version', VersionSchema);
+module.exports = mongoose.model('Version', VersionSchema)
 
 

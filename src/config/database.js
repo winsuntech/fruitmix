@@ -4,6 +4,6 @@ module.exports = {
     development: 'mongodb://localhost/app-development',
     test: 'mongodb://localhost/app-test'
   }
-};
+}
 
 

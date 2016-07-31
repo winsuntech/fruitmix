@@ -34,7 +34,7 @@ if (env !== 'production' && env !== 'development' && env !== 'test') {
 
 var dbUrl = require('./config/database').database[env]
 console.log('Database url: ' + dbUrl)
-mongoose.connect(dbUrl, err => { if (err) throw err; });
+mongoose.connect(dbUrl, err => { if (err) throw err })
 
 /** Model Initialization **/
 var User = require('./models/user')
@@ -71,7 +71,7 @@ app.use('/library',require('./routes/library'))
 app.use('/mediashare',require('./routes/mediashare'))
 
 /** Routing Ends **/
-app.use(multer({ dest:"/data/fruitmix/files" }).any())
+app.use(multer({ dest:'/data/fruitmix/files' }).any())
 
 /****
 spawnSync('rm',['-rf','/data/fruitmix/uploads']);
@@ -139,17 +139,17 @@ schedule.scheduleJob(rule, function(){ });
 **/
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {
-  var err = new Error('Not Found');
-  err.status = 404;
-  next(err);
-});
+  var err = new Error('Not Found')
+  err.status = 404
+  next(err)
+})
 
 // error handlers
 app.use(function(err, req, res, next) {
-  res.status(err.status || 500);
-  res.type('text/plain');
-  res.send(err.status + ' ' + err.message);
-});
+  res.status(err.status || 500)
+  res.type('text/plain')
+  res.send(err.status + ' ' + err.message)
+})
 
-module.exports = app;
+module.exports = app
 

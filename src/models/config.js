@@ -1,10 +1,10 @@
-var mongoose = require('mongoose');
-var Schema = mongoose.Schema;
+var mongoose = require('mongoose')
+var Schema = mongoose.Schema
 
 var ConfigSchema = new Schema({
-	data: {type:Object}
-});
+	                    data: {type:Object}
+})
 
-module.exports = mongoose.model('Config', ConfigSchema);
+module.exports = mongoose.model('Config', ConfigSchema)
 
 
