@@ -26,19 +26,19 @@ const testData1 = () => {
 
   let object = {
     a:          null,
-      b:        'a',
-      c:        'a',
-        d:      'c',
-      e:        'a',
-        f:      'e',
-        g:      'e',
-      h:        'a',
-        i:      'h',
-        j:      'h',
-          k:    'j',
-        l:      'h',
-          m:    'l',
-          n:    'l'
+    b:        'a',
+    c:        'a',
+    d:      'c',
+    e:        'a',
+    f:      'e',
+    g:      'e',
+    h:        'a',
+    i:      'h',
+    j:      'h',
+    k:    'j',
+    l:      'h',
+    m:    'l',
+    n:    'l'
   } 
 
   for (let prop in object) {  
@@ -572,20 +572,20 @@ describe('drive file operation', function() {
         mkdirp(`tmptest/${userUUID1}/world`, err => {
           if (err) return done(err)
           let preset = {
-            uuid: "ced8e0b0-071d-442b-94e2-b3574002000a",
-            owner: ["ced8e0b0-071d-442b-94e2-b3574002000b"],
-            writelist: ["ced8e0b0-071d-442b-94e2-b3574002000c"],
-            readlist: ["ced8e0b0-071d-442b-94e2-b3574002000d"],
+            uuid: 'ced8e0b0-071d-442b-94e2-b3574002000a',
+            owner: ['ced8e0b0-071d-442b-94e2-b3574002000b'],
+            writelist: ['ced8e0b0-071d-442b-94e2-b3574002000c'],
+            readlist: ['ced8e0b0-071d-442b-94e2-b3574002000d'],
             hash: null,
             htime: -1
           }
 
           let newset = {
-            uuid: "ced8e0b0-071d-442b-94e2-b3574002000e",
-            owner: ["ced8e0b0-071d-442b-94e2-b3574002000f"],
-            writelist: ["ced8e0b0-071d-442b-94e2-b3574002000g"],
-            readlist: ["ced8e0b0-071d-442b-94e2-b3574002000h"],
-            hash: "123456",
+            uuid: 'ced8e0b0-071d-442b-94e2-b3574002000e',
+            owner: ['ced8e0b0-071d-442b-94e2-b3574002000f'],
+            writelist: ['ced8e0b0-071d-442b-94e2-b3574002000g'],
+            readlist: ['ced8e0b0-071d-442b-94e2-b3574002000h'],
+            hash: '123456',
             htime: 0
           }
 
@@ -633,20 +633,20 @@ describe('drive file operation', function() {
         mkdirp(`tmptest/${userUUID1}/world`, err => {
           if (err) return done(err)
           let preset = {
-            uuid: "ced8e0b0-071d-442b-94e2-b3574002000a",
-            owner: ["ced8e0b0-071d-442b-94e2-b3574002000b"],
-            writelist: ["ced8e0b0-071d-442b-94e2-b3574002000c"],
-            readlist: ["ced8e0b0-071d-442b-94e2-b3574002000d"],
+            uuid: 'ced8e0b0-071d-442b-94e2-b3574002000a',
+            owner: ['ced8e0b0-071d-442b-94e2-b3574002000b'],
+            writelist: ['ced8e0b0-071d-442b-94e2-b3574002000c'],
+            readlist: ['ced8e0b0-071d-442b-94e2-b3574002000d'],
             hash: null,
             htime: -1
           }
 
           let newset = {
-            uuid: "ced8e0b0-071d-442b-94e2-b3574002000e",
-            owner: ["ced8e0b0-071d-442b-94e2-b3574002000f"],
-            writelist: ["ced8e0b0-071d-442b-94e2-b3574002000g"],
-            readlist: ["ced8e0b0-071d-442b-94e2-b3574002000h"],
-            hash: "123456",
+            uuid: 'ced8e0b0-071d-442b-94e2-b3574002000e',
+            owner: ['ced8e0b0-071d-442b-94e2-b3574002000f'],
+            writelist: ['ced8e0b0-071d-442b-94e2-b3574002000g'],
+            readlist: ['ced8e0b0-071d-442b-94e2-b3574002000h'],
+            hash: '123456',
             htime: 0
           }
 
@@ -693,77 +693,77 @@ describe('drive file operation', function() {
 
 describe('library file operation', function() {
 
-    describe('import library file', function() {
+  describe('import library file', function() {
       // tmptest/${userUUID}/ <- target folder
       // tmptest/hello <- file to be moved
 
-      let userUUID1 = UUID.v4()
-      let drivepath = path.join(process.cwd(), `tmptest/${userUUID1}`)
-      let srcpath = path.join(process.cwd(), 'tmptest', 'hello')
+    let userUUID1 = UUID.v4()
+    let drivepath = path.join(process.cwd(), `tmptest/${userUUID1}`)
+    let srcpath = path.join(process.cwd(), 'tmptest', 'hello')
 
-      it('should import a file into given library folder', function(done) {
-
-        rimraf('tmptest', err => {
-          if (err) return done(err)
-          mkdirp(`tmptest/${userUUID1}/`, err => {
-            if (err) return done(err)
-            let preset = {
-              uuid: UUID.v4(),
-              owner: [UUID.v4()],
-              writelist: [UUID.v4()],
-              readlist: [UUID.v4()],
-              hash: "123456",
-              htime: -1
-            }
-
-            xattr.set(drivepath, 'user.fruitmix', JSON.stringify(preset), err => {
-              if (err) return done(err)
-              fs.writeFile('tmptest/hello', preset.hash, err => {
-                if (err) return done(err) 
-                createProtoMapTree(drivepath, 'library', (err, tree) => {
-                  if (err) return done(err)
-
-                  tree.importFile(srcpath, tree.root, preset.hash, (err, node) => {
-                    if (err) return done(err) 
-                    fs.stat(path.join(drivepath, preset.hash), (err, stat) => {
-                      if (err) return done(err)
-
-                      let children = tree.root.children
-                      let child = children[0]
-                      expect(children.length).to.equal(1)
-                      expect(child.type).to.equal('file')
-                      expect(child.name).to.equal('123456')
-                      done()
-                    })
-                  })
-                })
-              })
-            })
-          })
-        }) 
-      })
-
-      it('should update a file', function(done) {
+    it('should import a file into given library folder', function(done) {
 
       rimraf('tmptest', err => {
         if (err) return done(err)
         mkdirp(`tmptest/${userUUID1}/`, err => {
           if (err) return done(err)
           let preset = {
-            uuid: "ced8e0b0-071d-442b-94e2-b3574002000a",
-            owner: ["ced8e0b0-071d-442b-94e2-b3574002000b"],
-            writelist: ["ced8e0b0-071d-442b-94e2-b3574002000c"],
-            readlist: ["ced8e0b0-071d-442b-94e2-b3574002000d"],
-            hash: "654321",
+            uuid: UUID.v4(),
+            owner: [UUID.v4()],
+            writelist: [UUID.v4()],
+            readlist: [UUID.v4()],
+            hash: '123456',
+            htime: -1
+          }
+
+          xattr.set(drivepath, 'user.fruitmix', JSON.stringify(preset), err => {
+            if (err) return done(err)
+            fs.writeFile('tmptest/hello', preset.hash, err => {
+              if (err) return done(err) 
+              createProtoMapTree(drivepath, 'library', (err, tree) => {
+                if (err) return done(err)
+
+                tree.importFile(srcpath, tree.root, preset.hash, (err, node) => {
+                  if (err) return done(err) 
+                  fs.stat(path.join(drivepath, preset.hash), (err, stat) => {
+                    if (err) return done(err)
+
+                    let children = tree.root.children
+                    let child = children[0]
+                    expect(children.length).to.equal(1)
+                    expect(child.type).to.equal('file')
+                    expect(child.name).to.equal('123456')
+                    done()
+                  })
+                })
+              })
+            })
+          })
+        })
+      }) 
+    })
+
+    it('should update a file', function(done) {
+
+      rimraf('tmptest', err => {
+        if (err) return done(err)
+        mkdirp(`tmptest/${userUUID1}/`, err => {
+          if (err) return done(err)
+          let preset = {
+            uuid: 'ced8e0b0-071d-442b-94e2-b3574002000a',
+            owner: ['ced8e0b0-071d-442b-94e2-b3574002000b'],
+            writelist: ['ced8e0b0-071d-442b-94e2-b3574002000c'],
+            readlist: ['ced8e0b0-071d-442b-94e2-b3574002000d'],
+            hash: '654321',
             htime: -1
           }
 
           let newset = {
-            uuid: "ced8e0b0-071d-442b-94e2-b3574002000e",
-            owner: ["ced8e0b0-071d-442b-94e2-b3574002000f"],
-            writelist: ["ced8e0b0-071d-442b-94e2-b3574002000g"],
-            readlist: ["ced8e0b0-071d-442b-94e2-b3574002000h"],
-            hash: "123456",
+            uuid: 'ced8e0b0-071d-442b-94e2-b3574002000e',
+            owner: ['ced8e0b0-071d-442b-94e2-b3574002000f'],
+            writelist: ['ced8e0b0-071d-442b-94e2-b3574002000g'],
+            readlist: ['ced8e0b0-071d-442b-94e2-b3574002000h'],
+            hash: '123456',
             htime: 0
           }
 
@@ -868,6 +868,6 @@ describe('library file operation', function() {
 
 
 
-    }) // end of create library file 
+  }) // end of create library file 
   
 })

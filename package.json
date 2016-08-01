@@ -7,11 +7,10 @@
     "build": "babel src --out-dir build",
     "devel": "nodemon --exec babel-node src/main.js",
     "test": "mocha --compilers js:babel-core/register --recursive test",
-    "perf": "mocha --compilers js:babel-core/register --recursive perf",
-    "test-server": "NODE_PATH=. NODE_ENV=test nodemon ./bin/www",
-    "unit": "NODE_PATH=. mocha test/unit --recursive --es_staging",
     "agent": "NODE_PATH=. NODE_ENV=test mocha --compilers js:babel-core/register --recursive test_agent",
-    "production": "NODE_PATH=. NODE_ENV=production node ./bin/www"
+    "lint": "node node_modules/eslint/bin/eslint.js src",
+    "linttest": "node node_modules/eslint/bin/eslint.js test",
+    "lintagent": "node node_modules/eslint/bin/eslint.js test_agent"
   },
   "dependencies": {},
   "devDependencies": {

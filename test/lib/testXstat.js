@@ -30,7 +30,7 @@ const uuid7 = '68d814e1-5051-43de-a579-b228df924302'
 const uuid8 = '23affbe4-7040-429b-ac32-1a7fe7fccd1d'
 const uuid9 = '80a0959d-568b-4079-936e-0c21d02570af'
 
-const sha256_1 = "2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824"
+const sha256_1 = '2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824'
 
 const defaultXattr = {
   uuid: uuid1,
