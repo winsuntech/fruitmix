@@ -548,6 +548,7 @@ describe('repo', function() {
     })
   })
 
+/** TODO
   describe('delete folder from a drive folder', function() {
     let userUUID1 = UUID.v4()
     fs.writeFileSync('tmptest/aba','11')
@@ -596,6 +597,7 @@ describe('repo', function() {
       })  
     })
   })
+**/
 
   describe('delete file form a drive folder', function() {
     let userUUID1 = UUID.v4()
