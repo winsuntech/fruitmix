@@ -28,23 +28,31 @@ Virtual Root can be a mount point. A mount point is also a folder.
 
 Virutal Root can not be nested.
 
-#### Universe
+A **Virtual Root File System (Virtual ROOTFS)** is the file system subtree containing all files or folders dominated by a Virtual Root.
 
-**Universe** is defined as a set containing all files and folders dominated by all VROOTs.
+This definition is inclusive (including the root folder itself).
 
-In other words, if we define a **VROOT Set** as Set<sub>VROOT</sub>, then the **Universe** are the the union set of all such sets.
+A set of VROOTs is denoted by Set<sub>VROOT</sub>. Each element in this set containing a reference to a VROOT, with SOME related information. **TODO**
+
+A set of VROOTFSes is denoted by Set<sub>VROOTFS</sub>. Each element in this set containing the normal file or folder information, their structural information, and a reference to their common ancestor (VROOT).
+
+#### Universe (Host or Server)
+
+**Universe** is defined as a set containing all files and folders dominated by all VROOTs, that is, it is the union set of ALL Virtual Root File System.
 
 #### Ownership
 
-Each VROOT must be assigned to at least one owner.
+Each VROOT (or VROOTFS) must be assigned to at least one owner.
 
 Only SysAdmin can change the ownership of a VROOT.
 
 #### Server and Client
 
-From the viewpoint of host (server) program, there will be **a collection of VROOTs**, their corresponding VROOT sets form a **Partition** of Universe. The program can add or delete a VROOT, which is essentially changed the Universe. The program can also change the ownership of any VROOT.
+From the viewpoint of host (server) program, there will be a Set<sub>VROOT</sub> containing all VROOTs, their corresponding VROOTFS sets form a **Partition** of Universe.
 
-From the viewpoint of client program, it sees only the VROOTs owned by the login user.
+The program can add or delete a VROOT, which is essentially changing the Universe. The program can also change the ownership of any VROOT.
+
+From the viewpoint of client program, it sees only the VROOTs owned by the login user, which is a subset of Host's Set<sub>VROOT</sub>.
 
 #### Other words
 
