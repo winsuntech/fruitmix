@@ -10,7 +10,7 @@ var xattr = require('fs-xattr')
 var spawn = require('child_process').spawn
 var spawnSync = require('child_process').spawnSync
 var multer  = require('multer')
-var upload = multer({ dest: '/data/fruitmix/uploads/' })
+// var upload = multer({ dest: '/data/fruitmix/uploads/' })
 var helper = require('../middleware/tools')
 var path = require('path')
 const readChunk = require('read-chunk')
@@ -100,6 +100,7 @@ router.get('/*',auth.jwt(), (req, res) => {
   }
 })
 
+/**
 router.post('/*',auth.jwt(),upload.single('file'),(req, res) => {
   var pathname = url.parse(req.url).pathname
   var fuuid = pathname.substr(1)
@@ -194,6 +195,8 @@ router.post('/*',auth.jwt(),upload.single('file'),(req, res) => {
     else return res.status(400).json('type is missing')
   }
 })
+
+**/
 
 router.patch('/*',auth.jwt(), (req, res) => {
   var pathname = url.parse(req.url).pathname

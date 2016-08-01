@@ -71,7 +71,7 @@ app.use('/library',require('./routes/library'))
 app.use('/mediashare',require('./routes/mediashare'))
 
 /** Routing Ends **/
-app.use(multer({ dest:'/data/fruitmix/files' }).any())
+// app.use(multer({ dest:'/data/fruitmix/files' }).any())
 
 /****
 spawnSync('rm',['-rf','/data/fruitmix/uploads']);

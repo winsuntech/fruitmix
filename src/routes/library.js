@@ -10,7 +10,7 @@ var xattr = require('fs-xattr')
 var spawn = require('child_process').spawn
 var spawnSync = require('child_process').spawnSync
 var multer  = require('multer')
-var upload = multer({ dest: '/data/fruitmix/uploads/'})
+// var upload = multer({ dest: '/data/fruitmix/uploads/'})
 var helper = require('../middleware/tools')
 var path = require('path')
 const readChunk = require('read-chunk')
@@ -20,7 +20,7 @@ var Librarylist = require('mongoose').model('Librarylist')
 var Udbinding = require('mongoose').model('Udbinding')
 var debug=false
 
-
+/**
 router.post('/*',auth.jwt(),upload.single('file'),(req, res) => {
   debug && console.log('00000000000000')
   var pathname = url.parse(req.url).pathname
@@ -94,6 +94,7 @@ router.post('/*',auth.jwt(),upload.single('file'),(req, res) => {
     console.log(e)
   }
 })
+**/
 
 module.exports = router
 

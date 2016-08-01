@@ -54,7 +54,7 @@ The program can add or delete a VROOT, which is essentially changing the Univers
 
 From the viewpoint of client program, it sees only the VROOTs owned by the login user, which is a subset of Host's Set<sub>VROOT</sub>.
 
-#### Other words
+#### Other Words
 
 Any file or folder belongs to exactly one Virtual Root.
 
