@@ -44,7 +44,7 @@ var Comment = require('./models/comment')
 var Udbindling = require('./models/udbinding')
 var Librarylist = require('./models/librarylist')
 var Exif = require('./models/exif')
-var Config = require('./models/config')
+// var Config = require('./models/config')
 var auth = require('./middleware/auth')
 var helper = require('./middleware/tools')
 
