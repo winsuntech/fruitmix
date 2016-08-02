@@ -56,19 +56,22 @@ app.use(bodyParser.json())
 app.use(bodyParser.urlencoded({ extended: false }))
 app.use(auth.init())
 
+import models from './models/models'
+import { createUserModel } from './models/userModel'
+
 /** Routeing Begins **/
 app.use(express.static(path.join(__dirname, 'public')))
 app.use('/', require('./routes/index'))
-app.use('/init', require('./routes/init'))
+app.use('/init', require('./routes/init2').default)
 app.use('/login', require('./routes/login'))
 app.use('/token', require('./routes/token'))
 app.use('/users', require('./routes/users'))
-app.use('/files',require('./routes/files'))
-app.use('/media',require('./routes/media'))
+app.use('/files', require('./routes/files'))
+app.use('/media', require('./routes/media'))
 
 app.use('/authtest', require('./routes/authtest'))
-app.use('/library',require('./routes/library'))
-app.use('/mediashare',require('./routes/mediashare'))
+app.use('/library', require('./routes/library'))
+app.use('/mediashare', require('./routes/mediashare'))
 
 /** Routing Ends **/
 // app.use(multer({ dest:'/data/fruitmix/files' }).any())

@@ -2,20 +2,9 @@ import fs from 'fs'
 import Promise from 'bluebird'
 import mkdirp from 'mkdirp'
 
+import { throwBusy, throwOutOfSync, throwInvalid, throwError } from '../utils/throw'
+
 Promise.promisifyAll(fs)
-
-const throwError = (text) => { throw new Error(text) }
-const throwBusy = (text) => { 
-  let e = new Error(text || 'busy')
-  e.code = 'EBUSY'
-  throw e
-}
-
-const throwOutOfSync = (text) => {
-  let e = new Error(text || 'out of sync')
-  e.code = 'EOUTOFSYNC'
-  throw e
-}
 
 class Collection {
   
