@@ -29,6 +29,8 @@ class Collection {
   /**
     throw EBUSY if locked
     throw EOUTOFSYNC if list is outdated
+
+    since list is treated as immutable, newlist should be different from list
   **/
   async updateAsync(list, newlist) {
 
@@ -79,4 +81,4 @@ const impromptu = async () => {
   return l2
 }
 
-impromptu().then(l => console.log(l)).catch(e => console.log(e))
+// impromptu().then(l => console.log(l)).catch(e => console.log(e))
