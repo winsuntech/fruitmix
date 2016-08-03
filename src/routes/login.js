@@ -1,19 +1,20 @@
-var User = require('mongoose').model('User')
-var router = require('express').Router()
+import { Router } from 'express'
+import Models from '../models/models'
 
-router.get('/', function(req, res, next) {
+const router = Router()
 
-  User.find({ type: 'user' }, 'uuid username avatar', (err, docs) => {
-    if (err) {
-      return res.status(500).json(null)
-    }
-    res.json(docs.map(doc => ({
-      username: doc.username, 
-      uuid: doc.uuid, 
-      avatar: doc.avatar
-    }))) 
-  })
+router.get('/', (req, res) => {
+
+  let User = Models.getModel('user')
+  let mapped = User.collection.list
+                .map(usr => ({
+                  uuid: usr.uuid,
+                  username: usr.username,
+                  avatar: usr.avatar
+                }))
+
+  res.status(200).json(mapped)
 })
 
-module.exports = router
+export default router
 

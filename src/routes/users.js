@@ -77,6 +77,5 @@ router.patch('/',auth.jwt(), (req, res) => {
   }
 })
 
-
 module.exports = router
 

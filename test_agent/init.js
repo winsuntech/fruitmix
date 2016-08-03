@@ -84,9 +84,7 @@ describe('test init when user exists', function() {
             models.setModel('user', mod)
             done()
           }) 
-          .catch(e => {
-            done(e)
-          })
+          .catch(e => done(e))
       })
     })
   })

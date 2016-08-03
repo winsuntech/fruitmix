@@ -63,7 +63,7 @@ import { createUserModel } from './models/userModel'
 app.use(express.static(path.join(__dirname, 'public')))
 app.use('/', require('./routes/index'))
 app.use('/init', require('./routes/init2').default)
-app.use('/login', require('./routes/login'))
+app.use('/login', require('./routes/login').default)
 app.use('/token', require('./routes/token'))
 app.use('/users', require('./routes/users'))
 app.use('/files', require('./routes/files'))
