@@ -42,7 +42,7 @@ describe('syncmanager', function() {
           createSyncManager(rootpath, (syncm) => {
             expect(syncm.rootpath).to.equal(rootpath)
             let newnode=syncm.canonicalJson(testnode)
-            expect(newnode).deep.to.equal({"a":1,"b":2,"c":3})
+            expect(newnode).deep.to.equal('{"a":1,"b":3,"c":2}')
             done()
           })
         })
@@ -50,7 +50,26 @@ describe('syncmanager', function() {
     })
   })
 
-
+  describe('hash', function() {
+    let testnode={a:1,c:2,b:3}
+    let rootpath = path.join(process.cwd(), 'synctest') 
+    console.log(rootpath)
+    it('should return a hash value', function(done) {
+      
+      rimraf('synctest', err => {
+        if (err) return done(err)
+        mkdirp('synctest', err => {
+          if (err) return done(err) 
+          createSyncManager(rootpath, (syncm) => {
+            expect(syncm.rootpath).to.equal(rootpath)
+            let hash=syncm.calHash(testnode)
+            expect(hash).deep.to.equal('9abf0853a542d602f7b461fa34f52ee42862d22c43552b76d115c53d230a0271')
+            done()
+          })
+        })
+      }) 
+    })
+  })
   // describe('repo scan', function() {
 
   //   let rootpath = path.join(process.cwd(), 'tmptest')
