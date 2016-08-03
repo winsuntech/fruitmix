@@ -1,27 +1,21 @@
 var passport = require('passport')
 var BasicStrategy = require('passport-http').BasicStrategy
 
-var User = require('mongoose').model('User')
+import Models from '../models/models'
 
-module.exports = (passport) => {
+const decorator = (passport) => {
 
-  var verify = (username, password, done) => {
-
-    User.findOne({ uuid: username }, (err, user) => {
-
-      if (err) { return done(err) }
-      if (!user) { return done(null, false) }
-
-      user.verifyPassword(password, (err, isMatch) => {
-
-        if (err) { return done(err) }
-        if (!isMatch) { return done(null, false) }
-        return done(null, user)
+  let verify = (username, password, done) => 
+    Models.getModel('user')
+      .verifyPassword(username, password)
+      .then(usr => {
+        usr ? done(null, usr) : done(null, false)
       })
-    })
-  }
-
+      .catch(e => done(e))
+  
   passport.use(new BasicStrategy(verify))
 }
+
+module.exports = decorator 
 
 

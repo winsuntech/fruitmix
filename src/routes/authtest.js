@@ -1,13 +1,12 @@
 var router = require('express').Router()
 var passport = require('passport')
 
-router.get('/', passport.authenticate('jwt', { session : false }), (req, res) => {
-  
-  console.log('+++')
-  console.log(req.user)
-  console.log('+++')
+router.get('/basic', passport.authenticate('basic', { session : false}), (req, res) => {
+  res.send('auth test basic')
+})
 
-  res.send('test test')
+router.get('/jwt', passport.authenticate('jwt', { session : false }), (req, res) => {
+  res.send('auth test jwt')
 })
 
 module.exports = router

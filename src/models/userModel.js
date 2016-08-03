@@ -72,13 +72,14 @@ class UserModel {
     return uuid
   }
 
+  /** change signature **/
   async verifyPassword(useruuid, password) {
     
     let user = this.collection.list.find(u => u.uuid === useruuid)
-    if (!user) return false
+    if (!user) return null
 
     let match = bcrypt.compareAsync(password, user.password)
-    return match
+    return match ? user : null
   }
 }
 

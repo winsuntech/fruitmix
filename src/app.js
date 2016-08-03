@@ -45,7 +45,7 @@ var Udbindling = require('./models/udbinding')
 var Librarylist = require('./models/librarylist')
 var Exif = require('./models/exif')
 // var Config = require('./models/config')
-var auth = require('./middleware/auth')
+var auth = require('./middleware/auth').default
 var helper = require('./middleware/tools')
 
 // uncomment after placing your favicon in /public

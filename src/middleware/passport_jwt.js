@@ -14,13 +14,12 @@ var passportJwt = require('passport-jwt')
 var JwtStrategy = passportJwt.Strategy
 var ExtractJwt = passportJwt.ExtractJwt
 
-var User = require('mongoose').model('User')
+// var User = require('mongoose').model('User')
 var jwtConf = require('../config/passport_jwt')
 
-/*
- * This function is used for initialize passport with jwt strategy
- */ 
-module.exports = (passport) => {
+import Models from '../models/models'
+
+const decorator = (passport) => {
 
   var opts = {
     secretOrKey: jwtConf.secret,
@@ -29,17 +28,13 @@ module.exports = (passport) => {
 
   var verify = (jwt_payload, done) => {
 
-    User.findOne({ uuid: jwt_payload.uuid }, (err, user) => {
-    
-      if (err) return done(err, false)
-      if (user)
-        done(null, user)
-      else
-        done(null, false)
-    })
+    let User = Models.getModel('user')    
+    let user = User.collection.list.find(u => u.uuid === jwt_payload.uuid)
+    user ? done(null, user) : done(null, false)
   }
-
   passport.use(new JwtStrategy(opts, verify))
 }
+
+module.exports = decorator
 
 
