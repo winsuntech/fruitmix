@@ -694,8 +694,8 @@ describe('drive file operation', function() {
 describe('library file operation', function() {
 
   describe('import library file', function() {
-      // tmptest/${userUUID}/ <- target folder
-      // tmptest/hello <- file to be moved
+    // tmptest/${userUUID}/ <- target folder
+    // tmptest/hello <- file to be moved
 
     let userUUID1 = UUID.v4()
     let drivepath = path.join(process.cwd(), `tmptest/${userUUID1}`)

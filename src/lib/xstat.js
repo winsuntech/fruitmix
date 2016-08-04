@@ -1,5 +1,6 @@
 import fs from 'fs'
 
+import Promise from 'bluebird'
 import xattr from 'fs-xattr'
 import UUID from 'node-uuid'
 import validator from 'validator'
@@ -212,11 +213,7 @@ function readXstatAnyway(path, callback) {
   fs.stat(path, (err, stats) => {
     if (err) return callback(err)
     xattr.get(path, 'user.fruitmix', (err, attr) => {
-      if (err && err.code === 'ENODATA'){ 
-        readXstat2(path,{},(err,r)=>{
-          return callback(null, r)
-        })
-      }
+      if (err && err.code === 'ENODATA') return callback(null, null)
       else if (err) return callback(err)
       let parsed = parseJSON(attr)
       if (!parsed) return callback(null, null)
