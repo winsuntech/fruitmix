@@ -7,6 +7,9 @@ const readChunk = require('read-chunk');
 const fileType = require('file-type');
 var helper = require('../middleware/tools');
 var spawnSync = require('child_process').spawnSync;
+var id3 = require("jsmediatags");
+var probe = require('node-ffprobe');
+
 //var fhelp =memt;
 function attachexif(node,exif){
 	node.detail=exif
