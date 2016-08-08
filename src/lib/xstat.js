@@ -237,6 +237,64 @@ function readVRootXstat(path, callback) {
 }
 
 function rootify(path, perm, callback) {
+
+}
+
+function readXstat3(path, perm, callback) {
+
+  // if (!validateOwner(perm.owner)) return callback(new Error('owner is not provided or invalid'))
+
+  fs.stat(path, (err, stats) => {
+
+    if (err) return callback(err)
+    xattr.get(path, 'user.fruitmix', (err, attr) => {
+
+      let parsed, fixed, invalid = false
+
+      if (err && err.code !== 'ENODATA') return callback(err)
+      if (!err) {
+        parsed = parseJSON(attr)
+        if (!validateXattr(parsed)) {
+          invalid = true
+          fixed = fixBadXattr(parsed, perm.owner)
+        }
+      }
+      
+      // non-exist, or json invalid, or bad and can't be fixed
+      if (err || !parsed || (invalid && fixed === null)) {
+
+        let props = {}
+        // since xattr does not exist, it doesn't matter if force is true or false
+        props.uuid = UUID.v4()
+        props.owner = perm.owner
+        props.writelist = perm.writelist ? perm.writelist : null
+        props.readlist = perm.readlist ? perm.readlist : null
+        props.hash = null,
+        props.htime = -1
+
+        xattr.set(path, 'user.fruitmix', JSON.stringify(props), err => {
+          if (err) return callback(err)
+          return callback(null, Object.assign(stats, props, { abspath: path }))
+        })
+        return // !
+      }   
+
+      let good = invalid ? fixed : parsed
+      if (good.htime !== stats.mtime.getTime()) {
+        good.hash = null
+        good.htime = -1
+      }
+
+      if (!shallowequal(good, parsed)) {
+        xattr.set(path, 'user.fruitmix', JSON.stringify(good), err => {
+          if (err) return callback(err) 
+          return callback(null, Object.assign(stats, good, { abspath: path }))
+        })
+      } 
+
+      callback(null, Object.assign(stats, good, { abspath: path }))
+    }) // xattr.get
+  })
 }
 
 // performance critical version
@@ -291,6 +349,7 @@ function readXstat2(path, perm, callback) {
           return callback(null, Object.assign(stats, good, { abspath: path }))
         })
       } 
+
       callback(null, Object.assign(stats, good, { abspath: path }))
     }) // xattr.get
   })

@@ -4,7 +4,7 @@
 
 # Extended Attribute
 
-Fruitmix uses Linux file system's Extended Attribute (xattr) feature to attach data onto files and folders.
+Fruitmix uses Linux file system's Extended Attribute (xattr) feature to store `File Instance` data.
 
 All files and folders in `Universe` has an extended attribute named: `user.fruitmix`, including the root folders.
 
@@ -23,25 +23,61 @@ There are five propertes in xattr for non-root folders and files.
 }
 ```
 
-* `uuid`: string, UUID, version 4, required.
-* `owner`: string, UUID, version 4, null if not set.
-* `writelist`: null or array, containing UUID list
-* `readlist`: null or array, containing UUID list
-* `hash`: SHA256 string for file, or null, if not computed yet.
-* `htime`: hash time, epoch time integer. Reader can compare this with mtime to determine if hash is outdated
+* `uuid`: string, UUID, version 4, required
+* `owner`: string, UUID, version 4, null if not set, required
+* `writelist`: null or array, containing UUID list, required
+* `readlist`: null or array, containing UUID list, required
+* `hash`: SHA256 string for file, or null, if not computed yet, required
+* `htime`: hash time, epoch time integer. Reader can compare this with mtime to determine if hash is outdated, required.
 
-Owner property has different interpretation for non-root and root node. For non-root node, it is interpreted as the folder or file **creator**.
+Notice that owner property has different interpretation for non-root and root node. For non-root node, it is interpreted as the **creator**.
 
-It is possible that there is no way to determine this property. For example, the user copies a file into a `VRoot` folder manually, through login shell. Then the file or folder is found by fruitmix, there is no proper logic to determine the `creator` automatically, especially in the case that there are more than one users in corresponding `VRoot` owner. The only thing we can do is to leave it empty, aka, `null`.
-
+In most cases when user put files into system, either through web interface, or via some sort of network file service, such as samba, fruitmix can determine who is the creator of the file. But there are chances that user put a file into the system manually, bypassing the fruitmix. In such situation, there is no proper logic to force the `creator` to be someone, especially in multiple user owned drives or libraries. The only thing we can do is to leave it empty (`null`).
 
 # Xstat
 
 `Xstat` is a data structure merged from a fruitmix xattr and `fs.stat` object, plus a `abspath` property indicating the absolute path for this folder or file.
 
-# readXstat (function)
 
-`readXstat` reads the `fs.stat` as well as Extended attributes defined above.
+```
+{
+  dev: 2114,
+  ino: 48064969,
+  mode: 33188,
+  nlink: 1,
+  uid: 85,
+  gid: 100,
+  rdev: 0,
+  size: 527,
+  blksize: 4096,
+  blocks: 8,
+  atime: Mon, 10 Oct 2011 23:24:11 GMT,
+  mtime: Mon, 10 Oct 2011 23:24:11 GMT,
+  ctime: Mon, 10 Oct 2011 23:24:11 GMT,
+  birthtime: Mon, 10 Oct 2011 23:24:11 GMT
+}
+```
+# readXstat (path, perm, callback)
+
+`readXstat` reads the `fs.Stats` as well as Extended Attributes defined above.
+
+If the xattr on file or folder is missing, or it's not valid JSON format, or there are invalid properties can can't be fixed automatically, `readXstat` will construct a new one for it.
+
+* missing: no xattr at all
+* invalid JSON: JSON.parse() throw errors
+* invalid properties:
+  * uuid: non-exists or not a uuid, can be fixed with a new one
+  * owner: non-exists, or neither a uuid nor null, can be fixed with null
+  * writelist: non-exists, or not a uuid array, can be fixed with null
+  * readlist: non-exists, or not a uuid array, can be fixed with null
+  * writelist & readlist: both null, or both array, can be fixed with empty array if one of them is null
+  * hash: must be valid hash string, correct length and regex test [0-9a-f], can be fixed with null
+  * htime: must be valid integer (epoch time), can be fixed with -1
+  * hash & htime: both be valid, if one invalid, fix both
+  * htime & mtime: if htime !== mtime, invalidate both hash & htime
+
+
+
 
 There are two versions of this function.
 
