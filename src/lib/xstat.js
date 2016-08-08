@@ -222,6 +222,23 @@ function readXstatAnyway(path, callback) {
   })
 }
 
+function readVRootXstat(path, callback) {
+  fs.stat(path, (err, stats) => {
+    if (err) return callback(err)
+    xattr.get(path, 'user.fruitmix', (err, attr) => {
+      if (err && err.code === 'ENODATA') return callback(null, null)
+      else if (err) return callback(err)
+
+      let parsed = parseJSON(attr)
+      if (!parsed) return callback(null, null)
+      callback(null, Object.assign(stats, formatXattr(parsed), { abspath: path }))
+    })
+  })
+}
+
+function rootify(path, perm, callback) {
+}
+
 // performance critical version
 function readXstat2(path, perm, callback) {
 
@@ -404,6 +421,8 @@ async function updateXattrHashAsync(path, hash, htime) {
 
   return await xattrSetAsync(path, 'user.fruitmix', JSON.stringify(attr))
 }
+
+
 
 let testing = {
   xattrGetRaw,

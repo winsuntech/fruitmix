@@ -189,7 +189,6 @@ class ProtoMapTree {
 // create proto tree for either drive or library
 // for drive, folder name is considered to be drive uuid
 // for library, folder name is considered to be library uuid
-
 function createProtoMapTreeV1(rootpath, type, callback) {
 
   if (!(typeof rootpath === 'string')) return callback(new Error('rootpath must be a string'))
@@ -231,6 +230,7 @@ function createProtoMapTreeV1(rootpath, type, callback) {
       xstat.writelist = proto.writelist
       xstat.readlist = proto.readlist
       break
+
     default:
       throw new Error('type must be drive or library')
     }
