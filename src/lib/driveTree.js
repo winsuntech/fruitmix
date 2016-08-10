@@ -1,16 +1,27 @@
 import rimraf from 'rimraf'
 
+import { readXstat } from './xstat'
 import ProtoMapTree from './protoMapTree'
 import { mapXstatToObject } from './tools'
 
-class DriveTree extends ProtoMapTree {
+// for drive with single owner this should be the owner
+// for drive with multiple owner, owner can be [] or undefined
+const createDriveProto = (xstat) => {
+  owner: xstat.owner.length === 1 ? xstat.owner : [],
+  writelist: undefined,
+  readlist: undefined
+}
+
+class Drive extends ProtoMapTree {
 
   constructor(xstat) {
 
-    super({owner: xstat.owner, writelist: null, readlist: null})
+    let proto = createDriveProto(xstat)
+    let root = mapXstatToObject(xstat)
+
+    super(proto, root)
     
-    let rootObj = mapXstatToObject(xstat)
-    this.createNode(null, rootObj)     
+    this.uuid = xstat.uuid
     this.rootpath = xstat.abspath
   }
 
@@ -86,5 +97,25 @@ class DriveTree extends ProtoMapTree {
     callback(null, node)
   }
 }
+
+// for drive, the xstat must be 
+// 1. isFolder
+// 2. has at least one owner
+// 3. writelist and readlist must be defined
+
+const createDrive = (target) => {
+
+  readXstat(target, null, (err, xstat) => {
+    if (err) return callback(err)
+    if (xstat === null) return callback(new Error('not a drive folder'))
+    if (!xstat.isDirectory()) return callback(new Error('not a folder')) 
+    if (!xstat.owner.length) return callback(new Error('at least one owner'))
+    if (!xstat.writelist || !xstat.readlist) return callback(new Error('permission list cannot be undefined'))
+    
+    callback(null, new Drive(xstat))
+  })  
+}  
+
+export { createDrive }
 
 
