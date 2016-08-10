@@ -5,6 +5,7 @@ import rimraf from 'rimraf'
 import { readXstat } from './xstat'
 import { ProtoMapTree } from './protoMapTree'
 import { mapXstatToObject } from './tools'
+import { visit } from './visitors'
 
 // for drive with single owner this should be the owner
 // for drive with multiple owner, owner can be [] or undefined
@@ -13,6 +14,20 @@ const createDriveProto = (xstat) => ({
   writelist: undefined,
   readlist: undefined
 })
+
+const driveVisitor = (dir, node, entry, callback) => {
+
+  let entrypath = path.join(dir, entry)
+  readXstat(entrypath, (err, xstat) => {
+    if (err) return callback()
+    // if (!xstat.isDirectory() && !xstat.isFile()) return callback()
+
+    let object = mapXstatToObject(xstat)
+    let entryNode = node.tree.createNode(node, object) 
+    if (!xstat.isDirectory()) return callback()  
+    callback(entryNode)
+  })
+}
 
 class Drive extends ProtoMapTree {
 
