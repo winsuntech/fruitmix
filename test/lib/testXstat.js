@@ -9,8 +9,8 @@ import UUID from 'node-uuid'
 import validator from 'validator'
 
 import {
-  readTimeStampAsync,
-  readXstat2,
+  readTimeStamp,
+  readXstat,
   readXstatAnyway,
   readXstatAsync,
   updateXattrPermissionAsync,
@@ -46,12 +46,10 @@ describe('xstat', function() {
   let cwd = process.cwd()
   let fpath = path.join(cwd, 'tmptest')
 
-  describe('readTimeStampAsync 01', function(){
+  describe('readTimeStamp', function(){
 
     let timestamp
-
     before(function(done) {
-
       let uuid = UUID.v4()
       rimraf('tmptest', err => {
         if (err) return done(err)
@@ -67,12 +65,11 @@ describe('xstat', function() {
     })
 
     it('should read timestamp', function(done) {
-      readTimeStampAsync(fpath)
-        .then(r => {
-          expect(r).to.equal(timestamp)
-          done() 
-        })
-        .catch(e => done(e))
+      readTimeStamp(fpath, (err, mtime) => {
+        if (err) done(err)
+        expect(mtime).to.equal(timestamp)
+        done()
+      })
     })
   })
 
@@ -86,11 +83,17 @@ describe('xstat', function() {
         if (err) return done(err)
         mkdirp('tmptest', err => {
           if (err) return done(err)
-
+/**
           readXstatAnyway(fpath, (err, attr) => {
             if (err) return done(err)
             expect(attr).to.be.null
             done()
+          })
+**/
+          readXstat(fpath, null, (err, attr) => {
+            if (err) return done(err)
+            expect(attr).to.be.null
+            done()  
           })
         })
       })

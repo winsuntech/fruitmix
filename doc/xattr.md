@@ -1,7 +1,3 @@
-\[
-\alpha * \beta
-\]
-
 # Extended Attribute
 
 Fruitmix uses Linux file system's Extended Attribute (xattr) feature to store `File Instance` data.
@@ -10,7 +6,7 @@ All files and folders in `Universe` has an extended attribute named: `user.fruit
 
 # Non-Root Node
 
-There are five propertes in xattr for non-root folders and files.
+There are five properties in xattr for non-root folders and files.
 
 ```
 {
@@ -18,8 +14,8 @@ There are five propertes in xattr for non-root folders and files.
   owner: null,
   writelist: null,
   readlist: null,
-  hash: null,
-  htime: -1 // epoch time value, i.e. Date object.getTime()
+  hash: null,   // file only
+  htime: null   // epoch time value, i.e. Date object.getTime(), file only
 }
 ```
 
@@ -36,10 +32,13 @@ In most cases when user put files into system, either through web interface, or 
 
 # Xstat
 
-`Xstat` is a data structure merged from a fruitmix xattr and `fs.stat` object, plus a `abspath` property indicating the absolute path for this folder or file.
+`Xstat` is a data structure merged from a fruitmix xattr and `fs.Stats` object, plus a `abspath` property indicating the absolute path for this folder or file.
 
+Example:
 
 ```
+# there are also functions on the object, see nodejs documents
+
 {
   dev: 2114,
   ino: 48064969,
@@ -54,30 +53,50 @@ In most cases when user put files into system, either through web interface, or 
   atime: Mon, 10 Oct 2011 23:24:11 GMT,
   mtime: Mon, 10 Oct 2011 23:24:11 GMT,
   ctime: Mon, 10 Oct 2011 23:24:11 GMT,
-  birthtime: Mon, 10 Oct 2011 23:24:11 GMT
+  birthtime: Mon, 10 Oct 2011 23:24:11 GMT,
+
+  uuid: ,
+  owner: ,
+  writelist: ,
+  readlist: ,
+  hash: ,
+  htime: ,
+
+  abspath:
 }
 ```
-# readXstat (path, perm, callback)
+# readXstat (path, callback)
 
-`readXstat` reads the `fs.Stats` as well as Extended Attributes defined above.
+`readXstat` reads the xstat object for given path.
 
-If the xattr on file or folder is missing, or it's not valid JSON format, or there are invalid properties can can't be fixed automatically, `readXstat` will construct a new one for it.
+If xattr does not exist, or it's not valid JSON, `readXstat` will construct a new one filled with default value.
 
-* missing: no xattr at all
-* invalid JSON: JSON.parse() throw errors
-* invalid properties:
-  * uuid: non-exists or not a uuid, can be fixed with a new one
-  * owner: non-exists, or neither a uuid nor null, can be fixed with null
-  * writelist: non-exists, or not a uuid array, can be fixed with null
-  * readlist: non-exists, or not a uuid array, can be fixed with null
-  * writelist & readlist: both null, or both array, can be fixed with empty array if one of them is null
-  * hash: must be valid hash string, correct length and regex test [0-9a-f], can be fixed with null
-  * htime: must be valid integer (epoch time), can be fixed with -1
-  * hash & htime: both be valid, if one invalid, fix both
-  * htime & mtime: if htime !== mtime, invalidate both hash & htime
+The default value is:
 
+```
+{
+  uuid: UUID.v4(),
+  owner: null,
+  writelist: null,
+  readlist: null,
+  hash: null,
+  htime: null
+}
+```
 
+If the xattr on file containing invalid properties, `readXstat` will fix it and save it back.
 
+Here is the list of constraints on xattr object:
+
+* uuid: non-exists or not a uuid, fixed with a new one
+* owner: non-exists, or not a uuid or null, fixed with null or default
+* writelist: non-exists, or not a uuid array, fixed with null or default
+* readlist: non-exists, or not a uuid array, fixed with null or default
+* writelist & readlist: both null, or both array, can be fixed with empty array if one of them is null
+* hash: must be valid hash string, correct length and regex test [0-9a-f], can be fixed with null
+* htime: must be valid integer (epoch time), can be fixed with -1
+* hash & htime: both be valid, if one invalid, fix both
+* htime & mtime: if htime !== mtime, invalidate both hash & htime
 
 There are two versions of this function.
 
@@ -97,3 +116,13 @@ For `Virtual Root`, there are extra rules for validation:
 `drive` allows one or more owners. Admin can add or remove owner. Can be deleted by SysAdmin.
 
 `homeLibrary` allows exactly one owner. Cannot be changed. Cannot be deleted unless the user is deleted. Each user has only one `homeLibrary`. It is recommended to create `homeLibrary` on System Drive and name the folder as same uuid with user, suffixed by `-lib`
+
+```
+{
+  uuid: UUID.v4(),
+  owner: [...], // non-empty!
+  writelist: [...], // non-empty!
+  readlist: [...], // non-empty!
+  roottype: 'drive', 'library'
+}
+```
