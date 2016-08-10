@@ -115,13 +115,13 @@ const readXstat = (target, ...args) => {
           err ? callback(err) : callback(null, Object.assign(stats, opts, { abspath: target })))
       }
 
-      let type
+      let type, copy = Object.assign({}, parsed)
       if (stats.isDirectory()) type = 'folder'
       else if (stats.isFile()) type = 'file'
       else throw new Error('unexpected type')
 
-      valid = validateXattr(attr, type, stats.mtime)
-      if (!shallowequal(valid, xattr)) 
+      valid = validateXattr(parsed, type, stats.mtime)
+      if (!shallowequal(valid, copy)) 
         xattr.set(target, FRUITMIX, JSON.stringify(valid), err => 
           err ? callback(err) : callback(null, Object.assign(stats, valid, { abspath: target }))) 
       else 
