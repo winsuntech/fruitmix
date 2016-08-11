@@ -108,45 +108,17 @@ app.use(multer({
 //     }
 //   });
 // });
+
+
+
 spawnSync('rm',['-rf','/data/fruitmix/uploads']);
 spawnSync('mkdir',['/data/fruitmix/uploads']);
-if(!fs.existsSync('/data/fruitmix/thumbs')){
-  spawnSync('mkdir',['/data/fruitmix/thumbs']);
-}
-if(!fs.existsSync('/data/fruitmix/library')){
-  spawnSync('mkdir',['/data/fruitmix/library']);
-}
-if(!fs.existsSync('/data/fruitmix/drive')){
-  spawnSync('mkdir',['/data/fruitmix/drive']);
-}
+
+helper.initfolder('thumbs');
+helper.initfolder('library');
+helper.initfolder('drive');
 // fmap = new Map();
-try{
-  var to1=xattr.getSync('/data/fruitmix/library','user.owner').toString('utf-8')
-  if(to1!==''){
-    xattr.setSync('/data/fruitmix/library','user.owner','')
-  }
-}
-catch(e){
-  xattr.setSync('/data/fruitmix/library','user.owner','')
-}
-try{
-  var to1=xattr.getSync('/data/fruitmix/drive','user.owner').toString('utf-8')
-  if(to1!==''){
-    xattr.setSync('/data/fruitmix/drive','user.owner','')
-  }
-}
-catch(e){
-  xattr.setSync('/data/fruitmix/drive','user.owner','')
-}
-try{
-  var to1=xattr.getSync('/data/fruitmix/thumbs','user.owner').toString('utf-8')
-  if(to1!==''){
-    xattr.setSync('/data/fruitmix/thumbs','user.owner','')
-  }
-}
-catch(e){
-  xattr.setSync('/data/fruitmix/thumbs','user.owner','')
-}
+
 
 global.dmap = new Map();
 global.memt = require('./middleware/treemanager');
