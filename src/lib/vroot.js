@@ -1,4 +1,4 @@
-
+/**
 const validateVrootXstat = (xstat) {
 
   if (typeof xstat !== 'object' || xstat === null) return null
@@ -34,4 +34,4 @@ const rootify = (target) {
 
 }
 
-
+**/

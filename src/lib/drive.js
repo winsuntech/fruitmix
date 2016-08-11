@@ -1,17 +1,45 @@
+import path from 'path'
+
 import rimraf from 'rimraf'
 
-import ProtoMapTree from './protoMapTree'
+import { readXstat } from './xstat'
+import { ProtoMapTree } from './protoMapTree'
 import { mapXstatToObject } from './tools'
+import { visit } from './visitors'
 
-class DriveTree extends ProtoMapTree {
+// for drive with single owner this should be the owner
+// for drive with multiple owner, owner can be [] or undefined
+const createDriveProto = (xstat) => ({
+  owner: xstat.owner.length === 1 ? xstat.owner : [],
+  writelist: undefined,
+  readlist: undefined
+})
+
+const driveVisitor = (dir, node, entry, callback) => {
+
+  let entrypath = path.join(dir, entry)
+  readXstat(entrypath, (err, xstat) => {
+    if (err) return callback()
+    // if (!xstat.isDirectory() && !xstat.isFile()) return callback()
+
+    let object = mapXstatToObject(xstat)
+    let entryNode = node.tree.createNode(node, object) 
+    if (!xstat.isDirectory()) return callback()  
+    callback(entryNode)
+  })
+}
+
+class Drive extends ProtoMapTree {
 
   constructor(xstat) {
-
-    super({owner: xstat.owner, writelist: null, readlist: null})
-    
-    let rootObj = mapXstatToObject(xstat)
-    this.createNode(null, rootObj)     
+    let proto = createDriveProto(xstat)
+    let root = mapXstatToObject(xstat)
+    super(proto, root)
     this.rootpath = xstat.abspath
+  }
+
+  uuid() {
+    return this.root.uuid
   }
 
   abspath(node) {
@@ -19,11 +47,11 @@ class DriveTree extends ProtoMapTree {
     let prepend = path.resolve(this.rootpath, '..')
     nodepath.unshift(prepend)
     return path.join(...nodepath)
-  },
+  }
 
   scan(callback) {
     visit(this.rootpath, this.root, driveVisitor, () => callback())    
-  },
+  }
 
   importFile(srcpath, targetNode, filename, callback) {
 
@@ -37,7 +65,7 @@ class DriveTree extends ProtoMapTree {
         callback(null, node) 
       })
     })
-  },
+  }
 
   createFolder(targetNode, folderName, callback) {
     
@@ -56,7 +84,7 @@ class DriveTree extends ProtoMapTree {
         callback(null, node)
       })
     })
-  },
+  }
 
   renameFileOrFolder(node, newName, callback) {
     fs.rename(this.abspath(node),this.abspath(node.parent)+'/'+newName,(err)=>{
@@ -64,7 +92,7 @@ class DriveTree extends ProtoMapTree {
       node.name=newName
       callback(null,node)
     })
-  },
+  }
 
   deleteFileOrFolder(targetnode, callback){ 
     rimraf(this.abspath(targetnode),err=>{
@@ -72,7 +100,7 @@ class DriveTree extends ProtoMapTree {
       let ntree =this.deleteNode(targetnode)
       callback(null,ntree)
     })
-  },
+  }
 
   updateDriveFile(node,fruitmix,callback) {
     node.writelist=fruitmix.writelist
@@ -87,4 +115,26 @@ class DriveTree extends ProtoMapTree {
   }
 }
 
+// for drive, the xstat must be 
+// 1. isFolder
+// 2. has at least one owner
+// 3. writelist and readlist must be defined
+const createDrive = (target, callback) => {
+
+  if (!path.isAbsolute(target))
+    return process.nextTick(callback, new Error('target must be absolute path'))
+
+  readXstat(target, null, (err, xstat) => {
+
+    if (err) return callback(err)
+    if (xstat === null) return callback(new Error('not a drive folder'))
+    if (!xstat.isDirectory()) return callback(new Error('not a folder')) 
+    if (!xstat.owner.length) return callback(new Error('at least one owner'))
+    if (!xstat.writelist || !xstat.readlist) return callback(new Error('permission list cannot be undefined'))
+    
+    callback(null, new Drive(xstat))
+  })  
+}  
+
+export { createDrive }
 

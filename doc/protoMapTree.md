@@ -1,14 +1,20 @@
 # ProtoMapTree
 
-ProtoMapTree is a tree implemented as `Fly Weight` pattern.
+ProtoMapTree is a tree implemented as `Fly Weight Pattern`.
 
 It utilizes JavaScript's prototypal inheritance feature to minimize memory usage.
 
-Other than the common tree/node structure, there is an object, named as proto, acting as the prototype of all node object. That is, all nodes inherit from this object.
+Other than the common tree/node structure, there is an object, named as proto, acting as the prototype of all node object. Or in terms of JavaScript inheritance, all nodes inherit from this object.
 
 The tree (class) object looks like:
 
 ```
+{
+  root: ,
+  proto: ,
+  uuidMap: ,
+  hashMap: ,
+}
 constructor(proto) {
 
   this.root = null

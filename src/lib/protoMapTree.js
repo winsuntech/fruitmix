@@ -9,37 +9,36 @@ import { readXstatAnyway, readXstat2 ,updateXattrPermissionAsync,updateXattrHash
 import { mapXstatToObject } from './tools'
 import { visit } from './visitors'
 
-const protoNode = {
+const nodeProperties = {
 
-  root: function() {
+  root() {
     let node = this
     while (node.parent !== null) node = node.parent
     return node
   },
 
-  setChild: function(child) {
+  setChild(child) {
     this.children ? this.children.push(child) : this.children = [child]
   },
 
-  unsetChild: function(child) {
+  unsetChild(child) {
     let children = this.getChildren()
     let index = children.findIndex(c => c === child)
     if (index === -1) throw new Error('Node has no such child')
     children.splice(index, 1)
   },
 
-  getChildren: function() {
+  getChildren() {
     return this.children ? this.children : []
   },
 
-  attach: function(parent) {
+  attach(parent) {
     if (this.parent) throw new Error('node is already attached')
     this.parent = parent
     parent.setChild(this)
   },
 
-  detach: function() {
-
+  detach() {
     if (this.parent === null) throw new Error('Node is already detached')
     this.parent.unsetChild(this)
     this.parent = null   
@@ -61,7 +60,7 @@ const protoNode = {
     }
   },
 
-  nodepath: function() {
+  nodepath() {
     let q = []
     this.upEach(node => q.unshift(node))
     return q
@@ -90,26 +89,27 @@ const protoNode = {
   }
 }
 
-Object.freeze(protoNode)
+Object.freeze(nodeProperties)
 
 class ProtoMapTree {
 
-  constructor(proto) {
+  constructor(proto, root) {
     
-    this.root = null
-    this.proto = Object.assign(Object.create(protoNode), proto)
-    
-    let tree = this
+    // this.proto = Object.assign(Object.create(nodeProperties), proto)
+    // this.proto = Object.create(proto, nodeProperties) 
+    this.proto = Object.assign(proto, nodeProperties)
 
-    this.proto.tree = function () {
-      return tree
-    }
+    // let tree = this
+    // this.proto.tree = function () { return tree }
+    this.proto.tree = this
 
     // ! IMPORTANT DONT DO THIS
     // Object.freeze(this.proto)
 
     this.uuidMap = new Map()
     this.hashMap = new Map()
+
+    this.root = this.createNode(null, root)
   } 
 
   hashMapSet(node) {
@@ -135,6 +135,8 @@ class ProtoMapTree {
   }
 
   createNode(parent, flatObject) {
+
+    if (!flatObject.uuid) throw new Error('node object must have uuid property')
   
     let node = Object.create(this.proto)
     for (let prop in flatObject) {
@@ -442,5 +444,5 @@ const libraryTreeMethods = {
   },
 }
 
-export { protoNode, ProtoMapTree, createProtoMapTree } 
+export { nodeProperties, ProtoMapTree, createProtoMapTree } 
 
