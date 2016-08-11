@@ -8,7 +8,7 @@ import xattr from 'fs-xattr'
 import { expect } from 'chai'
 
 import { 
-  protoNode, 
+  nodeProperties, 
   ProtoMapTree, 
   createProtoMapTree, 
 } from '../../src/lib/protoMapTree'
@@ -18,7 +18,7 @@ const testData1 = () => {
   let arr = 'abcdefghijklmnopqrstuvwxyz'
     .split('')
     .map(c => {
-      let node = Object.create(protoNode)
+      let node = Object.create(nodeProperties)
       node.parent = null
       node.name = c
       return node
@@ -51,7 +51,6 @@ const testData1 = () => {
       node.attach(parent)
     }
   } 
-
   return arr
 }
 
@@ -72,6 +71,46 @@ describe('protoMapTree', function() {
       done()
     })
   })
+})
+
+describe('new ProtoMapTree()', function() {
+
+  let uuid1 = '1e15e8ce-7ae4-43f4-8d9f-285c1f28dfac'
+  let digest1 = 'e14bfc54f20117011c716706ba9c4879a07f6a882d34766eda70ec5bbfe54e0e'
+
+  it('should throw if root no uuid', function() {
+
+    let proto = { x: 1, y: 2 }
+    let root = { a: 'aa', b: 'bb'}
+    let fn = () => { return new ProtoMapTree(proto, root) }
+    expect(fn).to.throw(Error)
+  })
+
+  it('should have a correct ProtoMapTree', function() {
+
+    let proto = { x: 1 }
+    let root = { a: 'aa', uuid: uuid1, hash: digest1 }
+    let t = new ProtoMapTree(proto, root)
+
+    // t.proto is proto
+    expect(t.proto === proto).to.be.true
+    // t.proto preserve properties
+    expect(t.proto.x).to.equal(1)
+
+    // t.root preserve properties
+    expect(t.root.a).to.equal('aa')
+    // t.root is root node
+    expect(t.root.parent).to.be.null
+    // t.root has no children
+    expect(t.root.getChildren()).to.deep.equal([])
+
+    // t.proto is the prototype of t.root
+    expect(t.proto.isPrototypeOf(t.root)).to.be.true
+    // t.root is in uuid map
+    expect(t.uuidMap.get(uuid1)).to.equal(t.root)
+    // [t.root] is in hash map
+    expect(t.hashMap.get(digest1)).to.deep.equal([t.root])
+  }) 
 })
 
 describe('createProtoMapTree', function() {
@@ -694,8 +733,8 @@ describe('drive file operation', function() {
 describe('library file operation', function() {
 
   describe('import library file', function() {
-      // tmptest/${userUUID}/ <- target folder
-      // tmptest/hello <- file to be moved
+    // tmptest/${userUUID}/ <- target folder
+    // tmptest/hello <- file to be moved
 
     let userUUID1 = UUID.v4()
     let drivepath = path.join(process.cwd(), `tmptest/${userUUID1}`)

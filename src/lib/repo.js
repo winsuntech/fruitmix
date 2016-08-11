@@ -6,11 +6,9 @@ import { mkdirpAsync, fsStatAsync, fsMkdirAsync, mapXstatToObject } from './tool
 import { createProtoMapTree } from './protoMapTree'
 import {nodeUserReadable,nodeUserWritable} from './perm'
 
-
 class Repo {
 
   constructor(rootpath) {
-
     this.rootpath = rootpath
     this.drives = []
     this.libraries = []

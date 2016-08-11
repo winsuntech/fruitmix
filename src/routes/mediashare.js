@@ -3,7 +3,10 @@ var Versionlink = require('mongoose').model('Versionlink')
 // var Photolink = require('mongoose').model('Photolink');
 // var Group = require('mongoose').model('Group');
 var router = require('express').Router()
-const auth = require('../middleware/auth')
+// const auth = require('../middleware/auth')
+import auth from '../middleware/auth'
+
+
 const uuid = require('node-uuid')
 var url = require('url')
 var sha256 = require('sha256')

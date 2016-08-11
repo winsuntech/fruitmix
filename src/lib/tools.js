@@ -1,3 +1,4 @@
+import path from 'path'
 import fs from 'fs'
 
 import rimraf from 'rimraf'
@@ -58,7 +59,8 @@ export const mapXstatToObject = (xstat) => {
   abspath: '/home/xenial/Projects/fruitmix/tmptest' } */
 
   // not very safe TODO
-  let name = xstat.abspath.split('/').pop()
+  // let name = xstat.abspath.split('/').pop()
+  let name = path.basename(xstat.abspath)
   
   let type
   if (xstat.isDirectory()) type = 'folder'
@@ -71,20 +73,12 @@ export const mapXstatToObject = (xstat) => {
     owner: xstat.owner,
     writelist: xstat.writelist,
     readlist: xstat.readlist,
-/**
-    attribute: {
-      changetime: xstat.ctime,
-      modifytime: xstat.mtime,
-      createtime: xstat.birthtime,
-      size: xstat.size,
-      name: name,     
-    },
-**/
     name: name,
-    hash: xstat.hash,
   }
 
+  if (xstat.isFile() && xstat.hash) obj.hash = xstat.hash  
   if (obj.type === 'file') obj.size = xstat.size
+
   return obj
 }
 

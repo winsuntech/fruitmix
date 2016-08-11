@@ -32,6 +32,9 @@ node_modules
 # Optional REPL history
 .node_repl_history
 
+# Orig
+*.orig
+
 # swp
 *~
 *.swp
@@ -43,3 +46,7 @@ tmptest/
 build/
 .DS_Store
 ._.DS_Store
+
+npm-debug.log
+
+testdata/

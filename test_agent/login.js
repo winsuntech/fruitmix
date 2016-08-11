@@ -75,12 +75,13 @@ describe('test login one user exists', function() {
   })
 })
 
-describe('test login two user exists', function() {
-  
+describe('test login two users exist', function() {
   it('should return info of two users', function(done) {
     throw new Error('not implemented')
   })
+})
 
+describe('test login two users exist with one device user', function() {
   it('should return info of users with type of "user"', function(done) {
     throw new Error('not implemented')
   })

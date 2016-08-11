@@ -1,20 +1,22 @@
 
-try {
-  var Db = require('tingodb')().Db
-  var db = new Db('tmpdb', {nativeObjectID: true})
-  var collection = db.collection('test')
-}
-catch (e) {
-  console.log(e)
+function hello(path, callback) {
+  if (path) callback(new Error('i am error'))
+  else callback(null, 'world')
 }
 
-collection.insert({item: 'hello'}, function(err, result) {
-  if (err) return console.log(err)
+function doSomething() {
 
-  collection.findOne({item: 'hello'}, function(err, item) {
+  hello('quick', (err, result) => {
     console.log(err)
-    console.log(item)
+    console.log(result)
   })
-})
 
+  console.log('this is divider -----------------')
 
+  hello(null, (err, result) => {
+    console.log(err)
+    console.log(result)
+  })
+}
+
+doSomething()

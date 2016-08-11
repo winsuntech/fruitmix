@@ -1,7 +1,8 @@
 //var User = require('mongoose').model('User');
 var Comment = require('mongoose').model('Comment')
 var router = require('express').Router()
-const auth = require('../middleware/auth')
+// const auth = require('../middleware/auth')
+import auth from '../middleware/auth'
 const uuid = require('node-uuid')
 var url = require('url')
 const globby = require('globby')
