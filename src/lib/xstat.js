@@ -120,7 +120,7 @@ const readXstat = (target, ...args) => {
       else if (stats.isFile()) type = 'file'
       else throw new Error('unexpected type')
 
-      valid = validateXattr(parsed, type, stats.mtime)
+      valid = validateXattr(parsed, type, stats.mtime.getTime())
       if (!shallowequal(valid, copy)) 
         xattr.set(target, FRUITMIX, JSON.stringify(valid), err => 
           err ? callback(err) : callback(null, Object.assign(stats, valid, { abspath: target }))) 
