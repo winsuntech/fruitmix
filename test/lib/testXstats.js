@@ -6,9 +6,9 @@ import {
 	updateXattrPermissionAsync,
 	updateXattrHashAsync,
 	testing
-} from '../../src/lib/xstats.js';
+} from '../../src/lib/xstat.js';
 
 const expect = chai.expect;
 const FRUITMIX = 'user.fruitmix';
 
-describe(function(){});
+// describe(function(){});

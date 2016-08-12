@@ -112,6 +112,10 @@ class ProtoMapTree {
     this.root = this.createNode(null, root)
   } 
 
+  uuid() {
+    return this.root.uuid
+  }
+
   hashMapSet(node) {
     if (!node.hash) return
     if (this.hashMap.has(node.hash)) {

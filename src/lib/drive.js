@@ -38,10 +38,6 @@ class Drive extends ProtoMapTree {
     this.rootpath = xstat.abspath
   }
 
-  uuid() {
-    return this.root.uuid
-  }
-
   abspath(node) {
     let nodepath = node.nodepath().map(n => n.name)
     let prepend = path.resolve(this.rootpath, '..')
