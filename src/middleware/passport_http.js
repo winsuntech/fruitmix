@@ -1,4 +1,4 @@
-var passport = require('passport')
+import passport from 'passport'
 var BasicStrategy = require('passport-http').BasicStrategy
 
 import Models from '../models/models'
