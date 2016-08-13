@@ -12,6 +12,8 @@ import xattr from 'fs-xattr'
 import models from './models/models'
 import { createUserModel } from './models/userModel'
 
+import auth from './middleware/auth'
+
 /** Express **/
 let app = express()
 
@@ -37,7 +39,7 @@ var Udbindling = require('./models/udbinding')
 var Librarylist = require('./models/librarylist')
 var Exif = require('./models/exif')
 **/
-var auth = require('./middleware/auth').default
+// var auth = require('./middleware/auth').default
 // var helper = require('./middleware/tools')
 
 // uncomment after placing your favicon in /public

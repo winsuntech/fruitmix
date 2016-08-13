@@ -1,9 +1,10 @@
 import { Router } from 'express'
 import Models from '../models/models'
+import { sysAvail } from '../lib/system'
 
 const router = Router()
 
-router.post('/', (req, res) => {
+router.post('/', sysAvail, (req, res) => {
 
   let User = Models.getModel('user')
 

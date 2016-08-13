@@ -17,7 +17,6 @@ let users = [
     'email': null,
     'isFirstUser': true,
     'isAdmin': true,
-    'type': 'user'
   }
 ]
 
