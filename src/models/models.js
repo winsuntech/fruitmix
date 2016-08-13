@@ -1,15 +1,15 @@
 
 /** simply using a JavaScript plain object as key value pairs for singleton models **/
 
-const models = {}
+var models = {}
 
-models.setModel = function(name, model) {
-  this[name] = model
+const setModel = (name, model) => models[name] = model
+const getModel = (name) => {
+  if (models[name] === undefined) throw new Error('model not found')
+  return models[name]
 }
 
-models.getModel = function(name) {
-  return this[name]
-}
+const clear = () => models = {}
 
-export default models
+export default { setModel, getModel, clear }
 

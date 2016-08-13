@@ -1,6 +1,8 @@
 import path from 'path'
 import fs from 'fs'
 
+import syspath from '../models/paths'
+
 import { readXstat2 } from './xstat'
 import { mkdirpAsync, fsStatAsync, fsMkdirAsync, mapXstatToObject } from './tools'
 import { createProtoMapTree } from './protoMapTree'
@@ -309,10 +311,10 @@ async function createRepoAsync(rootpath) {
 
 function createRepo(rootpath, callback) {  
 
-  createRepoAsync(rootpath)
-    .then(repo => callback(null, repo))
-    .catch(e => callback(e))
+  
 }
+
+
 
 export { createRepo }
 
