@@ -1,5 +1,7 @@
 import path from 'path'
+import fs from 'fs'
 
+import Promise from 'bluebird'
 import rimraf from 'rimraf'
 
 import { readXstat } from './xstat'
@@ -132,5 +134,7 @@ const createDrive = (target, callback) => {
   })  
 }  
 
-export { createDrive }
+const createDriveAsync = Promise.promisify(createDrive)
+
+export { createDrive, createDriveAsync }
 
