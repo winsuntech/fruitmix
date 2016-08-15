@@ -6,8 +6,28 @@
 
   file: {
     type: 'animation, ''audio', 'images',
-    brief:
+    brief: 'JPEG image data, ...',
+    mimeType: '....'
   }
 
+  animation: {
+
+    ffmpeg: {
+
+    }
+  }
+
+  audio: {
+    id3: {
+
+    }
+  }
+
+  images: {
+    gm: {
+
+    }
+  }
 }
+
 ```

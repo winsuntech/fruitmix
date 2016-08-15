@@ -2,8 +2,7 @@ import fs from 'fs'
 import path from 'path'
 
 import Promise from 'bluebird'
-import syspath from '../models/paths'
-
+import syspath from './paths'
 import models from '../models/models'
 
 let initialized = false
