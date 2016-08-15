@@ -9,17 +9,19 @@ import { mkdirpAsync, fsStatAsync, fsMkdirAsync, mapXstatToObject } from './tool
 import { createProtoMapTree } from './protoMapTree'
 import {nodeUserReadable,nodeUserWritable} from './perm'
 
+import { createDrive, createDriveAsync } from './drive'
+
 Promise.promisifyAll(fs)
 
 const readXstatAsync = Promise.promisify(readXstat)
 
 class Repo {
 
-  constructor(rootpath) {
-    this.rootpath = rootpath
+  constructor() {
     this.drives = []
   }
 
+/**
   prepend() {
     return path.resolve(this.rootpath, '..')
   }
@@ -27,10 +29,7 @@ class Repo {
   driveDirPath() {
     return path.join(this.rootpath, 'drive')
   }
-
-  libraryDirPath() {
-    return path.join(this.rootpath, 'library')
-  }
+**/
 
   findTreeInDriveByUUID(uuid) {
     return this.drives.find(tree => tree.uuidMap.get(uuid))
@@ -220,15 +219,13 @@ async function createRepoAsync(rootpath) {
   return new Repo(rootpath)
 }
 
-const scanDrives = async (dpath) =>
-  fs.readdirAsync(dpath)
-    .map(entry => readXstatAsync(path.join(dpath, entry), null))
-    .filter(xstat => xstat.isDirectory() && xstat.owner.length > 0 && xstat.writelist && xstat.readlist)
+const scanDrivesAsync = async (dpath) =>
+  fs.readdirAsync(dpath).map(entry => createDriveAsync(path.join(dpath, entry)))
 
 // rootpath
 function createRepo(rootpath, callback) {  
     
 }
 
-export { createRepo, scanDrives }
+export { createRepo, scanDrivesAsync }
 

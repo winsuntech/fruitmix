@@ -4,7 +4,7 @@ import rimraf from 'rimraf'
 import mkdirp from 'mkdirp'
 import xattr from 'fs-xattr'
 
-import { scanDrives} from '../../src/lib/repo'
+import { scanDrivesAsync} from '../../src/lib/repo'
 
 const cwd = process.cwd()
 
@@ -22,7 +22,7 @@ describe('testing scan drives', function() {
   })
 
   it('should scan nothing if drives folder empty', function(done) {
-    scanDrives(path.join(cwd, 'tmptest'))
+    scanDrivesAsync(path.join(cwd, 'tmptest'))
       .then(r => console.log(r) || done())
       .catch(e => console.log(e) || done(e))
   })
@@ -41,7 +41,7 @@ describe('testing scan drives', function() {
         }),
         err => {
           if (err) return done(err)
-          scanDrives(path.join(cwd, 'tmptest'))
+          scanDrivesAsync(path.join(cwd, 'tmptest'))
             .then(r => console.log(r) || done())
             .catch(e => console.log(e) || done(e))
         })
