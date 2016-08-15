@@ -1,5 +1,7 @@
 import path from 'path'
+import fs from 'fs'
 
+import Promise from 'bluebird'
 import rimraf from 'rimraf'
 
 import { readXstat } from './xstat'
@@ -36,10 +38,6 @@ class Drive extends ProtoMapTree {
     let root = mapXstatToObject(xstat)
     super(proto, root)
     this.rootpath = xstat.abspath
-  }
-
-  uuid() {
-    return this.root.uuid
   }
 
   abspath(node) {
@@ -136,5 +134,7 @@ const createDrive = (target, callback) => {
   })  
 }  
 
-export { createDrive }
+const createDriveAsync = Promise.promisify(createDrive)
+
+export { createDrive, createDriveAsync }
 

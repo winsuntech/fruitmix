@@ -1,19 +1,27 @@
 import path from 'path'
 import fs from 'fs'
 
-import { readXstat2 } from './xstat'
+import Promise from 'bluebird'
+import syspath from './paths'
+
+import { readXstat } from './xstat'
 import { mkdirpAsync, fsStatAsync, fsMkdirAsync, mapXstatToObject } from './tools'
 import { createProtoMapTree } from './protoMapTree'
 import {nodeUserReadable,nodeUserWritable} from './perm'
 
+import { createDrive, createDriveAsync } from './drive'
+
+Promise.promisifyAll(fs)
+
+const readXstatAsync = Promise.promisify(readXstat)
+
 class Repo {
 
-  constructor(rootpath) {
-    this.rootpath = rootpath
+  constructor() {
     this.drives = []
-    this.libraries = []
   }
 
+/**
   prepend() {
     return path.resolve(this.rootpath, '..')
   }
@@ -21,15 +29,9 @@ class Repo {
   driveDirPath() {
     return path.join(this.rootpath, 'drive')
   }
-
-  libraryDirPath() {
-    return path.join(this.rootpath, 'library')
-  }
+**/
 
   findTreeInDriveByUUID(uuid) {
-    // console.log("<<<<<<<<<<<<<<<<")
-    // console.log(this.drives.find(tree => tree.uuidMap.get(uuid)))
-    // console.log(this.drives.find({"uuid":uuid}))
     return this.drives.find(tree => tree.uuidMap.get(uuid))
   }
 
@@ -40,13 +42,6 @@ class Repo {
   findNodeInDriveByUUID(uuid) {
     for (let i = 0; i < this.drives.length; i++) {
       let x = this.drives[i].uuidMap.get(uuid)
-      if (x) return x
-    }
-  }
-
-  findNodeInLibraryByUUID(uuid) {
-    for (let i = 0; i < this.libraries.length; i++) {
-      let x = this.libraries[i].uuidMap.get(uuid)
       if (x) return x
     }
   }
@@ -108,26 +103,6 @@ class Repo {
     }) 
   } 
 
-  scanLibraries(callback) {
-    fs.readdir(this.libraryDirPath(), (err, entries) => {
-      if (err) callback(err)
-      if (entries.length === 0) return callback(null)
-      let count = entries.length
-      entries.forEach(entry => {
-        createProtoMapTree(path.join(this.libraryDirPath(), entry), 'library', (err, tree) => {
-          if (!err) this.libraries.push(tree)
-          if (!--count) callback()
-        })
-      })
-    })
-  }
-
-  scan(callback) {
-    let count = 2
-    this.scanDrives(() => !--count && callback())
-    this.scanLibraries(() => !--count && callback())
-  }
-
   createDrive(userUUID, callback) {
   
     let dirpath = path.join(this.driveDirPath(), userUUID)
@@ -152,35 +127,10 @@ class Repo {
     })
   } 
    
-  createLibrary(userUUID, libraryUUID, callback) {
-    
-    let dirpath = path.join(this.libraryDirPath(), libraryUUID)
-    fs.mkdir(dirpath, err => {
-      if (err) return callback(err)
-
-      let perm = {
-        owner: [userUUID],
-        writelist: [],
-        readlist: []
-      }
-
-      readXstat2(dirpath, perm, (err, xstat) => {
-        if (err) return callback(err)
-
-        createProtoMapTree(dirpath, 'library', (err, tree) => { 
-          if (err) return callback(err)
-          this.libraries.push(tree)
-          callback(null, tree)
-        })
-      })
-    })
-  }
-
   createFileInDrive(userUUID, srcpath, targetDirUUID, filename, callback) {
 
     //let tree = findTreeInDriveByUUID(userUUID)
     //if (!tree) return callback    
-
     let node = this.findNodeInDriveByUUID(targetDirUUID)
     if (!node) return callback(new Error('uuid not found')) 
 
@@ -190,10 +140,6 @@ class Repo {
   }
 
   createDriveFolder(userUUID, folderName, targetDirUUID,callback) {
-    // console.log(">>>>>>>>>>>>>>>")
-    // console.log(userUUID)
-    // console.log(folderName)
-    // console.log(this.drives)
     // let tree = this.findTreeInDriveByUUID(userUUID)
     // if (!tree) return callback(new Error('tree not found')) 
 
@@ -205,18 +151,6 @@ class Repo {
     })
   }  
 
-  createLibraryFile(userUUID, extpath, hash,targetLibraryUUID,callback) {
-    // let tree = this.findTreeInDriveByUUID(userUUID)
-    // if (!tree) return callback(new Error('uuid not found'))
-
-    let node = this.findNodeInLibraryByUUID(targetLibraryUUID)
-    if (!node) return callback(new Error('uuid not found')) 
-
-    node.tree.importFile(extpath, node, hash, (err, node) => {
-      err ? callback(err) : callback(null, node)
-    })
-  } 
-
   /** read **/  
   readDriveFileorFolderInfo(uuid){
     let node = this.findNodeInDriveByUUID(uuid)
@@ -225,15 +159,7 @@ class Repo {
     return node
   }
 
-  readLibraryFileInfo(uuid){
-    let node = this.findNodeInLibraryByUUID(uuid)
-    if (!node) return new Error('uuid not found')
-
-    return node
-  }
-
   /** update **/
-
   renameDriveFileOrFolder(uuid, newName,callback) {
 
     let node = this.findNodeInDriveByUUID(uuid)
@@ -261,20 +187,6 @@ class Repo {
     if (!node) return callback(new Error('uuid not found'))
 
     node.tree.deleteFileOrFolder(node,(err,node)=>{
-      err ? callback(err) : callback(null, node)
-    })
-  }
-
-  /** delete **/
-  deleteLibraryFile(fileUUID,callback) {
-    // console.log("<<<<<<<<<<<<<")
-    // console.log(this.libraries)
-    // console.log(fileUUID)
-
-    let node = this.findNodeInLibraryByUUID(fileUUID)
-    if (!node) return callback(new Error('uuid not found'))
-
-    node.tree.deleteFile(node,(err,node)=>{
       err ? callback(err) : callback(null, node)
     })
   }
@@ -307,12 +219,13 @@ async function createRepoAsync(rootpath) {
   return new Repo(rootpath)
 }
 
-function createRepo(rootpath, callback) {  
+const scanDrivesAsync = async (dpath) =>
+  fs.readdirAsync(dpath).map(entry => createDriveAsync(path.join(dpath, entry)))
 
-  createRepoAsync(rootpath)
-    .then(repo => callback(null, repo))
-    .catch(e => callback(e))
+// rootpath
+function createRepo(rootpath, callback) {  
+    
 }
 
-export { createRepo }
+export { createRepo, scanDrivesAsync }
 
