@@ -1,51 +1,50 @@
 import path from 'path'
 
-import rimraf from 'rimraf'
-import mkdirp from 'mkdirp'
-import xattr from 'fs-xattr'
+import Promise from 'bluebird'
+import chai from 'chai'
+import chaiAsPromised from "chai-as-promised"
 
-import { scanDrivesAsync} from '../../src/lib/repo'
+import { rimrafAsync, mkdirpAsync, fs, xattr } from '../util/async'
+import uuids from '../util/uuids'
+import { scanDrivesAsync } from '../../src/lib/repo'
+
+chai.use(chaiAsPromised)
+const expect = chai.expect
 
 const cwd = process.cwd()
 
-const uuid01 = '090100c4-0fd9-4582-9fad-86b9cddc66f6'
-
 describe('testing scan drives', function() {
 
-  before(function(done) {
-    rimraf('tmptest', err => {
-      if (err) return done(err)
-      mkdirp('tmptest', err => {
-        err ? done(err) : done()
-      })
-    })
+  beforeEach(function() { 
+    return (async () => { 
+      await rimrafAsync('tmptest')
+      await mkdirpAsync('tmptest')
+    })()
   })
 
-  it('should scan nothing if drives folder empty', function(done) {
-    scanDrivesAsync(path.join(cwd, 'tmptest'))
-      .then(r => console.log(r) || done())
-      .catch(e => console.log(e) || done(e))
+  it('should scan nothing if drives folder empty', function() {
+    return expect(scanDrivesAsync(path.join(cwd, 'tmptest')))
+      .to.eventually.deep.equal([])
   })
 
   // not finished
-  it('should scan one drive folder if xattr legal', function(done) {
-    mkdirp('tmptest/drive01', err => {
-      if (err) return done(err)
-      xattr.set(path.join(cwd, 'tmptest', 'drive01'), 
-        'user.fruitmix',
-        JSON.stringify({
-          uuid: uuid01,
-          owner: [uuid01],
-          writelist: [],
-          readlist: [] 
-        }),
-        err => {
-          if (err) return done(err)
-          scanDrivesAsync(path.join(cwd, 'tmptest'))
-            .then(r => console.log(r) || done())
-            .catch(e => console.log(e) || done(e))
-        })
+  it('should scan one drive folder if xattr legal', function() {
+
+    let dpath = path.join(cwd, 'tmptest', 'drive01')
+    let preset = JSON.stringify({
+      uuid: uuids[0], 
+      owner: [uuids[1]], 
+      writelist:[], 
+      readlist:[] 
     })
+
+    return (async () => {
+      await mkdirpAsync('tmptest/drive01')
+      await xattr.setAsync(dpath, 'user.fruitmix', preset)
+      let drives = await scanDrivesAsync(path.join(cwd, 'tmptest'))
+      expect(drives.length).to.equal(1)
+      throw new Error('need more assertion')
+    })()
   })
 })
 
