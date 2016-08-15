@@ -6,20 +6,12 @@ import Promise from 'bluebird'
 import { expect } from 'chai'
 import UUID from 'node-uuid'
 import validator from 'validator'
-import rimraf from 'rimraf'
-import mkdirp from 'mkdirp'
-import xattr from 'fs-xattr'
 
-import { createDrive } from '../../src/lib/drive'
+import { rimrafAsync, mkdirpAsync, fs, xattr } from '../util/async'
+import { createDriveAsync } from '../../src/lib/drive'
 
 const uuid1 = 'c0765cd5-acd1-4b53-bb17-7834ebdca6c1' 
 const uuid2 = 'd7114148-e2bd-42f8-88f9-a980a1a4d29c' 
-
-const rimrafAsync = Promise.promisify(rimraf)
-const mkdirpAsync = Promise.promisify(mkdirp)
-const createDriveAsync = Promise.promisify(createDrive)
-
-Promise.promisifyAll(xattr)
 
 const cwd = process.cwd()
 const FRUITMIX = 'user.fruitmix'
@@ -38,7 +30,11 @@ describe('test create Drive', function() {
       .then(() => done())
       .catch(e => done(e))
   })
-
+/**
+  beforeEach(function() {
+    
+  })
+**/
   it('should create a drive', function(done) {
     xattr.setAsync('tmptest', FRUITMIX, preset1)
       .then(() => createDriveAsync(path.join(cwd, 'tmptest')))
