@@ -31,7 +31,10 @@ const driveVisitor = (dir, node, entry, callback) => {
   })
 }
 
-class Drive extends ProtoMapTree {
+// we just need abspath, owners, writelist and readlist
+// to construct a drive tree object
+
+class DriveTree extends ProtoMapTree {
 
   constructor(xstat) {
     let proto = createDriveProto(xstat)
@@ -117,7 +120,7 @@ class Drive extends ProtoMapTree {
 // 1. isFolder
 // 2. has at least one owner
 // 3. writelist and readlist must be defined
-const createDrive = (target, callback) => {
+const createDriveTree = (target, callback) => {
 
   if (!path.isAbsolute(target))
     return process.nextTick(callback, new Error('target must be absolute path'))
@@ -130,11 +133,11 @@ const createDrive = (target, callback) => {
     if (!xstat.owner.length) return callback(new Error('at least one owner'))
     if (!xstat.writelist || !xstat.readlist) return callback(new Error('permission list cannot be undefined'))
     
-    callback(null, new Drive(xstat))
+    callback(null, new DriveTree(xstat))
   })  
 }  
 
-const createDriveAsync = Promise.promisify(createDrive)
+const createDriveTreeAsync = Promise.promisify(createDriveTree)
 
-export { createDrive, createDriveAsync }
+export { createDriveTree, createDriveTreeAsync }
 

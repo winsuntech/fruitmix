@@ -3,7 +3,6 @@ import fs from 'fs'
 
 import Promise from 'bluebird'
 
-
 import { openDriveDefinitionsAsync } from '../models/driveDefinitions'
 
 import { readXstat } from './xstat'
@@ -11,23 +10,68 @@ import { mkdirpAsync, fsStatAsync, fsMkdirAsync, mapXstatToObject } from './tool
 import { createProtoMapTree } from './protoMapTree'
 import {nodeUserReadable,nodeUserWritable} from './perm'
 
-import { createDrive, createDriveAsync } from './drive'
+import { createDriveTree, createDriveTreeAsync } from './driveTree'
 
 Promise.promisifyAll(fs)
 
 const readXstatAsync = Promise.promisify(readXstat)
 
 // return an array of xstat that is valid drive root xstat
-const scanSystemDrives = (drivePath) => 
+const scanSystemDrivesAsync = async (drivePath) => 
   fs.readdirAsync(drivePath)
     .map(entry => readXstatAsync(path.join(drivePath, entry), null))
-    .filter(xstat => xstat !== null && 
+    .filter(xstat => xstat !== null &&
       xstat.isDirectory() && 
       xstat.owner.length > 0 &&
       xstat.writelist &&
       xstat.readlist)
 
-const scanSystemDrivesAsync = Promise.promisify(scanSystemDrives)
+/**
+
+  runtime status of a drive
+
+  1. 'unsupported', 'offline', 'online'
+  2. for online drive, index status: 'none', 'indexing', 'indexed'
+
+**/
+const buildDriveList = (definitions, xstats) => 
+
+  definitions.map(def => {
+
+    // only fruitmix URI protocol is processed, for now
+    if (def.URI === 'fruitmix') { 
+      let xstat = xstats.find(x => x.uuid === def.uuid)
+      if (xstat) {
+        return {
+          uuid: def.uuid,
+          status: 'online',
+          indexStatus: 'none'
+        }
+      }
+      else {
+        return {
+          uuid: def.uuid,
+          status: 'offline',
+          indexStatus: 'none'
+        }
+      }
+    }
+    else {
+      return {
+        uuid: def.uuid,
+        status: 'unsupported',
+        indexStatus: 'none'
+      }
+    }
+  })
+
+class Drive {
+
+  construct(definition, xstat) {
+    this.definition = definition
+    this.xstat = xstat  
+  }
+}
 
 class Repo {
 
@@ -37,20 +81,13 @@ class Repo {
     this.models = models
 
     this.definitions = null
-    this.trees = []
-    this.drives = []
+    this.trees = null
+    this.drives = null
 
     this.initState = 'IDLE' // 'INITIALIZING', 'INITIALIZED', 'DEINITIALIZING',
   }
 
-  async scanSystemDrives() {
-
-    let drivePath = this.paths.get('models')
-    return fs.readdirAsync(drivePath)
-      .map(entry => readXstatAsync(path.join(drivePath, entry), null))
-      .filter(xstat => xstat !== null && xstat.isDirectory())
-  }
-
+  // load drive definitions, scan system drive folder, build
   async init() {
 
     if (this.initState !== 'IDLE') 
@@ -66,6 +103,10 @@ class Repo {
     }
 
     let drivePath = this.paths.get('models')
+    let xstats = await scanSystemDrivesAsync(drivePath)
+    this.drives = buildDriveList(defs, xstats)
+
+    let scanning = this.drives.filter(drv => drv.status === 'online' && drv.definition.index === 'auto')
      
     this.initState = 'INITIALIZED'
   }
@@ -261,8 +302,8 @@ async function createRepoAsync(rootpath) {
 const createRepo = (paths, models) => new Repo(paths, models)
 
 const testing = {
-  scanSystemDrives
+  scanSystemDrivesAsync
 }
 
-export { createRepo, scanSystemDrives }
+export { createRepo, testing }
 
