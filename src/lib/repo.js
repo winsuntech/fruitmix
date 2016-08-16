@@ -2,7 +2,9 @@ import path from 'path'
 import fs from 'fs'
 
 import Promise from 'bluebird'
-import syspath from './paths'
+
+
+import { openDriveDefinitionsAsync } from '../models/driveDefinitions'
 
 import { readXstat } from './xstat'
 import { mkdirpAsync, fsStatAsync, fsMkdirAsync, mapXstatToObject } from './tools'
@@ -15,12 +17,57 @@ Promise.promisifyAll(fs)
 
 const readXstatAsync = Promise.promisify(readXstat)
 
+// return an array of xstat that is valid drive root xstat
+const scanSystemDrives = (drivePath) => 
+  fs.readdirAsync(drivePath)
+    .map(entry => readXstatAsync(path.join(drivePath, entry), null))
+    .filter(xstat => xstat !== null && 
+      xstat.isDirectory() && 
+      xstat.owner.length > 0 &&
+      xstat.writelist &&
+      xstat.readlist)
+
+const scanSystemDrivesAsync = Promise.promisify(scanSystemDrives)
+
 class Repo {
 
   constructor(paths, models) {
+
     this.paths = paths
     this.models = models
+
+    this.definitions = null
+    this.trees = []
     this.drives = []
+
+    this.initState = 'IDLE' // 'INITIALIZING', 'INITIALIZED', 'DEINITIALIZING',
+  }
+
+  async scanSystemDrives() {
+
+    let drivePath = this.paths.get('models')
+    return fs.readdirAsync(drivePath)
+      .map(entry => readXstatAsync(path.join(drivePath, entry), null))
+      .filter(xstat => xstat !== null && xstat.isDirectory())
+  }
+
+  async init() {
+
+    if (this.initState !== 'IDLE') 
+      return new Error('invalid state')
+
+    this.initState = 'INITIALIZING'
+
+    let modelPath = this.paths.get('models')
+    let defs = openDriveDefinitionsAsync(path.join(modelPath, 'driveDefinitions.json'))
+    if (!defs) {
+      this.initState = 'IDLE'
+      return new Error('fail to load definitions')
+    }
+
+    let drivePath = this.paths.get('models')
+     
+    this.initState = 'INITIALIZED'
   }
 
   findTreeInDriveByUUID(uuid) {
@@ -211,7 +258,11 @@ async function createRepoAsync(rootpath) {
   return new Repo(rootpath)
 }
 
-const createRepo(paths, models) => new Repo(paths, models)
+const createRepo = (paths, models) => new Repo(paths, models)
 
-export { createRepo, scanDrivesAsync }
+const testing = {
+  scanSystemDrives
+}
+
+export { createRepo, scanSystemDrives }
 

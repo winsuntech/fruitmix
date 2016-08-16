@@ -41,12 +41,9 @@ class DriveDefinitions {
 const openDriveDefinitionsAsync = async (filepath, tmpfolder) => {
 
   let collection = await openOrCreateCollectionAsync(filepath, tmpfolder)
-
-  if (collection) 
-    return new DriveDefinitions(collection)
-
+  if (collection) return new DriveDefinitions(collection)
   return null
-})
+}
 
 export { openDriveDefinitionsAsync }
 
