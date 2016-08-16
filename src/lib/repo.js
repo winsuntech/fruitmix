@@ -17,26 +17,14 @@ const readXstatAsync = Promise.promisify(readXstat)
 
 class Repo {
 
-  constructor() {
+  constructor(paths, models) {
+    this.paths = paths
+    this.models = models
     this.drives = []
   }
 
-/**
-  prepend() {
-    return path.resolve(this.rootpath, '..')
-  }
-
-  driveDirPath() {
-    return path.join(this.rootpath, 'drive')
-  }
-**/
-
   findTreeInDriveByUUID(uuid) {
     return this.drives.find(tree => tree.uuidMap.get(uuid))
-  }
-
-  findTreeInLibraryByUUID(uuid) {
-    return this.libraries.find(tree => tree.uuidMap.get(uuid))
   }
 
   findNodeInDriveByUUID(uuid) {
@@ -87,6 +75,10 @@ class Repo {
     default:
       return false
     }
+  }
+  
+  async scanDrivesAsync() {
+    await fs.readdirAsync(dpath).map(entry => createDriveAsync(path.join(dpath, entry)))
   }
 
   scanDrives(callback) {
@@ -219,13 +211,7 @@ async function createRepoAsync(rootpath) {
   return new Repo(rootpath)
 }
 
-const scanDrivesAsync = async (dpath) =>
-  fs.readdirAsync(dpath).map(entry => createDriveAsync(path.join(dpath, entry)))
-
-// rootpath
-function createRepo(rootpath, callback) {  
-    
-}
+const createRepo(paths, models) => new Repo(paths, models)
 
 export { createRepo, scanDrivesAsync }
 

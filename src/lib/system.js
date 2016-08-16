@@ -2,7 +2,7 @@ import fs from 'fs'
 import path from 'path'
 
 import Promise from 'bluebird'
-import syspath from './paths'
+import paths from './paths'
 import models from '../models/models'
 
 let initialized = false
@@ -11,15 +11,20 @@ const avail = (req, res, next) => initialized ? next() : res.status(503).end()
 
 const initAsync = async (sysroot) => {
 
-  // set sysroot to syspath
-  await syspath.setSysRoot(sysroot)
+  // set sysroot to paths
+  await paths.setRootAsync(sysroot)
 
   // retrieve tmp path
-  let tmppath = syspath.get('tmp')
+  let repo = createRepo()
+
+  let sysDrivePath = paths.get('drives')
+  // scan drives and add to repo
+
+  let tmpPath = paths.get('tmp')
 
   // create and set user model
-  let userModelPath = path.join(syspath.get('models'), 'userModel.json')
-  let userModel = await createUserModelAsync(userModelPath, tmppath)
+  let userFilePath = path.join(paths.get('models'), 'userModel.json')
+  let userModel = await createUserModelAsync(userFilePath, repo, tmpPath)
   models.setModel('user', userModel)
 
   intialized = true
@@ -28,7 +33,7 @@ const initAsync = async (sysroot) => {
 const deinit = () => {
   // there will be race conditon !!! FIXME
   models.clear()
-  syspath.unsetRoot()  
+  paths.unsetRoot()  
 }
 
 const system = {
