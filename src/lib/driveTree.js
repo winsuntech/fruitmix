@@ -9,14 +9,6 @@ import { ProtoMapTree } from './protoMapTree'
 import { mapXstatToObject } from './tools'
 import { visit } from './visitors'
 
-// for drive with single owner this should be the owner
-// for drive with multiple owner, owner can be [] or undefined
-const createDriveProto = (xstat) => ({
-  owner: xstat.owner.length === 1 ? xstat.owner : [],
-  writelist: undefined,
-  readlist: undefined
-})
-
 const driveVisitor = (dir, node, entry, callback) => {
 
   let entrypath = path.join(dir, entry)
@@ -31,16 +23,21 @@ const driveVisitor = (dir, node, entry, callback) => {
   })
 }
 
-// we just need abspath, owners, writelist and readlist
-// to construct a drive tree object
-
+// a drive tree is a in-memory caching and indexing layer for given virtual drive.
 class DriveTree extends ProtoMapTree {
 
-  constructor(xstat) {
-    let proto = createDriveProto(xstat)
-    let root = mapXstatToObject(xstat)
-    super(proto, root)
-    this.rootpath = xstat.abspath
+  constructor(rootObj, rootpath) {
+
+    let proto = { 
+      // for drive with single owner this should be the owner
+      // for drive with multiple owner, owner can be [] or undefined
+      owner: rootObj.owner.length === 1 ? rootObj.owner : [],
+      writelist: undefined,
+      readlist: undefined
+    }
+
+    super(proto, rootObj)
+    this.rootpath = rootpath
   }
 
   abspath(node) {
@@ -120,24 +117,13 @@ class DriveTree extends ProtoMapTree {
 // 1. isFolder
 // 2. has at least one owner
 // 3. writelist and readlist must be defined
-const createDriveTree = (target, callback) => {
+const createDriveTree = (rootObj, rootpath) => {
 
-  if (!path.isAbsolute(target))
-    return process.nextTick(callback, new Error('target must be absolute path'))
+  if (typeof rootObj !== 'object') throw new Error('invalid rootObj')
+  if (!path.isAbsolute(rootpath)) throw new Error('rootpath must be absolute path')
 
-  readXstat(target, null, (err, xstat) => {
-
-    if (err) return callback(err)
-    if (xstat === null) return callback(new Error('not a drive folder'))
-    if (!xstat.isDirectory()) return callback(new Error('not a folder')) 
-    if (!xstat.owner.length) return callback(new Error('at least one owner'))
-    if (!xstat.writelist || !xstat.readlist) return callback(new Error('permission list cannot be undefined'))
-    
-    callback(null, new DriveTree(xstat))
-  })  
+  return new DriveTree(rootObj, rootpath)
 }  
 
-const createDriveTreeAsync = Promise.promisify(createDriveTree)
-
-export { createDriveTree, createDriveTreeAsync }
+export { createDriveTree }
 

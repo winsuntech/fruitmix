@@ -1,13 +1,4 @@
-import path from 'path'
-import fs from 'fs'
-import rimraf from 'rimraf'
-
 import deepEqual from 'deep-equal'
-import validator from 'validator'
-
-import { readXstatAnyway, readXstat2 ,updateXattrPermissionAsync,updateXattrHashAsync} from './xstat'
-import { mapXstatToObject } from './tools'
-import { visit } from './visitors'
 
 const nodeProperties = {
 
@@ -185,5 +176,5 @@ class ProtoMapTree {
   }
 }
 
-export { ProtoMapTree } 
+export { nodeProperties, ProtoMapTree } 
 

@@ -39,6 +39,7 @@ describe('lib/tool functions', function() {
       })
 
       let result = mapXstatToObject(dirXstat)
+      console.log(result)
 
       expect(result.uuid).to.equal(xstat.uuid)
       expect(result.type).to.equal('folder')
@@ -54,7 +55,7 @@ describe('lib/tool functions', function() {
 //      expect(result.attribute.createtime.getTime()).to.equal(xstat.birthtime.getTime())
 //      expect(result.attribute.size).to.equal(xstat.size)
       expect(result.size).to.be.undefined
-      expect(result.hash).to.equal(xstat.hash)
+      expect(result.hash).to.be.undefined
 
       done()
     })

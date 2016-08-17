@@ -22,7 +22,7 @@ const preset1 = JSON.stringify({
     readlist:[]
   })
 
-describe('testDrive.js', function() {
+describe(path.basename(__filename), function() {
 
   describe('test create Drive', function() {
     
