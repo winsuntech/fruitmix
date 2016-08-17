@@ -2,7 +2,7 @@ import fs from 'fs'
 import Promise from 'bluebird'
 import mkdirp from 'mkdirp'
 
-import { throwBusy, throwOutOfSync, throwInvalid, throwError } from '../utils/throw'
+import { throwBusy, throwOutOfSync, throwInvalid, throwError } from '../util/throw'
 
 Promise.promisifyAll(fs)
 

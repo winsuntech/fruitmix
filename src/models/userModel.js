@@ -3,7 +3,7 @@ import UUID from 'node-uuid'
 import validator from 'validator'
 import Promise from 'bluebird'
 
-import { throwBusy, throwInvalid } from '../utils/throw'
+import { throwBusy, throwInvalid } from '../util/throw'
 import { openOrCreateCollectionAsync} from './collection'
 
 /** Schema

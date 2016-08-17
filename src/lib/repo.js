@@ -2,41 +2,117 @@ import path from 'path'
 import fs from 'fs'
 
 import Promise from 'bluebird'
-import syspath from './paths'
+
+import { openDriveDefinitionsAsync } from '../models/driveDefinitions'
 
 import { readXstat } from './xstat'
 import { mkdirpAsync, fsStatAsync, fsMkdirAsync, mapXstatToObject } from './tools'
 import { createProtoMapTree } from './protoMapTree'
 import {nodeUserReadable,nodeUserWritable} from './perm'
 
-import { createDrive, createDriveAsync } from './drive'
+import { createDriveTree, createDriveTreeAsync } from './driveTree'
 
 Promise.promisifyAll(fs)
 
 const readXstatAsync = Promise.promisify(readXstat)
 
-class Repo {
-
-  constructor() {
-    this.drives = []
-  }
+// return an array of xstat that is valid drive root xstat
+const scanSystemDrivesAsync = async (drivePath) => 
+  fs.readdirAsync(drivePath)
+    .map(entry => readXstatAsync(path.join(drivePath, entry), null))
+    .filter(xstat => xstat !== null &&
+      xstat.isDirectory() && 
+      xstat.owner.length > 0 &&
+      xstat.writelist &&
+      xstat.readlist)
 
 /**
-  prepend() {
-    return path.resolve(this.rootpath, '..')
+
+  runtime status of a drive
+
+  1. 'unsupported', 'offline', 'online'
+  2. for online drive, index status: 'none', 'indexing', 'indexed'
+
+**/
+const buildDriveList = (definitions, xstats) => 
+
+  definitions.map(def => {
+
+    // only fruitmix URI protocol is processed, for now
+    if (def.URI === 'fruitmix') { 
+      let xstat = xstats.find(x => x.uuid === def.uuid)
+      if (xstat) {
+        return {
+          uuid: def.uuid,
+          status: 'online',
+          indexStatus: 'none'
+        }
+      }
+      else {
+        return {
+          uuid: def.uuid,
+          status: 'offline',
+          indexStatus: 'none'
+        }
+      }
+    }
+    else {
+      return {
+        uuid: def.uuid,
+        status: 'unsupported',
+        indexStatus: 'none'
+      }
+    }
+  })
+
+class Drive {
+
+  construct(definition, xstat) {
+    this.definition = definition
+    this.xstat = xstat  
+  }
+}
+
+class Repo {
+
+  constructor(paths, models) {
+
+    this.paths = paths
+    this.models = models
+
+    this.definitions = null
+    this.trees = null
+    this.drives = null
+
+    this.initState = 'IDLE' // 'INITIALIZING', 'INITIALIZED', 'DEINITIALIZING',
   }
 
-  driveDirPath() {
-    return path.join(this.rootpath, 'drive')
+  // load drive definitions, scan system drive folder, build
+  async init() {
+
+    if (this.initState !== 'IDLE') 
+      return new Error('invalid state')
+
+    this.initState = 'INITIALIZING'
+
+    let modelPath = this.paths.get('models')
+    let defs = openDriveDefinitionsAsync(path.join(modelPath, 'driveDefinitions.json'))
+    if (!defs) {
+      this.initState = 'IDLE'
+      return new Error('fail to load definitions')
+    }
+
+    let drivePath = this.paths.get('models')
+    let xstats = await scanSystemDrivesAsync(drivePath)
+    this.drives = buildDriveList(defs, xstats)
+
+    let scanning = this.drives.filter(drv => drv.status === 'online' && drv.definition.index === 'auto')
+     
+    this.initState = 'INITIALIZED'
   }
-**/
 
   findTreeInDriveByUUID(uuid) {
     return this.drives.find(tree => tree.uuidMap.get(uuid))
-  }
-
-  findTreeInLibraryByUUID(uuid) {
-    return this.libraries.find(tree => tree.uuidMap.get(uuid))
   }
 
   findNodeInDriveByUUID(uuid) {
@@ -87,6 +163,10 @@ class Repo {
     default:
       return false
     }
+  }
+  
+  async scanDrivesAsync() {
+    await fs.readdirAsync(dpath).map(entry => createDriveAsync(path.join(dpath, entry)))
   }
 
   scanDrives(callback) {
@@ -219,13 +299,11 @@ async function createRepoAsync(rootpath) {
   return new Repo(rootpath)
 }
 
-const scanDrivesAsync = async (dpath) =>
-  fs.readdirAsync(dpath).map(entry => createDriveAsync(path.join(dpath, entry)))
+const createRepo = (paths, models) => new Repo(paths, models)
 
-// rootpath
-function createRepo(rootpath, callback) {  
-    
+const testing = {
+  scanSystemDrivesAsync
 }
 
-export { createRepo, scanDrivesAsync }
+export { createRepo, testing }
 

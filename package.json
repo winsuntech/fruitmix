@@ -6,8 +6,8 @@
     "start": "node build/app.js",
     "build": "babel src --out-dir build",
     "devel": "nodemon --exec babel-node src/main.js",
-    "test": "mocha --compilers js:babel-core/register --recursive test",
-    "agent": "NODE_PATH=. NODE_ENV=test mocha --compilers js:babel-core/register --recursive test_agent",
+    "test": "mocha --compilers js:babel-core/register --recursive --sort test",
+    "agent": "NODE_PATH=. NODE_ENV=test mocha --compilers js:babel-core/register --recursive --sort test_agent",
     "lint": "node node_modules/eslint/bin/eslint.js src",
     "linttest": "node node_modules/eslint/bin/eslint.js test",
     "lintagent": "node node_modules/eslint/bin/eslint.js test_agent"
