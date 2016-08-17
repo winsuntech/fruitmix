@@ -87,13 +87,13 @@ class ProtoMapTree {
   // proto can be any plain JavaScript object
   // root should have at least the uuid for this general data structure
   // for fruitmix specific usage, root should have owner, writelist and readlist
-  constructor(proto, root) {
+  constructor(proto) {
     
     this.proto = Object.assign(proto, nodeProperties)
     this.proto.tree = this
     this.uuidMap = new Map()
     this.hashMap = new Map()
-    this.root = this.createNode(null, root)
+    this.root = null
   } 
 
   uuid() {
@@ -101,7 +101,7 @@ class ProtoMapTree {
   }
 
   hashMapSet(node) {
-    if (!node.hash) return
+    if (!node.hash || node.type !== 'file') return
     if (this.hashMap.has(node.hash)) {
       this.hashMap.get(node.hash).push(node)
     }
@@ -125,6 +125,12 @@ class ProtoMapTree {
   createNode(parent, flatObject) {
 
     if (!flatObject.uuid) throw new Error('node object must have uuid property')
+    if (!flatObject.type) throw new Error('node object must have type property')
+    if (flatObject.type !== 'file' && flatObject.type !== 'folder') 
+      throw new Error('node object type must be either file or folder')
+
+    if (parent === null && flatObject.type !== 'folder')
+      throw new Error('root object type must be folder')
   
     let node = Object.create(this.proto)
     for (let prop in flatObject) {
@@ -136,6 +142,7 @@ class ProtoMapTree {
     }
 
     if (parent === null) {
+      if (this.root) throw new Error('root already set')
       node.parent = null // TODO: should have a test case for this !!! this may crash forEach
       this.root = node
     }

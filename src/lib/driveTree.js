@@ -113,10 +113,6 @@ class DriveTree extends ProtoMapTree {
   }
 }
 
-// for drive, the xstat must be 
-// 1. isFolder
-// 2. has at least one owner
-// 3. writelist and readlist must be defined
 const createDriveTree = (rootObj, rootpath) => {
 
   if (typeof rootObj !== 'object') throw new Error('invalid rootObj')

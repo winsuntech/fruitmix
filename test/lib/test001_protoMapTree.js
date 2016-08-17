@@ -57,7 +57,6 @@ const testData1 = () => {
 describe(path.basename(__filename), function() {
 
   describe('protoMapTree', function() {
-    
     describe('path', function() { 
       it('nodeK path should be a h j k', function(done) { 
         let arr = testData1()
@@ -76,43 +75,111 @@ describe(path.basename(__filename), function() {
   })
 
   describe('new ProtoMapTree()', function() {
+   
+    let proto = { x: 1, y: 2, z: ['hello', 1] } 
+    let t
+
+    beforeEach(function() {
+      t = new ProtoMapTree(proto) 
+    })
+    
+    it('should preserve proto object props', function() {
+      expect(t.proto.x).to.equal(proto.x)
+      expect(t.proto.y).to.equal(proto.y)
+      expect(t.proto.z).to.deep.equal(proto.z)
+    })
+
+    it('should set itself to proto.tree', function() {
+      expect(t.proto.tree).to.equal(t) 
+    })
+
+    it('should have an empty uuid Map', function() {
+      expect(t.uuidMap instanceof Map).to.be.true
+      expect(t.uuidMap.size).to.equal(0)
+    })
+
+    it('should have an empty hash Map', function() {
+      expect(t.hashMap instanceof Map).to.be.true
+      expect(t.hashMap.size).to.equal(0)
+    })
+
+    it('should have null root', function() {
+      expect(t.root).to.be.null
+    })
+  })
+
+  describe('create root', function() {
 
     let uuid1 = '1e15e8ce-7ae4-43f4-8d9f-285c1f28dfac'
     let digest1 = 'e14bfc54f20117011c716706ba9c4879a07f6a882d34766eda70ec5bbfe54e0e'
+    let root = { uuid: uuid1, hash: digest1, type:'folder', a: 1 }
+    let proto = { x: 1, y: 2, z: ['hello', 1] }
+    let t
+  
+    beforeEach(function() {
+      t = new ProtoMapTree(proto)
+    })
 
     it('should throw if root no uuid', function() {
 
-      let proto = { x: 1, y: 2 }
-      let root = { a: 'aa', b: 'bb'}
-      let fn = () => { return new ProtoMapTree(proto, root) }
+      let root = { type: 'folder' }
+      let fn = () => { t.createNode(null, root) }
       expect(fn).to.throw(Error)
     })
 
-    it('should have a correct ProtoMapTree', function() {
+    it('should throw if root object no type', function() {
+  
+      let root = { uuid: uuid1 }
+      let fn = () => { t.createNode(null, root) }
+      expect(fn).to.throw(Error)
+    })
 
-      let proto = { x: 1 }
-      let root = { a: 'aa', uuid: uuid1, hash: digest1 }
-      let t = new ProtoMapTree(proto, root)
+    it('should throw if root is not a folder', function() {
 
-      // t.proto is proto
-      expect(t.proto === proto).to.be.true
-      // t.proto preserve properties
-      expect(t.proto.x).to.equal(1)
+      let root = { uuid: uuid1, type: 'file' }
+      let fn = () => { t.createNode(null, root) }
+      expect(fn).to.throw(Error)
+    })
 
-      // t.root preserve properties
-      expect(t.root.a).to.equal('aa')
-      // t.root is root node
-      expect(t.root.parent).to.be.null
-      // t.root has no children
-      expect(t.root.getChildren()).to.deep.equal([])
+    it('root should preserve root object props', function() {
 
-      // t.proto is the prototype of t.root
-      expect(t.proto.isPrototypeOf(t.root)).to.be.true
-      // t.root is in uuid map
-      expect(t.uuidMap.get(uuid1)).to.equal(t.root)
-      // [t.root] is in hash map
-      expect(t.hashMap.get(digest1)).to.deep.equal([t.root])
+      t.createNode(null, root)
+
+      expect(t.root.a).to.equal(root.a)
+      expect(t.root.uuid).to.equal(root.uuid)
+      expect(t.root.hash).to.equal(root.hash)
+      expect(t.root.type).to.equal(root.type)
     }) 
+
+    it('root should have correct parent/children set', function() {
+      
+      t.createNode(null, root)
+      
+      expect(t.root.parent).to.be.null
+      expect(t.root.getChildren()).to.deep.equal([])
+    })
+
+    it('proto should be the prototype of root', function() {
+      
+      t.createNode(null, root)
+
+      expect(t.proto.isPrototypeOf(t.root)).to.be.true
+    })
+
+    it('root should be in uuid map', function() {
+      
+      t.createNode(null, root)
+
+      expect(t.uuidMap.get(uuid1)).to.equal(t.root)
+      expect(t.uuidMap.size).to.equal(1)
+    })
+
+    it('root should NOT be in hash map, since it is a folder', function() {
+    
+      t.createNode(null, root)
+      
+      expect(t.hashMap.size).to.equal(0)
+    })
   })
 
   describe('createProtoMapTree', function() {
@@ -162,54 +229,6 @@ describe(path.basename(__filename), function() {
               })
             })
           })        
-        })
-      })
-    })
-
-    describe('create library tree', function(done) {
-
-      it('should create a library tree', function(done) {
-
-        let libraryUUID = UUID.v4()
-        let libraryPath = path.join(cwd, `tmptest/${libraryUUID}`)
-
-        rimraf('tmptest', err => {
-          if (err) return done(err)
-          mkdirp(`tmptest/${libraryUUID}`, err => {
-            if (err) return done(err)
-            
-            let preset = {
-              uuid: UUID.v4(),
-              owner: [UUID.v4()],
-              writelist: [UUID.v4()],
-              readlist: [UUID.v4()],
-              hash: null,
-              htime: -1
-            }
-
-            xattr.set(libraryPath, 'user.fruitmix', JSON.stringify(preset), err => {
-              if (err) return done(err)
-              
-              createProtoMapTree(libraryPath, 'library', (err, tree) => {
-                if (err) return done(err)
-
-                expect(tree.type).to.equal('library')
-                expect(tree.uuid).to.equal(libraryUUID)
-                expect(tree.rootpath).to.equal(libraryPath)
-
-                expect(tree.proto.tree).to.equal(tree)
-                expect(tree.proto.owner).to.deep.equal(preset.owner)
-                expect(tree.proto.writelist).to.deep.equal([])
-                expect(tree.proto.readlist).to.deep.equal(preset.readlist)
-
-                expect(tree.root.owner).to.deep.equal(preset.owner)
-                expect(tree.root.writelist).to.deep.equal([])
-                expect(tree.root.readlist).to.deep.equal(preset.readlist)
-
-                done()
-              }) 
-            })
-          })
         })
       })
     })
