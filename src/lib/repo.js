@@ -3,14 +3,14 @@ import fs from 'fs'
 
 import Promise from 'bluebird'
 
-import { openDriveDefinitionsAsync } from '../models/driveDefinitions'
+import { openDriveConfsAsync } from '../models/driveConfs'
 
 import { readXstat } from './xstat'
 import { mkdirpAsync, fsStatAsync, fsMkdirAsync, mapXstatToObject } from './tools'
 import { createProtoMapTree } from './protoMapTree'
 import {nodeUserReadable,nodeUserWritable} from './perm'
 
-import { createDriveTree, createDriveTreeAsync } from './driveTree'
+import { createDrive, createDriveAsync } from './drive'
 
 Promise.promisifyAll(fs)
 
@@ -96,7 +96,7 @@ class Repo {
     this.initState = 'INITIALIZING'
 
     let modelPath = this.paths.get('models')
-    let defs = openDriveDefinitionsAsync(path.join(modelPath, 'driveDefinitions.json'))
+    let defs = openDriveConfsAsync(path.join(modelPath, 'driveConfs.json'))
     if (!defs) {
       this.initState = 'IDLE'
       return new Error('fail to load definitions')
