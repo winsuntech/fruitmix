@@ -23,7 +23,7 @@ const testData1 = () => {
       node.name = c
       return node
     })
-
+  
   let object = {
     a:          null,
     b:        'a',
@@ -61,7 +61,7 @@ describe(path.basename(__filename), function() {
       it('nodeK path should be a h j k', function(done) { 
         let arr = testData1()
         let nodeK = arr.find(node => node.name === 'k')
-        expect(nodeK.nodepath().map(n => n.name)).to.deep.equal(['a', 'h', 'j', 'k'])
+  	expect(nodeK.nodepath().map(n => n.name)).to.deep.equal(['a', 'h', 'j', 'k'])
         done()
       })
 
@@ -71,7 +71,21 @@ describe(path.basename(__filename), function() {
         expect(nodeG.nodepath().map(n => n.name)).to.deep.equal(['a', 'e', 'g'])
         done()
       })
+
+      
     })
+    
+    describe('children', function() {
+      
+      it ('nodeA children should be b c e h', function(done) {
+        let arr = testData1()
+        let nodeA = arr.find(node => node.name === 'a')
+ 	expect(nodeA.children.map(n => n.name)).to.deep.equal(['b', 'c', 'e', 'h'])
+        done()
+      })
+
+    })
+
   })
 
   describe('new ProtoMapTree()', function() {
@@ -182,6 +196,16 @@ describe(path.basename(__filename), function() {
     })
   })
 
+  describe('modify tree', function() {
+    it('set a new child', function() {
+      let arr = testData1();
+      let nodeA = arr.find(node => node.name === 'a')
+      let nodeZ = arr.find(node => node.name === 'z')
+      nodeA.setChild(nodeZ);  
+      expect(nodeA.children.map(n => n.name)).to.deep.equal(['b', 'c', 'e', 'h', 'z'])
+    })
+  })
+/*
   describe('drive file operation', function() {
 
     describe('import drive file', function() {
@@ -770,5 +794,5 @@ describe(path.basename(__filename), function() {
       // })
 
     }) // end of create library file 
-  })
+})*/
 })
