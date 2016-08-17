@@ -10,7 +10,7 @@ import { mkdirpAsync, fsStatAsync, fsMkdirAsync, mapXstatToObject } from './tool
 import { createProtoMapTree } from './protoMapTree'
 import {nodeUserReadable,nodeUserWritable} from './perm'
 
-import { createDriveTree, createDriveTreeAsync } from './driveTree'
+import { createDrive, createDriveAsync } from './drive'
 
 Promise.promisifyAll(fs)
 

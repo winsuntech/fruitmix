@@ -7,8 +7,10 @@ import UUID from 'node-uuid'
 import validator from 'validator'
 
 import mkdirp from 'mkdirp' // FIXME
+
+import uuids from '../util/uuids'
 import { rimrafAsync, mkdirpAsync, fs, xattr } from '../util/async'
-import { createDriveTreeAsync } from '../../src/lib/driveTree'
+import { createDrive } from '../../src/lib/drive'
 
 const uuid1 = 'c0765cd5-acd1-4b53-bb17-7834ebdca6c1' 
 const uuid2 = 'd7114148-e2bd-42f8-88f9-a980a1a4d29c' 
@@ -22,81 +24,87 @@ const preset1 = JSON.stringify({
     readlist:[]
   })
 
+const fixed01 = {
+  uuid: uuids[0],
+  owner: [uuids[1]],
+  writelist: [],
+  readlist: []
+}
+
 describe(path.basename(__filename), function() {
 
-  describe('test create Drive', function() {
-    
-    beforeEach(function(done) {
-      rimrafAsync('tmptest')
-        .then(() => mkdirpAsync('tmptest'))    
-        .then(() => done())
-        .catch(e => done(e))
+  describe('test create drive', function() {
+
+    const expectInitialState = (drv, uuid) => {
+  
+      expect(drv.proto.writelist).to.be.undefined
+      expect(drv.proto.readlist).to.be.undefined
+
+      expect(drv.uuid).to.equal(uuid)
+      expect(drv.rootpath).to.be.null
+      expect(drv.memtreeState).to.equal('NONE')
+    }
+
+    it('proto should have owner for fixed owner, with w/r list undefined', function() {
+
+      let { uuid, owner, writelist, readlist } = fixed01
+      let drv = createDrive(uuid, owner, writelist, readlist, true)
+      expect(drv.proto.owner).to.deep.equal(owner)
+      expect(drv.fixedOwner).to.be.true
+      expectInitialState(drv, uuid)
     })
 
-    it('should create a drive', function(done) {
-      xattr.setAsync('tmptest', FRUITMIX, preset1)
-        .then(() => createDriveTreeAsync(path.join(cwd, 'tmptest')))
-        .then(drive => {
-          expect(drive.root.uuid).to.equal(uuid1)
-          expect(drive.root.owner).to.deep.equal([uuid2])
-          expect(drive.root.writelist).to.deep.equal([])
-          expect(drive.root.readlist).to.deep.equal([])
-          expect(drive.rootpath).to.equal(path.join(cwd, 'tmptest')) 
-          // throw new Error('need more expects, perhaps') // TODO
-          done()
-        })
-        .catch(e => done(e))
+    it('proto should have no owner for variable owner, with w/r list undefined', function() {
+
+      let { uuid, owner, writelist, readlist } = fixed01
+      let drv = createDrive(uuid, owner, writelist, readlist, false)
+      expect(drv.proto.owner).to.deep.equal([])
+      expect(drv.fixedOwner).to.be.false
+      expectInitialState(drv, uuid)
     })
   })
 
-  describe('test drive scan', function() {
+  describe('test memtree for drive', function() {
 
-    let drive
+    let { uuid, owner, writelist, readlist } = fixed01
 
-    beforeEach(function(done) {
-      rimrafAsync('tmptest')
-        .then(() => mkdirpAsync('tmptest'))    
-        .then(() => xattr.setAsync('tmptest', FRUITMIX, preset1))
-        .then(() => createDriveTreeAsync(path.join(cwd, 'tmptest')))
-        .then(drv => { drive = drv; done() })
-        .catch(e => done(e))
+    before(function() {
+      return (async () => {
+        await rimrafAsync('tmptest')
+        await mkdirpAsync('tmptest')
+      })()
     })
 
-    it('should scan one new folder', function(done) {
-      mkdirp('tmptest/folder1', err => {
-        drive.scan(() => {
+    it('should build memtree on empty folder', function() {
 
-          let children = drive.root.getChildren()
-          expect(children.length).to.equal(1)
-
-          let c0 = children[0]
-          expect(validator.isUUID(c0.uuid)).to.be.true
-          expect(c0.type).to.equal('folder')
-          expect(c0.owner).to.deep.equal([])        
-          expect(c0.name).to.equal('folder1')
-          expect(c0.parent.uuid).to.equal(uuid1)
-          done()
-        })      
-      })
+      let expected = { uuid, owner, writelist, readlist, type: 'folder' }
+      let drive = createDrive(uuid, owner, writelist, readlist, true)
+      drive.setRootpath('tmptest')
+      
+      return (async () => {
+        await drive.buildMemTreeAsync()
+        expect(drive.memtreeState).to.equal('CREATED')
+        expect(drive.uuidMap.size).to.equal(1)
+        expect(drive.root.uuid).to.deep.equal(expected.uuid)
+        expect(drive.root.type).to.equal('folder')
+        expect(drive.root.owner).to.deep.equal(expected.owner)
+        expect(drive.root.writelist).to.deep.equal(expected.writelist)
+        expect(drive.root.readlist).to.deep.equal(expected.readlist)
+      })()
     })
 
-    it('should scan one new file', function(done) {
-      fs.writeFile('tmptest/file1', 'hello', err => {
-        drive.scan(() => {
-        
-          let children = drive.root.getChildren()
-          expect(children.length).to.equal(1)
-
-          let c0 = children[0]
-          expect(validator.isUUID(c0.uuid)).to.be.true
-          expect(c0.type).to.equal('file')
-          expect(c0.owner).to.deep.equal([])
-          expect(c0.name).to.equal('file1')
-          expect(c0.size).to.equal(5)
-          expect(c0.parent.uuid).to.equal(uuid1)
-          done()
-        })
-      })
+    it('shoudl build memtree on single folder w/o xattr', function() {
+      
+      let drive = createDrive(uuid, owner, writelist, readlist, true)
+      drive.setRootpath('tmptest')
+    
+      return (async () => {
+        await mkdirpAsync('tmptest/folder1')
+        await drive.buildMemTreeAsync()
+       
+        // FIXME 
+        expect(drive.uuidMap.size).to.equal(2)
+      })()
     })
   })
 })
