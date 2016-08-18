@@ -2,12 +2,16 @@ import Promise from 'bluebird'
 
 import validator from 'validator'
 
-/** Schema
+/** 
+
+Schema
 
 {
   label: a string
   ownership: 'fixed', exactly one owner allowed, only visible to this owner,
              'variable', zero to many owner allowed, visible to all owners, as well as system administrator.
+
+  fixedOwner: 
 
   URI: 'fruitmix', 'appifi', 'peripheral:uuid=', 'peripheral:label=', 
       noticing that the uuid or label are file system uuid or label, not partition uuid or label, 
@@ -20,7 +24,7 @@ import validator from 'validator'
   writelist: []
   readlist: []
 
-  indexing: true or false
+  memCache: true or false
 }
 
 **/
