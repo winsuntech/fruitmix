@@ -33,8 +33,8 @@ const isUUID = (uuid) => (typeof uuid === 'string') ? validator.isUUID(uuid) : f
 describe('xstat.js', function(){
 
 	let cwd = process.cwd();
-	let tmpFoder = 'tmpFoder';
-	let tmpFile = 'tmpFile.js';
+	let tmpFoder = 'tmpTestFoder';
+	let tmpFile = 'tmpTestFile.js';
 	let fpath = path.join(cwd, tmpFoder);
 	let ffpath = path.join(fpath, tmpFile);
 
@@ -77,7 +77,7 @@ describe('xstat.js', function(){
 
 		after(function(){
 			rimraf(tmpFoder, err => {
-				if(err) throw new Error('delete testFoder failed');
+				if(err) throw new Error('delete tmpTestFoder failed');
 			});
 		});
 
@@ -554,9 +554,39 @@ describe('xstat.js', function(){
 				});
 			});
 		});
+	});
 
+	describe('updateXattrOwner', () => {
 
-		
+		beforeEach(done => {
+			rimraf(tmpFoder, err => {
+				if(err) return done(err);
+				mkdirp(tmpFoder, err => {
+					if(err) return done(err);
+					fs.stat(fpath, (err, stat) => {
+						xattr.set(fpath, FRUITMIX, JSON.stringify({
+							uuid: uuidArr[0],
+							owner: [uuidArr[1]],
+							writelist: [uuidArr[2]],
+							readlist: [uuidArr[3]],
+							hash: sha256_1,
+							htime: stat.mtime.getTime()
+						}), err => {
+							if(err) return done(err);
+							done(err);
+						});
+					});
+				});
+			});
+		});
+		after(() => {
+			rimraf(tmpFoder, err => {
+				if(err) throw new Error('delete tmpTestFoder failed');
+			});
+		});
+		it('hello', done => {
+			done();
+		});
 	});
 
 });
