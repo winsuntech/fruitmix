@@ -204,6 +204,90 @@ describe(path.basename(__filename), function() {
       nodeA.setChild(nodeZ);  
       expect(nodeA.children.map(n => n.name)).to.deep.equal(['b', 'c', 'e', 'h', 'z'])
     })
+    
+    it('unset a new child', function() {
+      let arr = testData1();
+      let nodeA = arr.find(node => node.name === 'a')
+      let nodeB = arr.find(node => node.name === 'b')
+      nodeA.unsetChild(nodeB);  
+      expect(nodeA.children.map(n => n.name)).to.deep.equal(['c', 'e', 'h'])
+    })
+
+    it('attach parent', function() {
+      let arr=testData1();
+      let nodeA = arr.find(node => node.name === 'a')
+      let nodeZ = arr.find(node => node.name === 'z')
+      nodeZ.attach(nodeA);  
+      expect(nodeA.children.map(n => n.name)).to.deep.equal(['b', 'c', 'e', 'h', 'z'])
+    })
+    
+    it('detach parent', function() {
+      let arr=testData1();
+      let nodeA = arr.find(node => node.name === 'a')
+      let nodeB = arr.find(node => node.name === 'b')
+      nodeB.detach();  
+      expect(nodeA.children.map(n => n.name)).to.deep.equal(['c', 'e', 'h'])
+    })
+
+  })
+
+  describe('get part of tree', function() {
+    it('get children by getChildren()', function(){
+      let arr = testData1();
+      let nodeA = arr.find(node => node.name === 'a')
+      expect(nodeA.children.map(n => n.name)).to.deep.equal(['b', 'c', 'e', 'h'])
+    })
+  })
+  
+  describe('traversal tree', function() {
+    it('upEach', function() { 
+        let arr = testData1()
+        let nodeG = arr.find(node => node.name === 'g')
+        let arr2 = []
+        nodeG.upEach(node => arr2.push(node))
+        expect(arr2.map(n=>n.name)).to.deep.equal(['g', 'e', 'a'])
+    })
+    
+    it('upFind', function() {
+      let arr = testData1()
+      let nodeG = arr.find(node => node.name === 'g')
+
+      expect(nodeG.upFind(node => node.name==='e').name==='e');
+      expect(nodeG.upFind(node => node.name==='z')===undefined);
+ 
+    }) 
+    
+    it('preVisit', function() {
+      let arr = testData1()
+      let nodeA = arr.find(node => node.name === 'a')
+      let arr2 = []
+      nodeA.preVisit(node => arr2.push(node.name));
+      expect(arr2).to.deep.equal([ 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n' ]) 
+    })
+    
+   it('postVisit', function() {
+      let arr = testData1()
+      let nodeA = arr.find(node => node.name === 'a')
+      let arr2 = []
+      nodeA.postVisit(node => arr2.push(node.name)); 
+      expect(arr2).to.deep.equal([ 'b', 'd', 'c', 'f', 'g', 'e', 'i', 'k', 'j', 'm', 'n', 'l', 'h', 'a' ]) 
+    })
+
+    it('preVisitEol', function() {
+      let arr = testData1()
+      let nodeA = arr.find(node => node.name === 'a')
+      let arr2 = []
+      nodeA.preVisitEol(node => ( arr2.push(node.name), node.name!=='e')); 
+      expect(arr2).to.deep.equal([ 'a', 'b', 'c', 'd', 'e', 'h', 'i', 'j', 'k', 'l', 'm', 'n' ]) 
+    })
+    
+    it('preVisitFind', function() {
+      let arr = testData1()
+      let nodeA = arr.find(node => node.name === 'a')
+      expect(nodeA.preVisitFind(node => node.name==='e').name==='e'); 
+      expect(nodeA.preVisitFind(node => node.name==='z')===undefined); 
+    })
+
   })
 /*
   describe('drive file operation', function() {

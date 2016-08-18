@@ -46,7 +46,7 @@ const nodeProperties = {
   upFind(func) {
     let node = this
     while (node !== null) {
-      if (func(node)) return ndoe
+      if (func(node)) return node
       node = node.parent
     }
   },
@@ -76,6 +76,7 @@ const nodeProperties = {
 
   preVisitFind(func) {
     if (func(this)) return this
+    if(this.children==undefined) return undefined
     return this.children.find(child => child.preVisitFind(func))
   }
 }
