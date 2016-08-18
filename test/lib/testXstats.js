@@ -19,15 +19,18 @@ const debug = true;
 const expect = chai.expect;
 const FRUITMIX = 'user.fruitmix';
 const uuidArr = [
-	UUID.v4(),
-	UUID.v4(),
-	UUID.v4(),
-	UUID.v4(),
-	UUID.v4(),
-	UUID.v4(),
-	UUID.v4()
+	'c3256d90-f789-47c6-8228-9878f2b106f6',
+	'6c15ff0f-b816-4b2e-8a2e-2f7c4902d13c',
+	'b6d7a826-0635-465f-9034-1f5a69181f68',
+	'e4197ec7-c588-492c-95c4-be6172318932',
+	'494e2130-56c6-477c-ba4f-b87226eb7ebd',
+	'52285890-5556-47fb-90f3-45e14e741ccd',
+	'6648fe47-bcf0-43cb-9f64-996620595bd7',
+	'238e1fa5-8847-43e6-860e-cf812d1f5e65',
+	'146e05a5-d31b-4601-bc56-a46e66bb14eb'
 ];
-const sha256_1 = '2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824'
+const sha256_1 = '2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824';
+const sha256_2 = '2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9825';
 const isUUID = (uuid) => (typeof uuid === 'string') ? validator.isUUID(uuid) : false;
 
 describe('xstat.js', function(){
@@ -75,6 +78,7 @@ describe('xstat.js', function(){
 			});
 		});
 
+		// remove test folder
 		after(function(){
 			rimraf(tmpFoder, err => {
 				if(err) throw new Error('delete tmpTestFoder failed');
@@ -203,59 +207,59 @@ describe('xstat.js', function(){
 			});
 		});
 
-		it('should return empty array if perset owner is an object', done => {
-			xattr.set(fpath, FRUITMIX, JSON.stringify({
-				uuid: uuidArr[0],
-				owner: { name: 'panda' }
-			}), err => {
-				if(err) return done(err);
-				readXstat(fpath, (err, attr) => {
-					if(err) return done(err);
-					expect(attr.owner).to.be.deep.equal([]);
-					expect(attr.uuid).to.be.deep.equal(uuidArr[0]);
-					expect(attr.writelist).to.be.an('undefined');
-					expect(attr.readlist).to.be.an('undefined');
-					expect(attr.abspath).to.deep.equal(fpath);
-					done();
-				});
-			});
-		});
+		// it('should return empty array if perset owner is an object', done => {
+		// 	xattr.set(fpath, FRUITMIX, JSON.stringify({
+		// 		uuid: uuidArr[0],
+		// 		owner: { name: 'panda' }
+		// 	}), err => {
+		// 		if(err) return done(err);
+		// 		readXstat(fpath, (err, attr) => {
+		// 			if(err) return done(err);
+		// 			expect(attr.owner).to.be.deep.equal([]);
+		// 			expect(attr.uuid).to.be.deep.equal(uuidArr[0]);
+		// 			expect(attr.writelist).to.be.an('undefined');
+		// 			expect(attr.readlist).to.be.an('undefined');
+		// 			expect(attr.abspath).to.deep.equal(fpath);
+		// 			done();
+		// 		});
+		// 	});
+		// });
 
-		it('should return empty array if perset owner is an undefined', done => {
-			xattr.set(fpath, FRUITMIX, JSON.stringify({
-				uuid: uuidArr[0],
-				owner: undefined
-			}), err => {
-				if(err) return done(err);
-				readXstat(fpath, (err, attr) => {
-					if(err) return done(err);
-					expect(attr.owner).to.be.deep.equal([]);
-					expect(attr.uuid).to.be.deep.equal(uuidArr[0]);
-					expect(attr.writelist).to.be.an('undefined');
-					expect(attr.readlist).to.be.an('undefined');
-					expect(attr.abspath).to.deep.equal(fpath);
-					done();
-				});
-			});
-		});
+		// it('should return empty array if perset owner is an undefined', done => {
+		// 	xattr.set(fpath, FRUITMIX, JSON.stringify({
+		// 		uuid: uuidArr[0],
+		// 		owner: undefined
+		// 	}), err => {
+		// 		if(err) return done(err);
+		// 		readXstat(fpath, (err, attr) => {
+		// 			if(err) return done(err);
+		// 			expect(attr.owner).to.be.deep.equal([]);
+		// 			expect(attr.uuid).to.be.deep.equal(uuidArr[0]);
+		// 			expect(attr.writelist).to.be.an('undefined');
+		// 			expect(attr.readlist).to.be.an('undefined');
+		// 			expect(attr.abspath).to.deep.equal(fpath);
+		// 			done();
+		// 		});
+		// 	});
+		// });
 
-		it('should return empty array if perset owner is an uuid', done => {
-			xattr.set(fpath, FRUITMIX, JSON.stringify({
-				uuid: uuidArr[0],
-				owner: uuidArr[0]
-			}), err => {
-				if(err) return done(err);
-				readXstat(fpath, (err, attr) => {
-					if(err) return done(err);
-					expect(attr.owner).to.be.deep.equal([]);
-					expect(attr.uuid).to.be.deep.equal(uuidArr[0]);
-					expect(attr.writelist).to.be.an('undefined');
-					expect(attr.readlist).to.be.an('undefined');
-					expect(attr.abspath).to.deep.equal(fpath);
-					done();
-				});
-			});
-		});
+		// it('should return empty array if perset owner is an uuid', done => {
+		// 	xattr.set(fpath, FRUITMIX, JSON.stringify({
+		// 		uuid: uuidArr[0],
+		// 		owner: uuidArr[0]
+		// 	}), err => {
+		// 		if(err) return done(err);
+		// 		readXstat(fpath, (err, attr) => {
+		// 			if(err) return done(err);
+		// 			expect(attr.owner).to.be.deep.equal([]);
+		// 			expect(attr.uuid).to.be.deep.equal(uuidArr[0]);
+		// 			expect(attr.writelist).to.be.an('undefined');
+		// 			expect(attr.readlist).to.be.an('undefined');
+		// 			expect(attr.abspath).to.deep.equal(fpath);
+		// 			done();
+		// 		});
+		// 	});
+		// });
 
 		it('should return empty array if perset owner is an empty array', done => {
 			xattr.set(fpath, FRUITMIX, JSON.stringify({
@@ -503,90 +507,154 @@ describe('xstat.js', function(){
 			});
 		});
 
-		it('should return undefined if readlist is undefined', done => {
-			fs.writeFile(ffpath, '', (err) => {
-				if(err) return done(err);
-				fs.stat(ffpath, (err,stat) => {
-					xattr.set(ffpath, FRUITMIX, JSON.stringify({
-						uuid: uuidArr[0],
-						owner: [uuidArr[1]],
-						writelist: [uuidArr[2]],
-						hash: sha256_1,
-						htime: stat.mtime.getTime()
-					}), err => {
-						if(err) done(err);
-						readXstat(ffpath, (err, attr) => {
-							expect(attr.uuid).to.deep.equal(uuidArr[0]);
-							expect(attr.owner).to.deep.equal([uuidArr[1]]);
-							expect(attr.writelist).to.be.an('undefined');
-							expect(attr.readlist).to.be.an('undefined');
-							expect(attr.hash).to.deep.equal(sha256_1);
-							expect(attr.abspath).to.deep.equal(ffpath);
-							done();
-						});
-					});
-				});
-			});
-		});
+		// it('should return undefined if readlist is undefined', done => {
+		// 	fs.writeFile(ffpath, '', (err) => {
+		// 		if(err) return done(err);
+		// 		fs.stat(ffpath, (err,stat) => {
+		// 			xattr.set(ffpath, FRUITMIX, JSON.stringify({
+		// 				uuid: uuidArr[0],
+		// 				owner: [uuidArr[1]],
+		// 				writelist: [uuidArr[2]],
+		// 				hash: sha256_1,
+		// 				htime: stat.mtime.getTime()
+		// 			}), err => {
+		// 				if(err) done(err);
+		// 				readXstat(ffpath, (err, attr) => {
+		// 					expect(attr.uuid).to.deep.equal(uuidArr[0]);
+		// 					expect(attr.owner).to.deep.equal([uuidArr[1]]);
+		// 					expect(attr.writelist).to.be.an('undefined');
+		// 					expect(attr.readlist).to.be.an('undefined');
+		// 					expect(attr.hash).to.deep.equal(sha256_1);
+		// 					expect(attr.abspath).to.deep.equal(ffpath);
+		// 					done();
+		// 				});
+		// 			});
+		// 		});
+		// 	});
+		// });
 
-		it('should return undefined if writelist is undefined', done => {
-			fs.writeFile(ffpath, '', (err) => {
-				if(err) return done(err);
-				fs.stat(ffpath, (err,stat) => {
-					xattr.set(ffpath, FRUITMIX, JSON.stringify({
-						uuid: uuidArr[0],
-						owner: [uuidArr[1]],
-						readlist: [uuidArr[2]],
-						hash: sha256_1,
-						htime: stat.mtime.getTime()
-					}), err => {
-						if(err) done(err);
-						readXstat(ffpath, (err, attr) => {
-							expect(attr.uuid).to.deep.equal(uuidArr[0]);
-							expect(attr.owner).to.deep.equal([uuidArr[1]]);
-							expect(attr.writelist).to.be.an('undefined');
-							expect(attr.readlist).to.be.an('undefined');
-							expect(attr.hash).to.deep.equal(sha256_1);
-							expect(attr.abspath).to.deep.equal(ffpath);
-							done();
-						});
-					});
-				});
-			});
-		});
+		// it('should return undefined if writelist is undefined', done => {
+		// 	fs.writeFile(ffpath, '', (err) => {
+		// 		if(err) return done(err);
+		// 		fs.stat(ffpath, (err,stat) => {
+		// 			xattr.set(ffpath, FRUITMIX, JSON.stringify({
+		// 				uuid: uuidArr[0],
+		// 				owner: [uuidArr[1]],
+		// 				readlist: [uuidArr[2]],
+		// 				hash: sha256_1,
+		// 				htime: stat.mtime.getTime()
+		// 			}), err => {
+		// 				if(err) done(err);
+		// 				readXstat(ffpath, (err, attr) => {
+		// 					expect(attr.uuid).to.deep.equal(uuidArr[0]);
+		// 					expect(attr.owner).to.deep.equal([uuidArr[1]]);
+		// 					expect(attr.writelist).to.be.an('undefined');
+		// 					expect(attr.readlist).to.be.an('undefined');
+		// 					expect(attr.hash).to.deep.equal(sha256_1);
+		// 					expect(attr.abspath).to.deep.equal(ffpath);
+		// 					done();
+		// 				});
+		// 			});
+		// 		});
+		// 	});
+		// });
+
 	});
 
-	describe('updateXattrOwner', () => {
+	describe('test update data', () => {
 
 		beforeEach(done => {
 			rimraf(tmpFoder, err => {
 				if(err) return done(err);
 				mkdirp(tmpFoder, err => {
 					if(err) return done(err);
-					fs.stat(fpath, (err, stat) => {
-						xattr.set(fpath, FRUITMIX, JSON.stringify({
-							uuid: uuidArr[0],
-							owner: [uuidArr[1]],
-							writelist: [uuidArr[2]],
-							readlist: [uuidArr[3]],
-							hash: sha256_1,
-							htime: stat.mtime.getTime()
-						}), err => {
-							if(err) return done(err);
-							done(err);
+					fs.writeFile(ffpath, '', err => {
+						if(err) return done(err);
+						fs.stat(ffpath, (err, stat) => {
+							xattr.set(ffpath, FRUITMIX, JSON.stringify({
+								uuid: uuidArr[0],
+								owner: [uuidArr[1]],
+								writelist: [uuidArr[2]],
+								readlist: [uuidArr[3]],
+								hash: sha256_1,
+								htime: stat.mtime.getTime()
+							}), err => {
+								if(err) return done(err);
+								done();
+							});
 						});
 					});
 				});
 			});
 		});
+
+		// remove test foder
 		after(() => {
 			rimraf(tmpFoder, err => {
 				if(err) throw new Error('delete tmpTestFoder failed');
 			});
 		});
-		it('hello', done => {
-			done();
-		});
-	});
 
+		describe('test updateXattrOwner', () => {
+
+			it('should returns the owner value after the change', done => {
+				fs.stat(ffpath, (err, stat) => {
+					if(err) done(err);
+					updateXattrOwner(ffpath, uuidArr[0], [uuidArr[4],uuidArr[5]], (err, attr) => {
+						if(err) done(err);
+						expect(attr.uuid).to.deep.equal(uuidArr[0]);
+						expect(attr.owner).to.deep.equal([uuidArr[4],uuidArr[5]]);
+						expect(attr.writelist).to.deep.equal([uuidArr[2]]);
+						expect(attr.readlist).to.deep.equal([uuidArr[3]]);
+						expect(attr.hash).to.deep.equal(sha256_1);
+						expect(attr.htime).to.deep.equal(stat.mtime.getTime());
+						done();
+					});
+				});
+			});
+
+		});
+
+		describe('test updateXattrPermission', () => {
+
+			it('should returns the permission value after the change', done => {
+				fs.stat(ffpath, (err, stat) => {
+					if(err) done(err);
+					updateXattrPermission(ffpath, uuidArr[0], [uuidArr[4]], [uuidArr[5]], (err, attr) => {
+						if(err) done(err);
+						expect(attr.uuid).to.deep.equal(uuidArr[0]);
+						expect(attr.owner).to.deep.equal([uuidArr[1]]);
+						expect(attr.writelist).to.deep.equal([uuidArr[4]]);
+						expect(attr.readlist).to.deep.equal([uuidArr[5]]);
+						expect(attr.hash).to.deep.equal(sha256_1);
+						expect(attr.htime).to.deep.equal(stat.mtime.getTime());
+						done();
+					});
+				});
+			});
+
+		});
+
+		describe('test updateXattrHash', () => {
+
+			it('should returns the hash value after the change', done => {
+				fs.stat(ffpath, (err, stat) => {
+					if(err) done(err);
+					updateXattrHash(ffpath, uuidArr[0], sha256_2, stat.mtime.getTime(), (err, attr) => {
+						if(err) done(err);
+						expect(attr.uuid).to.deep.equal(uuidArr[0]);
+						expect(attr.owner).to.deep.equal([uuidArr[1]]);
+						expect(attr.writelist).to.deep.equal([uuidArr[2]]);
+						expect(attr.readlist).to.deep.equal([uuidArr[3]]);
+						expect(attr.hash).to.deep.equal(sha256_2);
+						expect(attr.htime).to.deep.equal(stat.mtime.getTime());
+						done();
+					});
+				});
+			});
+
+		});
+
+	});
+	
 });
