@@ -207,59 +207,59 @@ describe('xstat.js', function(){
 			});
 		});
 
-		// it('should return empty array if perset owner is an object', done => {
-		// 	xattr.set(fpath, FRUITMIX, JSON.stringify({
-		// 		uuid: uuidArr[0],
-		// 		owner: { name: 'panda' }
-		// 	}), err => {
-		// 		if(err) return done(err);
-		// 		readXstat(fpath, (err, attr) => {
-		// 			if(err) return done(err);
-		// 			expect(attr.owner).to.be.deep.equal([]);
-		// 			expect(attr.uuid).to.be.deep.equal(uuidArr[0]);
-		// 			expect(attr.writelist).to.be.an('undefined');
-		// 			expect(attr.readlist).to.be.an('undefined');
-		// 			expect(attr.abspath).to.deep.equal(fpath);
-		// 			done();
-		// 		});
-		// 	});
-		// });
+		it('should return empty array if perset owner is an object', done => {
+			xattr.set(fpath, FRUITMIX, JSON.stringify({
+				uuid: uuidArr[0],
+				owner: { name: 'panda' }
+			}), err => {
+				if(err) return done(err);
+				readXstat(fpath, (err, attr) => {
+					if(err) return done(err);
+					expect(attr.owner).to.be.deep.equal([]);
+					expect(attr.uuid).to.be.deep.equal(uuidArr[0]);
+					expect(attr.writelist).to.be.an('undefined');
+					expect(attr.readlist).to.be.an('undefined');
+					expect(attr.abspath).to.deep.equal(fpath);
+					done();
+				});
+			});
+		});
 
-		// it('should return empty array if perset owner is an undefined', done => {
-		// 	xattr.set(fpath, FRUITMIX, JSON.stringify({
-		// 		uuid: uuidArr[0],
-		// 		owner: undefined
-		// 	}), err => {
-		// 		if(err) return done(err);
-		// 		readXstat(fpath, (err, attr) => {
-		// 			if(err) return done(err);
-		// 			expect(attr.owner).to.be.deep.equal([]);
-		// 			expect(attr.uuid).to.be.deep.equal(uuidArr[0]);
-		// 			expect(attr.writelist).to.be.an('undefined');
-		// 			expect(attr.readlist).to.be.an('undefined');
-		// 			expect(attr.abspath).to.deep.equal(fpath);
-		// 			done();
-		// 		});
-		// 	});
-		// });
+		it('should return empty array if perset owner is an undefined', done => {
+			xattr.set(fpath, FRUITMIX, JSON.stringify({
+				uuid: uuidArr[0],
+				owner: undefined
+			}), err => {
+				if(err) return done(err);
+				readXstat(fpath, (err, attr) => {
+					if(err) return done(err);
+					expect(attr.owner).to.be.deep.equal([]);
+					expect(attr.uuid).to.be.deep.equal(uuidArr[0]);
+					expect(attr.writelist).to.be.an('undefined');
+					expect(attr.readlist).to.be.an('undefined');
+					expect(attr.abspath).to.deep.equal(fpath);
+					done();
+				});
+			});
+		});
 
-		// it('should return empty array if perset owner is an uuid', done => {
-		// 	xattr.set(fpath, FRUITMIX, JSON.stringify({
-		// 		uuid: uuidArr[0],
-		// 		owner: uuidArr[0]
-		// 	}), err => {
-		// 		if(err) return done(err);
-		// 		readXstat(fpath, (err, attr) => {
-		// 			if(err) return done(err);
-		// 			expect(attr.owner).to.be.deep.equal([]);
-		// 			expect(attr.uuid).to.be.deep.equal(uuidArr[0]);
-		// 			expect(attr.writelist).to.be.an('undefined');
-		// 			expect(attr.readlist).to.be.an('undefined');
-		// 			expect(attr.abspath).to.deep.equal(fpath);
-		// 			done();
-		// 		});
-		// 	});
-		// });
+		it('should return empty array if perset owner is an uuid', done => {
+			xattr.set(fpath, FRUITMIX, JSON.stringify({
+				uuid: uuidArr[0],
+				owner: uuidArr[0]
+			}), err => {
+				if(err) return done(err);
+				readXstat(fpath, (err, attr) => {
+					if(err) return done(err);
+					expect(attr.owner).to.be.deep.equal([]);
+					expect(attr.uuid).to.be.deep.equal(uuidArr[0]);
+					expect(attr.writelist).to.be.an('undefined');
+					expect(attr.readlist).to.be.an('undefined');
+					expect(attr.abspath).to.deep.equal(fpath);
+					done();
+				});
+			});
+		});
 
 		it('should return empty array if perset owner is an empty array', done => {
 			xattr.set(fpath, FRUITMIX, JSON.stringify({
@@ -507,57 +507,57 @@ describe('xstat.js', function(){
 			});
 		});
 
-		// it('should return undefined if readlist is undefined', done => {
-		// 	fs.writeFile(ffpath, '', (err) => {
-		// 		if(err) return done(err);
-		// 		fs.stat(ffpath, (err,stat) => {
-		// 			xattr.set(ffpath, FRUITMIX, JSON.stringify({
-		// 				uuid: uuidArr[0],
-		// 				owner: [uuidArr[1]],
-		// 				writelist: [uuidArr[2]],
-		// 				hash: sha256_1,
-		// 				htime: stat.mtime.getTime()
-		// 			}), err => {
-		// 				if(err) done(err);
-		// 				readXstat(ffpath, (err, attr) => {
-		// 					expect(attr.uuid).to.deep.equal(uuidArr[0]);
-		// 					expect(attr.owner).to.deep.equal([uuidArr[1]]);
-		// 					expect(attr.writelist).to.be.an('undefined');
-		// 					expect(attr.readlist).to.be.an('undefined');
-		// 					expect(attr.hash).to.deep.equal(sha256_1);
-		// 					expect(attr.abspath).to.deep.equal(ffpath);
-		// 					done();
-		// 				});
-		// 			});
-		// 		});
-		// 	});
-		// });
+		it('should return undefined if readlist is undefined', done => {
+			fs.writeFile(ffpath, '', (err) => {
+				if(err) return done(err);
+				fs.stat(ffpath, (err,stat) => {
+					xattr.set(ffpath, FRUITMIX, JSON.stringify({
+						uuid: uuidArr[0],
+						owner: [uuidArr[1]],
+						writelist: [uuidArr[2]],
+						hash: sha256_1,
+						htime: stat.mtime.getTime()
+					}), err => {
+						if(err) done(err);
+						readXstat(ffpath, (err, attr) => {
+							expect(attr.uuid).to.deep.equal(uuidArr[0]);
+							expect(attr.owner).to.deep.equal([uuidArr[1]]);
+							expect(attr.writelist).to.be.an('undefined');
+							expect(attr.readlist).to.be.an('undefined');
+							expect(attr.hash).to.deep.equal(sha256_1);
+							expect(attr.abspath).to.deep.equal(ffpath);
+							done();
+						});
+					});
+				});
+			});
+		});
 
-		// it('should return undefined if writelist is undefined', done => {
-		// 	fs.writeFile(ffpath, '', (err) => {
-		// 		if(err) return done(err);
-		// 		fs.stat(ffpath, (err,stat) => {
-		// 			xattr.set(ffpath, FRUITMIX, JSON.stringify({
-		// 				uuid: uuidArr[0],
-		// 				owner: [uuidArr[1]],
-		// 				readlist: [uuidArr[2]],
-		// 				hash: sha256_1,
-		// 				htime: stat.mtime.getTime()
-		// 			}), err => {
-		// 				if(err) done(err);
-		// 				readXstat(ffpath, (err, attr) => {
-		// 					expect(attr.uuid).to.deep.equal(uuidArr[0]);
-		// 					expect(attr.owner).to.deep.equal([uuidArr[1]]);
-		// 					expect(attr.writelist).to.be.an('undefined');
-		// 					expect(attr.readlist).to.be.an('undefined');
-		// 					expect(attr.hash).to.deep.equal(sha256_1);
-		// 					expect(attr.abspath).to.deep.equal(ffpath);
-		// 					done();
-		// 				});
-		// 			});
-		// 		});
-		// 	});
-		// });
+		it('should return undefined if writelist is undefined', done => {
+			fs.writeFile(ffpath, '', (err) => {
+				if(err) return done(err);
+				fs.stat(ffpath, (err,stat) => {
+					xattr.set(ffpath, FRUITMIX, JSON.stringify({
+						uuid: uuidArr[0],
+						owner: [uuidArr[1]],
+						readlist: [uuidArr[2]],
+						hash: sha256_1,
+						htime: stat.mtime.getTime()
+					}), err => {
+						if(err) done(err);
+						readXstat(ffpath, (err, attr) => {
+							expect(attr.uuid).to.deep.equal(uuidArr[0]);
+							expect(attr.owner).to.deep.equal([uuidArr[1]]);
+							expect(attr.writelist).to.be.an('undefined');
+							expect(attr.readlist).to.be.an('undefined');
+							expect(attr.hash).to.deep.equal(sha256_1);
+							expect(attr.abspath).to.deep.equal(ffpath);
+							done();
+						});
+					});
+				});
+			});
+		});
 
 	});
 
@@ -648,6 +648,22 @@ describe('xstat.js', function(){
 						expect(attr.readlist).to.deep.equal([uuidArr[3]]);
 						expect(attr.hash).to.deep.equal(sha256_2);
 						expect(attr.htime).to.deep.equal(stat.mtime.getTime());
+						done();
+					});
+				});
+			});
+
+			it('should returns undefined if mtime is not equal', done => {
+				fs.stat(ffpath, (err, stat) => {
+					if(err) done(err);
+					updateXattrHash(ffpath, uuidArr[0], sha256_2, 123, (err, attr) => {
+						if(err) done(err);
+						expect(attr.uuid).to.deep.equal(uuidArr[0]);
+						expect(attr.owner).to.deep.equal([uuidArr[1]]);
+						expect(attr.writelist).to.deep.equal([uuidArr[2]]);
+						expect(attr.readlist).to.deep.equal([uuidArr[3]]);
+						expect(attr.hash).to.deep.equal(undefined);
+						expect(attr.htime).to.deep.equal(undefined);
 						done();
 					});
 				});
