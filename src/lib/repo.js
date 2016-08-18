@@ -1,75 +1,39 @@
 import path from 'path'
-import fs from 'fs'
 
 import Promise from 'bluebird'
 
-import { openDriveConfsAsync } from '../models/driveConfs'
+import { fs, mkdirpAsync, rimrafAsync } from '../util/async'
 
-import { readXstat } from './xstat'
-import { mkdirpAsync, fsStatAsync, fsMkdirAsync, mapXstatToObject } from './tools'
+import { readXstat, readXstatAsync } from './xstat'
 import { createProtoMapTree } from './protoMapTree'
-import {nodeUserReadable,nodeUserWritable} from './perm'
+import { nodeUserReadable, nodeUserWritable} from './perm'
 
-import { createDrive, createDriveAsync } from './drive'
+import { createDrive } from './drive'
 
-Promise.promisifyAll(fs)
+// currying 
+const createFruitmixDrive = (dir) => {
 
-const readXstatAsync = Promise.promisify(readXstat)
+  return async (conf) => {
 
-// return an array of xstat that is valid drive root xstat
-const scanSystemDrivesAsync = async (drivePath) => 
-  fs.readdirAsync(drivePath)
-    .map(entry => readXstatAsync(path.join(drivePath, entry), null))
-    .filter(xstat => xstat !== null &&
-      xstat.isDirectory() && 
-      xstat.owner.length > 0 &&
-      xstat.writelist &&
-      xstat.readlist)
+    let drive = createDrive(conf.uuid, conf.owner, conf.writelist, conf.readlist, conf.fixedOwner)
+    let drvpath = path.join(dir, conf.uuid)
+    let inspect = await fs.statAsync(drvpath).reflect()
+    
+    if (inspect.isFulfilled() && inspect.value().isDirectory()) {
+      drive.setRootpath(drvpath)  
+      if (conf.indexing) 
+        drive.buildMemTreeAsync().then(r=>{}).catch(e=>{}) 
+    }    
 
-/**
+    return drive
+  }
+}
 
-  runtime status of a drive
+// currying
+const createOtherDrive = (whatever) => {
 
-  1. 'unsupported', 'offline', 'online'
-  2. for online drive, index status: 'none', 'indexing', 'indexed'
-
-**/
-const buildDriveList = (definitions, xstats) => 
-
-  definitions.map(def => {
-
-    // only fruitmix URI protocol is processed, for now
-    if (def.URI === 'fruitmix') { 
-      let xstat = xstats.find(x => x.uuid === def.uuid)
-      if (xstat) {
-        return {
-          uuid: def.uuid,
-          status: 'online',
-          indexStatus: 'none'
-        }
-      }
-      else {
-        return {
-          uuid: def.uuid,
-          status: 'offline',
-          indexStatus: 'none'
-        }
-      }
-    }
-    else {
-      return {
-        uuid: def.uuid,
-        status: 'unsupported',
-        indexStatus: 'none'
-      }
-    }
-  })
-
-class Drive {
-
-  construct(definition, xstat) {
-    this.definition = definition
-    this.xstat = xstat  
+  return async (conf) => {
+    return createDrive(conf.uuid, conf.owner, conf.writelist, conf.readlist, conf.fixedOwner)
   }
 }
 
@@ -80,36 +44,70 @@ class Repo {
     this.paths = paths
     this.models = models
 
-    this.definitions = null
-    this.trees = null
+    this.confs = null
     this.drives = null
 
     this.initState = 'IDLE' // 'INITIALIZING', 'INITIALIZED', 'DEINITIALIZING',
   }
 
-  // load drive definitions, scan system drive folder, build
   async init() {
 
-    if (this.initState !== 'IDLE') 
-      return new Error('invalid state')
+    // check state
+    if (this.initState !== 'IDLE') return new Error('invalid state')
 
     this.initState = 'INITIALIZING'
 
-    let modelPath = this.paths.get('models')
-    let defs = openDriveConfsAsync(path.join(modelPath, 'driveConfs.json'))
-    if (!defs) {
+    // retrieve models path, open config
+    let modelDir = this.paths.get('models')
+    let tmpDir = this.paths.get('tmp')
+    let conf = await openOrCreateCollectionAsync(path.join(modelDir, 'driveConf.json'), tmpDir)
+    if (!confs) {
       this.initState = 'IDLE'
-      return new Error('fail to load definitions')
+      return new Error('fail to load drive configuration')
     }
+    this.confs = confs
 
-    let drivePath = this.paths.get('models')
-    let xstats = await scanSystemDrivesAsync(drivePath)
-    this.drives = buildDriveList(defs, xstats)
+    // retrieve drive directory 
+    let dir = this.paths.get('drives')
 
-    let scanning = this.drives.filter(drv => drv.status === 'online' && drv.definition.index === 'auto')
-     
+    this.drives = await Promise.all(confs.map(conf => {
+
+      if (conf.URI === 'fruitmix')
+        return createFruitmixDrive(dir)(conf)
+      else
+        return createOtherDrive()(conf)
+    }))
+
     this.initState = 'INITIALIZED'
   }
+
+  // SERVICE API: create new fruitmix drive
+  // label must be string, can be empty
+  // fixedOwner, true or false
+  // owner, uuid array, must be exactly one if fixedOwner true
+  // writelist, uuid array
+  // readlist, uuid array
+  // memCache, true or false
+  // return uuid 
+  async createNewFruitmixDrive({label, fixedOwner, owner, writelist, readlist, memCache}) {
+
+    let uuid = UUID.v4()          
+    let dir = this.paths.get('drives')
+
+    // create foldre in drive dir
+    await mkdirpAsync(path.join(dir, uuid))
+
+    // update data model
+    await this.conf.updateAsync(conf.list, [...conf.list, drvconf])
+   
+    // create drive and load it 
+    let drv = createFruitmixDrive(dir)(conf)
+    this.drives.push(drv)
+
+    return uuid
+  }
+
+  //////////////////////////////////////////////////////////////////////////  
 
   findTreeInDriveByUUID(uuid) {
     return this.drives.find(tree => tree.uuidMap.get(uuid))
@@ -302,7 +300,6 @@ async function createRepoAsync(rootpath) {
 const createRepo = (paths, models) => new Repo(paths, models)
 
 const testing = {
-  scanSystemDrivesAsync
 }
 
 export { createRepo, testing }
