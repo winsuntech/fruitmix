@@ -166,11 +166,14 @@ const updateXattrHash = (target, uuid, hash, htime) => {
   })
 }
 
+const readXstatAsync = Promise.promisify(readXstat)
+
 const testing = {}
 
 export { 
   readTimeStamp,
   readXstat,
+  readXstatAsync,
   updateXattrOwner,
   updateXattrPermission,
   updateXattrHash,
