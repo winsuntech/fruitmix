@@ -154,7 +154,7 @@ const updateXattrPermission = (target, uuid, writelist, readlist, callback) => {
   })
 }
 
-const updateXattrHash = (target, uuid, hash, htime) => {
+const updateXattrHash = (target, uuid, hash, htime, callback) => {
 
   readXstat(target, (err, xstat) => {
     if (err) return callback(err)
