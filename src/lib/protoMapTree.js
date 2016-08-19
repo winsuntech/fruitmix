@@ -1,3 +1,4 @@
+import EventEmitter from 'events'
 import deepEqual from 'deep-equal'
 
 const nodeProperties = {
@@ -82,13 +83,14 @@ const nodeProperties = {
 
 Object.freeze(nodeProperties)
 
-class ProtoMapTree {
+class ProtoMapTree extends EventEmitter {
 
   // proto can be any plain JavaScript object
   // root should have at least the uuid for this general data structure
   // for fruitmix specific usage, root should have owner, writelist and readlist
   constructor(proto) {
-    
+
+    super()    
     this.proto = Object.assign(proto, nodeProperties)
     this.proto.tree = this
     this.uuidMap = new Map()
@@ -152,11 +154,7 @@ class ProtoMapTree {
 
     this.uuidMap.set(node.uuid, node)
     this.hashMapSet(node)
-
-    if (this.uuidMap.size % 5000 === 0) {
-      console.log(this.uuidMap.size)
-      console.log(process.memoryUsage().rss)
-    }
+    this.emit('nodeCreated', node)
     return node
   }
 

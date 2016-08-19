@@ -89,7 +89,7 @@ class Repo {
   // readlist, uuid array
   // memCache, true or false
   // return uuid 
-  async createNewFruitmixDrive({label, fixedOwner, owner, writelist, readlist, memCache}) {
+  async createFruitmixDrive({label, fixedOwner, owner, writelist, readlist, cache}) {
 
     let uuid = UUID.v4()          
     let dir = this.paths.get('drives')
@@ -163,48 +163,6 @@ class Repo {
     }
   }
   
-  async scanDrivesAsync() {
-    await fs.readdirAsync(dpath).map(entry => createDriveAsync(path.join(dpath, entry)))
-  }
-
-  scanDrives(callback) {
-    fs.readdir(this.driveDirPath(), (err, entries) => {
-      if (err) callback(err)
-      if (entries.length === 0) return callback(null)      
-      let count = entries.length
-      entries.forEach(entry => {
-        createProtoMapTree(path.join(this.driveDirPath(), entry), 'drive', (err, tree) => {
-          if (!err) this.drives.push(tree)
-          if (!--count) callback()
-        })
-      })      
-    }) 
-  } 
-
-  createDrive(userUUID, callback) {
-  
-    let dirpath = path.join(this.driveDirPath(), userUUID)
-    fs.mkdir(dirpath, err => {
-
-      if (err) return callback(err)
-      let perm = {
-        owner: [userUUID],
-        writelist: [],
-        readlist: []
-      }
-
-      readXstat2(dirpath, perm, (err, xstat) => {
-        if (err) return callback(err)
-
-        createProtoMapTree(dirpath, 'drive', (err, tree) => {
-          if (err) return callback(err)
-          this.drives.push(tree)
-          callback(null, tree)    
-        }) 
-      })
-    })
-  } 
-   
   createFileInDrive(userUUID, srcpath, targetDirUUID, filename, callback) {
 
     //let tree = findTreeInDriveByUUID(userUUID)

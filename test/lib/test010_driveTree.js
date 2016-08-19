@@ -93,13 +93,15 @@ describe(path.basename(__filename), function() {
       })()
     })
 
-    it('shoudl build memtree on single folder w/o xattr', function() {
+    it('should build memtree on single folder w/o xattr', function() {
       
-      let drive = createDrive(uuid, owner, writelist, readlist, true)
-      drive.setRootpath('tmptest')
-    
       return (async () => {
-        await mkdirpAsync('tmptest/folder1')
+        await mkdirpAsync('tmptest/folder1/folder3')
+        await mkdirpAsync('tmptest/folder2')
+
+        let drive = createDrive(uuid, owner, writelist, readlist, true)
+        drive.setRootpath('tmptest')
+        drive.on('nodeCreated', node => console.log(node))
         await drive.buildMemTreeAsync()
        
         // FIXME 

@@ -78,6 +78,7 @@ class Drive extends ProtoMapTree {
 
     this.memtreeState = 'CREATING'
   
+    // create root node
     this.createNode(null, {
       uuid: this.uuid,
       type: 'folder',
@@ -92,6 +93,24 @@ class Drive extends ProtoMapTree {
         drive.memtreeState = 'CREATED'
         resolve()
       })
+    })
+  }
+
+  startBuildCache() {
+
+    this.memtreeState = 'CREATING'
+    this.createNode(null, {
+      uuid: this.uuid,
+      type: 'folder',
+      owner: this.owner,
+      writelist: this.writelist,
+      readlist: this.readlist,
+      name: '' // FIXME
+    })
+
+    let drive = this
+    visit(this.rootpath, this.root, driveVisitor, () => {
+      drive.memtreeState = 'CREATED'
     })
   }
 
