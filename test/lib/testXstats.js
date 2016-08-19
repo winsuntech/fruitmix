@@ -653,7 +653,7 @@ describe('xstat.js', function(){
 				});
 			});
 
-			it('should returns undefined if mtime is not equal', done => {
+			it('should returns undefined if mtime non-equal', done => {
 				fs.stat(ffpath, (err, stat) => {
 					if(err) done(err);
 					updateXattrHash(ffpath, uuidArr[0], sha256_2, 123, (err, attr) => {
