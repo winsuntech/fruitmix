@@ -207,7 +207,7 @@ describe('xstat.js', function(){
 			});
 		});
 
-		it('should return empty array if perset owner is an object', done => {
+		it('should return empty owner array if preset owner (xattr) is an object', done => {
 			xattr.set(fpath, FRUITMIX, JSON.stringify({
 				uuid: uuidArr[0],
 				owner: { name: 'panda' }
@@ -507,7 +507,7 @@ describe('xstat.js', function(){
 			});
 		});
 
-		it('should return undefined if readlist is undefined', done => {
+		it('should return undefined if readlist is undefined (NOT the definiton)', done => {
 			fs.writeFile(ffpath, '', (err) => {
 				if(err) return done(err);
 				fs.stat(ffpath, (err,stat) => {
@@ -533,7 +533,7 @@ describe('xstat.js', function(){
 			});
 		});
 
-		it('should return undefined if writelist is undefined', done => {
+		it('should return undefined if writelist is undefined (NOT the definition)', done => {
 			fs.writeFile(ffpath, '', (err) => {
 				if(err) return done(err);
 				fs.stat(ffpath, (err,stat) => {

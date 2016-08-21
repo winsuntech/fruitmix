@@ -1,8 +1,8 @@
 # Extended Attribute
 
-Fruitmix uses Linux file system's Extended Attribute feature to store `File Instance` data.
+Fruitmix uses Linux file system's Extended Attribute feature to store Fruitmix specific data for files and folders.
 
-All files and folders in `Universe` has an extended attribute named: `user.fruitmix`, including the root folders.
+All files and folders in `Universe` has an extended attribute named: `user.fruitmix`, but the root folder itself does not necessarily have this data.
 
 `xattr` is a JavaScript library for reading and writing extended attribute data for files and folders. We also use this term to refer to the extended attribute data.
 
@@ -13,15 +13,16 @@ There are possibly five or six properties in `xattr` for folders and files, depe
 When it is stored on disk, it is transformed to JSON format and has an extra property named `htime`. When loaded as program internal state, such data are merged into an `fs.Stats` object with `htime` property dropped (an object named as `xstat`, see blow), since it is not used by upper layer.
 
 ```
-# example xattr, in JavaScript format
+# example xattr, in JavaScript format, they are actually stored in JSON format
 
 {
   uuid: UUID.v4(),
   owner: [],
   writelist: [],
   readlist: [],
-  hash: ,
-  htime: , // only used in xstat layer and stored in disk
+  hash: (SHA256 string),
+  magic: (file magic string),
+  htime: (a number), // only used in xstat layer and stored in disk
 }
 ```
 
@@ -67,6 +68,7 @@ Example:
   writelist: ,
   readlist: ,
   hash: ,
+  magic: ,
   htime: , <-- being removed!!!
 
   // the absolute path for this file or folder
