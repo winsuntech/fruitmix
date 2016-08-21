@@ -23,8 +23,14 @@ const parseJSON = (string) => {
   catch (e) { return null }
 }
 
+const EInvalid = (text) => 
+  Object.assign((new Error(text || 'invalid args')), { code: 'EINVAL' })
+
 const InstanceMismatch = (text) => 
   Object.assign((new Error(text || 'instance mismatch')), { code: 'EINSTANCEMISMATCH' })
+
+const TimestampMismatch = (text) =>
+  Object.assign((new Error(text || 'timestamp mismatch')), { code: 'ETIMESTAMPMISMATCH' })
 
 const readTimeStamp = (target, callback) =>
   fs.stat(target, (err, stats) => 
@@ -50,7 +56,8 @@ const validateOwner = (owner) => {
 }
 
 // validate hash
-const isHashValid = (hash, htime, mtime) => htime === mtime && /[a-f0-9]{64}/.test(hash)
+// const isHashValid = (hash, htime, mtime) => htime === mtime && /[a-f0-9]{64}/.test(hash)
+const isHashValid = (hash) => /[a-f0-9]{64}/.test(hash)
 
 // validate Xattr
 const validateXattr = (attr, type, mtime) => {
@@ -68,7 +75,7 @@ const validateXattr = (attr, type, mtime) => {
   case 'file':
     if (!Number.isInteger(mtime)) throw new Error('mtime must be an integer')
     if (attr.hasOwnProperty('hash') || attr.hasOwnProperty('htime')) {
-      if (!isHashValid(attr.hash, attr.htime, mtime)) {
+      if (!isHashValid(attr.hash) || attr.htime !== mtime) {
         if (attr.hasOwnProperty('hash')) delete attr.hash
         if (attr.hasOwnProperty('htime')) delete attr.htime
       }
@@ -187,8 +194,14 @@ const updateXattrHashMagic = (target, uuid, hash, magic, htime, callback) => {
 
   readXstat(target, (err, xstat) => {
     if (err) return callback(err)
+
+    // uuid mismatch
     if (xstat.uuid !== uuid) return callback(InstanceMismatch())
-    if (xstat.htime !== htime) return callback(TimestampMismatch())
+    // invalid hash or magic
+    if (!isHashValid(hash) || typeof magic !== 'string' || magic.length === 0) return callback(EInvalid())
+    // timestamp mismatch
+    if (xstat.mtime !== htime) return callback(TimestampMismatch())
+
     let { uuid, owner, writelist, readlist } = xstat
     let newXattr = { uuid, owner, writelist, readlist, hash, magic, htime }
     xattr.set(target, FRUITMIX, JSON.stringify(newXattr), err => {
