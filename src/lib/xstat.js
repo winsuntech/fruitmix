@@ -196,6 +196,7 @@ const updateXattrHashMagic = (target, uuid, hash, magic, htime, callback) => {
     if (err) return callback(err)
 
     // uuid mismatch
+    console.log(xstat.uuid + '------' + uuid);
     if (xstat.uuid !== uuid) return callback(InstanceMismatch())
     // invalid hash or magic
     if (!isHashValid(hash) || typeof magic !== 'string' || magic.length === 0) return callback(EInvalid())
@@ -221,6 +222,7 @@ export {
   updateXattrOwner,
   updateXattrPermission,
   updateXattrHash,
+  updateXattrHashMagic,
   testing
 }
 
