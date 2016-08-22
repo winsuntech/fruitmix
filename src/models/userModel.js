@@ -85,8 +85,10 @@ class UserModel {
 
 const createUserModelAsync = async (filepath, tmpfolder) => {
 
-  let collection = await openOrCreateCollectionAsync(filepath, tmpfolder)
-  return new UserModel(collection)
+  let collection = await openOrCreateCollectionAsync(filepath, tmpfolder) 
+  if (collection)
+    return new UserModel(collection)
+  return null
 }
 
 export { createUserModelAsync }
