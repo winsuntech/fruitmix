@@ -10,7 +10,7 @@ import { nodeUserReadable, nodeUserWritable} from './perm'
 
 import { createDrive } from './drive'
 
-// currying 
+// currying
 const createFruitmixDrive = (dir) => {
 
   return async (conf) => {
