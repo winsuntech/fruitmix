@@ -21,12 +21,14 @@ class Digester extends EventEmitter {
   openssl() {
 
     if (this.spawn) return          // busy    
-
+/*
     do { // FIXME
       this.current = this.queue.shift()
     } while(this.current.parent === null)
-
+*/
     this.current = this.queue.shift() 
+    if(this.current==null||this.current==undefined) return;
+
     // console.log('calculating ' + this.current)
     this.spawn = child.spawn('openssl', ['dgst', '-sha256', '-r', this.current])
     this.spawn.stdout.on('data', data => {

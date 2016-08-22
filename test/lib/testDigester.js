@@ -90,7 +90,13 @@ describe("src/lib/digester.js", function() {
   })
   
   describe('openssl(...)', function() {
-    it('returns immediately when the state is in spawn', function() {
+   
+    beforeEach(function() {
+      myDigester=digester.default();
+    })
+   
+ 
+   it('returns immediately when the state is in spawn', function() {
       myDigester.spawn = 1;
       sinon.stub(child_process, 'spawn')
       myDigester.digest('test/res/test1.txt')
@@ -99,10 +105,16 @@ describe("src/lib/digester.js", function() {
       child_process.spawn.restore();
     })
     
-    it('returns immediately when queue is empty!', function(done) {
+    it('returns immediately when queue is empty!', function() {
       sinon.spy(child_process, 'spawn')
+      myDigester.openssl()
+      expect(child_process.spawn.callCount===0)
+      child_process.spawn.restore();
+    })
+   
+    it('works fine', function(done) {
       myDigester.digest('test/res/test1.txt')
-      myDigester.spawn
+      setTimeout(()=>{ console.log(myDigester.hash); done()}, 1500); 
     })
   })
 })
