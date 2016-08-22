@@ -5,6 +5,16 @@ import UUID from 'node-uuid'
 import validator from 'validator'
 import shallowequal from 'shallowequal'
 
+/**
+  uuid:
+  owner:
+  writelist:
+  readlist:
+  hash:
+  magic:
+  htime:
+**/
+
 // constant
 const FRUITMIX = 'user.fruitmix'
 
@@ -13,8 +23,14 @@ const parseJSON = (string) => {
   catch (e) { return null }
 }
 
+const EInvalid = (text) => 
+  Object.assign((new Error(text || 'invalid args')), { code: 'EINVAL' })
+
 const InstanceMismatch = (text) => 
   Object.assign((new Error(text || 'instance mismatch')), { code: 'EINSTANCEMISMATCH' })
+
+const TimestampMismatch = (text) =>
+  Object.assign((new Error(text || 'timestamp mismatch')), { code: 'ETIMESTAMPMISMATCH' })
 
 const readTimeStamp = (target, callback) =>
   fs.stat(target, (err, stats) => 
@@ -33,14 +49,22 @@ const validateUserList = (list) => {
   return list.every(isUUID) ? list : list.filter(isUUID)
 }
 
+const validateOwner = (owner) => {
+  let val = validateUserList(owner)
+  if (val === undefined) return []
+  return val
+}
+
 // validate hash
-const isHashValid = (hash, htime, mtime) => htime === mtime && /[a-f0-9]{64}/.test(hash)
+// const isHashValid = (hash, htime, mtime) => htime === mtime && /[a-f0-9]{64}/.test(hash)
+const isHashValid = (hash) => /[a-f0-9]{64}/.test(hash)
 
 // validate Xattr
 const validateXattr = (attr, type, mtime) => {
 
   attr.uuid = validateUUID(attr.uuid)
-  attr.owner = validateUserList(attr.owner)
+  // attr.owner = validateUserList(attr.owner)
+  attr.owner = validateOwner(attr.owner)
   attr.writelist = validateUserList(attr.writelist)
   attr.readlist = validateUserList(attr.readlist)
 
@@ -51,7 +75,7 @@ const validateXattr = (attr, type, mtime) => {
   case 'file':
     if (!Number.isInteger(mtime)) throw new Error('mtime must be an integer')
     if (attr.hasOwnProperty('hash') || attr.hasOwnProperty('htime')) {
-      if (!isHashValid(attr.hash, attr.htime, mtime)) {
+      if (!isHashValid(attr.hash) || attr.htime !== mtime) {
         if (attr.hasOwnProperty('hash')) delete attr.hash
         if (attr.hasOwnProperty('htime')) delete attr.htime
       }
@@ -154,7 +178,7 @@ const updateXattrPermission = (target, uuid, writelist, readlist, callback) => {
   })
 }
 
-const updateXattrHash = (target, uuid, hash, htime) => {
+const updateXattrHash = (target, uuid, hash, htime, callback) => {
 
   readXstat(target, (err, xstat) => {
     if (err) return callback(err)
@@ -163,6 +187,26 @@ const updateXattrHash = (target, uuid, hash, htime) => {
     let newAttr = { uuid, owner, writelist, readlist, hash, htime }
     xattr.set(target, FRUITMIX, JSON.stringify(newAttr), err => 
       err ? callback(err) : callback(null, Object.assign(xstat, { hash, htime })))
+  })
+}
+
+const updateXattrHashMagic = (target, uuid, hash, magic, htime, callback) => {
+
+  readXstat(target, (err, xstat) => {
+    if (err) return callback(err)
+
+    // uuid mismatch
+    if (xstat.uuid !== uuid) return callback(InstanceMismatch())
+    // invalid hash or magic
+    if (!isHashValid(hash) || typeof magic !== 'string' || magic.length === 0) return callback(EInvalid())
+    // timestamp mismatch
+    if (xstat.mtime !== htime) return callback(TimestampMismatch())
+
+    let { uuid, owner, writelist, readlist } = xstat
+    let newXattr = { uuid, owner, writelist, readlist, hash, magic, htime }
+    xattr.set(target, FRUITMIX, JSON.stringify(newXattr), err => {
+      err ? callback(err) : callback(null, Object.assign(xstat, { hash, magic, htime, abspath:target }))
+    })
   })
 }
 
