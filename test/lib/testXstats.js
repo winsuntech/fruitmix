@@ -662,38 +662,36 @@ describe('xstat.js', function(){
 				});
 			});
 
-			it('should returns undefined if mtime non-equal', done => {
-				fs.stat(ffpath, (err, stat) => {
-					if(err) return done(err);
-					updateXattrHash(ffpath, uuidArr[0], sha256_2, 123, (err, attr) => {
-						if(err) return done(err);
-						expect(attr.uuid).to.deep.equal(uuidArr[0]);
-						expect(attr.owner).to.deep.equal([uuidArr[1]]);
-						expect(attr.writelist).to.deep.equal([uuidArr[2]]);
-						expect(attr.readlist).to.deep.equal([uuidArr[3]]);
-						expect(attr.hash).to.deep.equal(undefined);
-						expect(attr.htime).to.deep.equal(undefined);
-						done();
-					});
-				});
-			});
+			// it('should returns undefined if mtime non-equal', done => {
+			// 	fs.stat(ffpath, (err, stat) => {
+			// 		if(err) return done(err);
+			// 		updateXattrHash(ffpath, uuidArr[0], sha256_2, 123, (err, attr) => {
+			// 			if(err) return done(err);
+			// 			expect(attr.uuid).to.deep.equal(uuidArr[0]);
+			// 			expect(attr.owner).to.deep.equal([uuidArr[1]]);
+			// 			expect(attr.writelist).to.deep.equal([uuidArr[2]]);
+			// 			expect(attr.readlist).to.deep.equal([uuidArr[3]]);
+			// 			expect(attr.hash).to.deep.equal(undefined);
+			// 			expect(attr.htime).to.deep.equal(undefined);
+			// 			done();
+			// 		});
+			// 	});
+			// });
 
 		});
 
 		describe('updateXattrHashMagic', () => {
 
-			it('unknow', done => {
+			it('Need to return the modified hash and magic values', done => {
 				fs.stat(ffpath, (err, stat) => {
-					if(err) return done(err);
-					console.log(uuidArr[0]);
 					// updateXattrHashMagic(target, uuid, 		hash, 		magic, 		htime, 							callback)
-					updateXattrHashMagic(ffpath, uuidArr[0], sha256_1, 'audio', stat.mtime.getTime(), (err, attr) => {
+					updateXattrHashMagic(ffpath, uuidArr[0], sha256_2, 'audio', stat.mtime.getTime(), (err, attr) => {
 						if(err) return done(err);
 						expect(attr.uuid).to.deep.equal(uuidArr[0]);
 						expect(attr.owner).to.deep.equal([uuidArr[1]]);
 						expect(attr.writelist).to.deep.equal([uuidArr[2]]);
 						expect(attr.readlist).to.deep.equal([uuidArr[3]]);
-						expect(attr.hash).to.deep.equal(sha256_1);
+						expect(attr.hash).to.deep.equal(sha256_2);
 						expect(attr.magic).to.deep.equal('audio');
 						expect(attr.htime).to.deep.equal(stat.mtime.getTime());
 						done();
