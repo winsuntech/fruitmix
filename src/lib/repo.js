@@ -10,7 +10,7 @@ import { nodeUserReadable, nodeUserWritable} from './perm'
 
 import { createDrive } from './drive'
 
-// currying 
+// currying
 const createFruitmixDrive = (dir) => {
 
   return async (conf) => {
@@ -21,7 +21,7 @@ const createFruitmixDrive = (dir) => {
     
     if (inspect.isFulfilled() && inspect.value().isDirectory()) {
       drive.setRootpath(drvpath)  
-      if (conf.indexing) 
+      if (conf.memCache) 
         drive.buildMemTreeAsync().then(r=>{}).catch(e=>{}) 
     }    
 
@@ -39,12 +39,11 @@ const createOtherDrive = (whatever) => {
 
 class Repo {
 
-  constructor(paths, models) {
+  constructor(paths, model) {
 
     this.paths = paths
-    this.models = models
+    this.model = model
 
-    this.confs = null
     this.drives = null
 
     this.initState = 'IDLE' // 'INITIALIZING', 'INITIALIZED', 'DEINITIALIZING',
@@ -57,21 +56,10 @@ class Repo {
 
     this.initState = 'INITIALIZING'
 
-    // retrieve models path, open config
-    let modelDir = this.paths.get('models')
-    let tmpDir = this.paths.get('tmp')
-    let conf = await openOrCreateCollectionAsync(path.join(modelDir, 'driveConf.json'), tmpDir)
-    if (!confs) {
-      this.initState = 'IDLE'
-      return new Error('fail to load drive configuration')
-    }
-    this.confs = confs
-
     // retrieve drive directory 
     let dir = this.paths.get('drives')
 
-    this.drives = await Promise.all(confs.map(conf => {
-
+    this.drives = await Promise.all(this.model.collection.map(conf => {
       if (conf.URI === 'fruitmix')
         return createFruitmixDrive(dir)(conf)
       else
@@ -89,7 +77,7 @@ class Repo {
   // readlist, uuid array
   // memCache, true or false
   // return uuid 
-  async createFruitmixDrive({label, fixedOwner, owner, writelist, readlist, cache}) {
+  async createFruitmixDrive({label, fixedOwner, owner, writelist, readlist, memCache}) {
 
     let uuid = UUID.v4()          
     let dir = this.paths.get('drives')
@@ -97,8 +85,10 @@ class Repo {
     // create foldre in drive dir
     await mkdirpAsync(path.join(dir, uuid))
 
-    // update data model
-    await this.conf.updateAsync(conf.list, [...conf.list, drvconf])
+    // save to model
+    await this.model.createDrive({
+      label, fixedOwner, URI: 'fruitmix', uuid, owner, writelist, readlist, memCache
+    })
    
     // create drive and load it 
     let drv = createFruitmixDrive(dir)(conf)

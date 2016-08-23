@@ -14,10 +14,12 @@ const nodeProperties = {
   },
 
   unsetChild(child) {
-    let children = this.getChildren()
+    let children = this.children
+    if (children === undefined) throw new Error('Node has no children')
     let index = children.findIndex(c => c === child)
     if (index === -1) throw new Error('Node has no such child')
     children.splice(index, 1)
+    if (children.length === 0) delete this.children 
   },
 
   getChildren() {
@@ -81,6 +83,36 @@ const nodeProperties = {
   }
 }
 
+const magicToMeta = (magic) => {
+
+  let meta = {}
+  if (magic.startsWith('JPEG image data')) {
+    meta.type = 'JPEG'
+
+    // remove exif bracket and split
+    let items = magic.replace(/\[.*\]/g, '').split(',').map(item => item.trim())
+
+    // find width x height
+    let x = items.find(item => /\d+x\d+/.test(item))
+    if (!x) return null
+  
+    let y = x.split('x')
+    meta.width = parseInt(y[0])
+    meta.height = parseInt(y[1])
+
+    if (items.find(item => item === 'Exif Standard:')) {
+      meta.extended = true
+    }
+    else {
+      meta.extended = false
+    }
+
+    return meta // type = JPEG, width, height, extended
+  }
+  return null
+}
+
+// to prevent unexpected modification
 Object.freeze(nodeProperties)
 
 class ProtoMapTree extends EventEmitter {
@@ -91,10 +123,19 @@ class ProtoMapTree extends EventEmitter {
   constructor(proto) {
 
     super()    
+
     this.proto = Object.assign(proto, nodeProperties)
     this.proto.tree = this
+
+    // for accessing node by UUID
     this.uuidMap = new Map()
+    // file only, examine magic and conditionally put node into map
     this.hashMap = new Map()
+    // file only, for file without hashmagic
+    this.hashless = new Set()
+    // folder only, for folder with writer/reader other than drive owner
+    this.shares = new Set()
+
     this.root = null
   } 
 
@@ -102,6 +143,7 @@ class ProtoMapTree extends EventEmitter {
     return this.root.uuid
   }
 
+/**
   hashMapSet(node) {
     if (!node.hash || node.type !== 'file') return
     if (this.hashMap.has(node.hash)) {
@@ -123,6 +165,7 @@ class ProtoMapTree extends EventEmitter {
       list.splice(index, 1) 
     }
   }
+**/
 
   createNode(parent, flatObject) {
 
@@ -152,9 +195,47 @@ class ProtoMapTree extends EventEmitter {
       node.attach(parent)
     }
 
+    // set uuid indexing
     this.uuidMap.set(node.uuid, node)
-    this.hashMapSet(node)
-    this.emit('nodeCreated', node)
+
+    // set digest indexing
+    if (node.type === 'file') {
+      if (node.magic) {
+        let digestObj = this.hashMap.get(node.hash)
+        if (digestObj) {
+          // if digest obj exists, add node to list
+          digestObj.nodes.push(node)
+        }
+        else {
+          // extract meta from magic
+          let meta = magicToMeta(node.magic)
+          if (meta) {
+            // if meta, create new digest obj  
+            digestObj = {
+              meta: meta,
+              nodes: [node]
+            }  
+            this.hashMap.set(node.hash, digestObj)
+          }
+          else {
+            // no meta, then remove hash and magic, they are not interested anymore
+            delete node.hash
+            delete node.magic
+          }
+        }
+      }
+      else { // hashless
+        this.hashless.add(this.node)
+      }
+    }
+    else if (node.type === 'folder') {
+      // TODO logic for share
+    }
+    else {
+      // do nothing or throw an error if you wish
+    }
+
+    // this.hashMapSet(node)
     return node
   }
 
@@ -162,15 +243,23 @@ class ProtoMapTree extends EventEmitter {
 
     let parent = this.uuidMap.get(parentUUID)
     if (!parent) return null
-    return parentthis.createNode(parent, content)
+    return this.createProtoNode(parent, content)
   }
 
+  // there are several reasons to change a node
+  // 1. structural change, that is, change parent, equivalent to move
+  // 2. permission change, writelist, readlist, owner (which is not used probably)
+  // 3. file metadata change (name)
+  // 4. file data change (mtime, size possibly)
+  updateNode(node, props) {
+    // this method should be split into several ones. 
+  }
+
+  // this function delete one leaf node
+  // for delete a sub tree, using higher level method
   deleteNode(node) {
+    if (node.children) throw new Error('node has children, cannot be deleted')
     node.detach()
-    node.postVisit(n => {
-      this.uuidMap.delete(n.uuid)
-      this.hashMapUnset(n)
-    })
     return node
   }
 

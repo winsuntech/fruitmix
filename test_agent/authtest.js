@@ -1,3 +1,4 @@
+import path from 'path'
 import fs from 'fs'
 import mkdirp from 'mkdirp'
 import rimraf from 'rimraf'
@@ -20,7 +21,8 @@ let users = [
   }
 ]
 
-describe('test basic authentication', function() {
+
+describe(path.basename(__filename) + ': test basic authentication', function() {
 
   let token
 
