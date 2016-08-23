@@ -49,24 +49,26 @@ const createDrive = (uuid, owner, writelist, readlist, fixedOwner) => {
 // a drive tree is a in-memory caching and indexing layer for given virtual drive.
 class Drive extends ProtoMapTree {
 
-  constructor(uuid, owner, writelist, readlist, fixedOwner) {
+  constructor(conf) {
 
     let proto = { 
-      owner: fixedOwner ? owner : [],
+      owner: conf.fixedOwner ? conf.owner : [],
       writelist: undefined,
       readlist: undefined
     }
 
     super(proto)
 
-    this.uuid = uuid
-    this.owner = owner
-    this.writelist = writelist
-    this.readlist = readlist
-    this.fixedOwner = fixedOwner
+    this.label = conf.label
+    this.fixedOwner = conf.fixedOwner
+    this.URI = conf.URI
+    this.uuid = conf.uuid
+    this.owner = conf.owner
+    this.writelist = conf.writelist
+    this.readlist = conf.readlist
+    this.cache = conf.cache
 
     this.cacheState = 'NONE'
-
     this.rootpath = null
   }
 
@@ -74,33 +76,9 @@ class Drive extends ProtoMapTree {
     this.rootpath = rootpath
   }
 
-  async buildMemTreeAsync() {
-
-    this.cacheState = 'CREATING'
-  
-    // create root node
-    this.createNode(null, {
-      uuid: this.uuid,
-      type: 'folder',
-      writelist: this.writelist,
-      readlist: this.readlist
-    })
-
-    let drive = this
-
-    return new Promise(resolve => {
-      visit(this.rootpath, this.root, driveVisitor, () => {
-        drive.cacheState = 'CREATED'
-        drive.emit('driveCached', drive)
-        resolve()
-      })
-    })
-  }
-
   startBuildCache() {
 
-    console.log('startBuildCache <<<<')
-
+    // console.log('startBuildCache <<<<')
     this.cacheState = 'CREATING'
     this.createNode(null, {
       uuid: this.uuid,
@@ -113,7 +91,7 @@ class Drive extends ProtoMapTree {
 
     let drive = this
     visit(this.rootpath, this.root, driveVisitor, () => {
-      console.log('endBuildCache >>>>')
+      // console.log('endBuildCache >>>>')
       drive.cacheState = 'CREATED'
       drive.emit('driveCached', drive)
     })

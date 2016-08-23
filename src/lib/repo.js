@@ -21,8 +21,8 @@ const createOtherDrive = (whatever) => {
 
 class Repo extends EventEmitter {
 
+  // repo constructor
   constructor(paths, model) {
-
     super()
     this.paths = paths
     this.model = model
@@ -30,23 +30,24 @@ class Repo extends EventEmitter {
     this.initState = 'IDLE' // 'INITIALIZING', 'INITIALIZED', 'DEINITIALIZING',
   }
 
+  // create a fruitmix drive object (not create a drive model!)
   createFruitmixDrive(dir) {
 
     return async (conf) => {
 
-      let drive = createDrive(conf.uuid, conf.owner, conf.writelist, conf.readlist, conf.fixedOwner)
+      let drive = createDrive(conf)
       let drvpath = path.join(dir, conf.uuid)
       let inspect = await fs.statAsync(drvpath).reflect()
       
       if (inspect.isFulfilled() && inspect.value().isDirectory()) {
         drive.setRootpath(drvpath)  
-        if (conf.memCache) {
+        if (conf.cache) {
           drive.on('driveCached', () => this.emit('driveCached', drive))
           drive.startBuildCache()
         }
       }    
 
-      console.log('fruitmixDrive created')
+      // console.log('fruitmixDrive created')
       return drive
     }
   }
