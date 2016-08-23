@@ -78,7 +78,6 @@ class Drive extends ProtoMapTree {
 
   startBuildCache() {
 
-    // console.log('startBuildCache <<<<')
     this.cacheState = 'CREATING'
     this.createNode(null, {
       uuid: this.uuid,
@@ -91,7 +90,6 @@ class Drive extends ProtoMapTree {
 
     let drive = this
     visit(this.rootpath, this.root, driveVisitor, () => {
-      // console.log('endBuildCache >>>>')
       drive.cacheState = 'CREATED'
       drive.emit('driveCached', drive)
     })
@@ -109,10 +107,6 @@ class Drive extends ProtoMapTree {
     let prepend = path.resolve(this.rootpath, '..')
     nodepath.unshift(prepend)
     return path.join(...nodepath)
-  }
-
-  scan(callback) {
-    visit(this.rootpath, this.root, driveVisitor, () => callback())    
   }
 
   importFile(srcpath, targetNode, filename, callback) {

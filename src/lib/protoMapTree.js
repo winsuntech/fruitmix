@@ -143,30 +143,6 @@ class ProtoMapTree extends EventEmitter {
     return this.root.uuid
   }
 
-/**
-  hashMapSet(node) {
-    if (!node.hash || node.type !== 'file') return
-    if (this.hashMap.has(node.hash)) {
-      this.hashMap.get(node.hash).push(node)
-    }
-    else {
-      this.hashMap.set(node.hash, [node])
-    }
-  } 
-
-  hashMapUnset(node) {
-
-    if (!node.hash) return
-    if (!this.hashMap.has(node.hash)) return
-    
-    let list = this.hashMap.get(node.hash)
-    let index = list.findIndex(n => n === node)
-    if (index !== -1) {
-      list.splice(index, 1) 
-    }
-  }
-**/
-
   createNode(parent, flatObject) {
 
     if (!flatObject.uuid) throw new Error('node object must have uuid property')

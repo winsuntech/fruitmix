@@ -39,7 +39,7 @@ const setRoot = (rootpath, callback) =>
 const unsetRoot = () => root = undefined
 
 // get path by name, throw if root unset or name unknown
-const _path = (name) => {
+const getPath = (name) => {
 
   if (!root) throw new Error('fruitmix root not set')
 
@@ -59,6 +59,6 @@ export default {
   setRoot,
   setRootAsync,
   unsetRoot,
-  path: _path
+  get: getPath
 }
 

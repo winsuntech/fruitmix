@@ -101,13 +101,13 @@ describe(path.basename(__filename) + ': test repo', function() {
         await paths.setRootAsync(path.join(cwd, 'tmptest'))
 
         // fake drive dir
-        let dir = paths.path('drives')
+        let dir = paths.get('drives')
         await mkdirpAsync(path.join(dir, drv001UUID))
         await mkdirpAsync(path.join(dir, drv002UUID))
         
         // write model files
-        dir = paths.path('models')
-        let tmpdir = paths.path('tmp')
+        dir = paths.get('models')
+        let tmpdir = paths.get('tmp')
         await fs.writeFileAsync(path.join(dir, 'users.json'), JSON.stringify(users, null, '  '))
         await fs.writeFileAsync(path.join(dir, 'drives.json'), JSON.stringify(drives, null, '  '))
 
@@ -142,7 +142,7 @@ describe(path.basename(__filename) + ': test repo', function() {
             return a.label.localeCompare(b.label)
           })
 
-          let dir = paths.path('drives')
+          let dir = paths.get('drives')
           let expected = [ 
             { 
               label: 'drv001',

@@ -11,14 +11,6 @@ import { nodeUserReadable, nodeUserWritable} from './perm'
 
 import { createDrive } from './drive'
 
-// currying
-const createOtherDrive = (whatever) => {
-
-  return async (conf) => {
-    return createDrive(conf.uuid, conf.owner, conf.writelist, conf.readlist, conf.fixedOwner)
-  }
-}
-
 class Repo extends EventEmitter {
 
   // repo constructor
@@ -31,65 +23,55 @@ class Repo extends EventEmitter {
   }
 
   // create a fruitmix drive object (not create a drive model!)
-  createFruitmixDrive(dir) {
+  createFruitmixDrive(conf, callback) {
 
-    return async (conf) => {
+    let dir = this.paths.get('drives')
+    let drvpath = path.join(dir, conf.uuid)
+    fs.stat(drvpath, (err, stat) => {
 
-      let drive = createDrive(conf)
-      let drvpath = path.join(dir, conf.uuid)
-      let inspect = await fs.statAsync(drvpath).reflect()
+      if (err) return callback(err)
       
-      if (inspect.isFulfilled() && inspect.value().isDirectory()) {
-        drive.setRootpath(drvpath)  
-        if (conf.cache) {
-          drive.on('driveCached', () => this.emit('driveCached', drive))
-          drive.startBuildCache()
-        }
-      }    
-
-      // console.log('fruitmixDrive created')
-      return drive
-    }
+      let drive = createDrive(conf)
+      drive.setRootpath(drvpath)
+      if (conf.cache) {
+        drive.on('driveCached', () => this.emit('driveCached', drive))
+        drive.startBuildCache()
+      }
+      callback(null, drive)
+    })
   }
 
+  // retrieve all drives from configuration
+  // TODO there may be a small risk that a user is deleted but drive not
   init(callback) {
 
-    // check state
     if (this.initState !== 'IDLE') return new Error('invalid state')
 
     this.initState = 'INITIALIZING'
 
     // retrieve drive directory 
-    let dir = this.paths.path('drives')
+    let dir = this.paths.get('drives')
     let list = this.model.collection.list
     let count = list.length
-    if (count) {
-      list.forEach(conf => {
-        if (conf.URI === 'fruitmix') {
-          this.createFruitmixDrive(dir)(conf)
-            .then(drv => {
-              this.drives.push(drv)
-              count--
-              if (count === 0) {
-                this.initState = 'INITIALIZED'
-                callback(null)
-              }
-            })
-            .catch(e => {
-              console.log(e)
-              count--
-              if (count === 0) {
-                this.initState = 'INITIALIZED'
-                callback(null)
-              }
-            })
-        }
-      })
-    }
-    else {
+
+    if (!count) {
       this.initState = 'INITIALIZED'
-      callback(null)
+      return callback()
     }
+
+    list.forEach(conf => {
+      if (conf.URI === 'fruitmix') {
+        this.createFruitmixDrive(conf, (err, drive) => {
+          if (!err) this.drives.push(drive)
+          if (!--count) {
+            this.initState = 'INITIALIZED'
+            callback()
+          }
+        })
+      }
+      else if (!--count)
+        callback()
+    })
   }
 
   // SERVICE API: create new fruitmix drive
