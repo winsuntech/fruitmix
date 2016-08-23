@@ -39,16 +39,15 @@ class UserModel {
     if (typeof username !== 'string') throwInvalid('invalid username')
     if (typeof password !== 'string') throwInvalid('invalid password')
     if (!password.length) throwInvalid('password can not be empty')
-    
+   /* 
     if (avatar && !validate(avatar)) throwInvalid('invalid avatar')
     avatar = avatar || null
-
-    if (email && !validate(email)) throwInvalid('invalid email')
+*/
+    avatar=null
+    if (email && !validator.isEmail(email)) throwInvalid('invalid email')
     email = email || null
-
     if (isAdmin && typeof isAdmin !== 'boolean') throwInvalid('invalid isAdmin type')
     isAdmin = isAdmin || false
-    
     if (type && type !== 'device') throwInvalid('invalid user type')
     type = type || 'user'
 
@@ -67,7 +66,6 @@ class UserModel {
       uuid, username, password: hash, avatar, email,
       isFirstUser, isAdmin, type
     }
-
     await this.collection.updateAsync(list, [...list, newUser])
     return uuid
   }
@@ -91,7 +89,7 @@ const createUserModelAsync = async (filepath, tmpfolder) => {
   return null
 }
 
-export { createUserModelAsync }
+export { createUserModelAsync, UserModel }
 
 
 
