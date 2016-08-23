@@ -191,20 +191,19 @@ const updateXattrHash = (target, uuid, hash, htime, callback) => {
 }
 
 const updateXattrHashMagic = (target, uuid, hash, magic, htime, callback) => {
-
+  
   readXstat(target, (err, xstat) => {
     if (err) return callback(err)
 
     // uuid mismatch
-    console.log(xstat.uuid + '------' + uuid);
     if (xstat.uuid !== uuid) return callback(InstanceMismatch())
     // invalid hash or magic
     if (!isHashValid(hash) || typeof magic !== 'string' || magic.length === 0) return callback(EInvalid())
     // timestamp mismatch
-    if (xstat.mtime !== htime) return callback(TimestampMismatch())
+    if (xstat.mtime.getTime() !== htime) return callback(TimestampMismatch())
 
-    let { uuid, owner, writelist, readlist } = xstat
-    let newXattr = { uuid, owner, writelist, readlist, hash, magic, htime }
+    let { owner, writelist, readlist } = xstat
+    let newXattr = { uuid: xstat.uuid, owner, writelist, readlist, hash, magic, htime: xstat.htime }
     xattr.set(target, FRUITMIX, JSON.stringify(newXattr), err => {
       err ? callback(err) : callback(null, Object.assign(xstat, { hash, magic, htime, abspath:target }))
     })
