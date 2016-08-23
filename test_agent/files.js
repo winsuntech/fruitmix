@@ -13,6 +13,8 @@ import { createRepo } from 'src/lib/repo'
 import request from 'supertest'
 import { mkdirpAsync, rimrafAsync, fs } from 'test/util/async'
 
+import validator from 'validator'
+
 let userUUID = '9f93db43-02e6-4b26-8fae-7d6f51da12af'
 let drv001UUID = 'ceacf710-a414-4b95-be5e-748d73774fc4'  
 let drv002UUID = '6586789e-4a2c-4159-b3da-903ae7f10c2a' 
@@ -85,7 +87,7 @@ const createRepoCachedAsync = Promise.promisify(createRepoCached)
 
 describe(path.basename(__filename) + ': test repo', function() {
 
-  describe('test drives api', function() {
+  describe('test files api', function() {
   
     let token
     let cwd = process.cwd()
@@ -129,57 +131,31 @@ describe(path.basename(__filename) + ': test repo', function() {
       })()     
     })
 
-    it('GET /drives returns predefined drive info', function(done) {
+    it('POST /files should create a folder', function(done) {
       request(app)
-        .get('/drives')
+        .post(`/files`)
         .set('Authorization', 'JWT ' + token)
-        .set('Accept', 'application/json')
+        .set('Accept', 'applicatoin/json')
+        .send({ target: drv001UUID, name: 'hello' }) 
         .expect(200)
-        .end(function(err, res) {
-          let arr = res.body
-          // sort by label
-          arr.sort(function(a, b) {
-            return a.label.localeCompare(b.label)
-          })
+        .end((err, res) => {
+          if (err) return done(err)
+          
+          let { uuid, type, name } = res.body
+          expect(uuid).to.be.a('string')
+          expect(validator.isUUID(uuid)).to.be.true
+          expect(type).to.equal('folder')
+          expect(name).to.equal('hello') 
 
-          let dir = paths.get('drives')
-          let expected = [ 
-            { 
-              label: 'drv001',
-              fixedOwner: true,
-              URI: 'fruitmix',
-              uuid: drv001UUID,
-              owner: [ userUUID ],
-              writelist: [],
-              readlist: [],
-              cache: true,
-              rootpath: path.join(dir, drv001UUID),
-              cacheState: 'CREATED',
-              uuidMapSize: 1,
-              hashMapSize: 0,
-              hashlessSize: 0,
-              sharesSize: 0 
-            },
-            { 
-              label: 'drv002',
-              fixedOwner: true,
-              URI: 'fruitmix',
-              uuid: drv002UUID,
-              owner: [ userUUID ],
-              writelist: [],
-              readlist: [],
-              cache: true,
-              rootpath: path.join(dir, drv002UUID),
-              cacheState: 'CREATED',
-              uuidMapSize: 1,
-              hashMapSize: 0,
-              hashlessSize: 0,
-              sharesSize: 0 
-            } 
-          ]
-          expect(arr).to.deep.equal(expected) 
+          let repo = models.getModel('repo')
+          let drv = repo.drives.find(drv => drv.uuid === drv001UUID)
+          let list = drv.print(drv001UUID) 
+                   
+          // assert relationship
+          // FIXME assert more
+          expect(list.find(node => node.uuid === uuid && node.parent === drv001UUID)).to.be.an('object')
           done()
-        })
+        }) 
     })
   })
 })

@@ -159,15 +159,15 @@ class Repo extends EventEmitter {
     })
   }
 
-  createDriveFolder(userUUID, folderName, targetDirUUID,callback) {
-
+  // tested briefly
+  createFolder(userUUID, folderName, targetDirUUID, callback) {
+    
     let node = this.findNodeInDriveByUUID(targetDirUUID)
-    if (!node) return callback(new Error('uuid not found')) 
+    if (!node) return callback(new Error('uuid not found'))
 
-    node.tree.createFolder(node,folderName,(err,node) => {
-      err?callback(err) : callback(null,node) 
-    })
-  }  
+    node.tree.createFolder(node, folderName, (err, node) => 
+      err ? callback(err) : callback(null, node))
+  }
 
   /** read **/  
   readDriveFileorFolderInfo(uuid){
@@ -208,33 +208,6 @@ class Repo extends EventEmitter {
       err ? callback(err) : callback(null, node)
     })
   }
-
-  // deprecated
-  printTree(keys) {
-
-    let queue = []
-    if (!this.tree) return console.log('no tree attached')
-
-    this.tree.root.preVisit(node => {
-
-      let obj = {
-        parent: node.parent === null ? null : node.parent.uuid,
-        parentName: node.parent === null ? null : node.parent.attribute.name,
-        children: node.children.map(n => n.uuid),
-        childrenName: node.children.map(n => n.attribute.name)
-      }
-       
-      queue.push(obj)
-    })
-    console.log(queue)
-  }
-}
-
-async function createRepoAsync(rootpath) {
-
-  mkdirpAsync(path.join(rootpath, 'drive'))
-  mkdirpAsync(path.join(rootpath, 'library'))
-  return new Repo(rootpath)
 }
 
 const createRepo = (paths, model) => new Repo(paths, model)

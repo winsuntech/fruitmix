@@ -139,7 +139,7 @@ class Drive extends ProtoMapTree {
 
     fs.mkdir(targetpath, err => {
       if (err) return callback(err)
-      readXstat2(targetpath, { owner: targetNode.tree.root.owner }, (err, xstat) => {
+      readXstat(targetpath, (err, xstat) => {
         if (err) return callback(err) // FIXME 
         let obj = mapXstatToObject(xstat)
         let node = targetNode.tree.createNode(targetNode, obj)
@@ -174,6 +174,32 @@ class Drive extends ProtoMapTree {
     updateXattrPermissionAsync(this.abspath(node),fruitmix)
     updateXattrHashAsync(this.abspath(node),fruitmix.hash,fruitmix.htime)
     callback(null, node)
+  }
+
+  print(uuid) {
+    
+    let node = this.uuidMap.get(uuid)
+    if (!node) {
+      console.log(`no node found to have uuid: ${uuid}`)
+      return
+    }
+
+    let queue = []
+    node.preVisit(n => {
+      let obj = {
+        parent: n.parent === null ? null : n.parent.uuid,
+        uuid: n.uuid,
+        type: n.type,
+        owner: n.owner,
+        writelist: n.writelist,
+        readlist: n.readlist,
+        name: n.name
+      }
+      queue.push(obj)
+    })
+
+    // console.log(queue)
+    return queue
   }
 }
 

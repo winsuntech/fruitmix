@@ -65,4 +65,5 @@ router.get('/', auth.jwt(), (req, res) => {
   return res.status(200).json(objs)
 }) 
 
+
 export default router

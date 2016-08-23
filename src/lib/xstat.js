@@ -113,9 +113,15 @@ const readXstat = (target, ...args) => {
 
   // now opts is either null or object
   if (opts) { // not null
-    if (opts.owner && opts.owner === validateUserList(opts.owner) &&
-        opts.writelist && opts.writelist === validateUserList(opts.writelist) &&
-        opts.readlist && opts.readlist === validateUserList(opts.readlist)) {}
+    if  (
+          opts.owner && opts.owner === validateUserList(opts.owner) &&
+          (
+            (opts.writelist && opts.writelist === validateUserList(opts.writelist) && opts.readlist && opts.readlist === validateUserList(opts.readlist))
+              ||
+            (opts.writelist === undefined && opts.readlist === undefined)
+          )
+        )
+    { }
     else
       return process.nextTick(callback, new TypeError('opts invalid'))
   }
@@ -135,6 +141,8 @@ const readXstat = (target, ...args) => {
 
         if (opts === null) return callback(null, null)
         if (opts === undefined) opts = { uuid: UUID.v4(), owner: [] }
+        else opts.uuid = UUID.v4()
+
         return xattr.set(target, FRUITMIX, JSON.stringify(opts), err => 
           err ? callback(err) : callback(null, Object.assign(stats, opts, { abspath: target })))
       }

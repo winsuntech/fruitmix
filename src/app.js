@@ -12,6 +12,7 @@ import system from './lib/system'
 
 import init from './routes/init'
 import login from './routes/login'
+import files from './routes/files'
 import drives from './routes/drives'
 
 let app = express()
@@ -39,7 +40,7 @@ app.use('/token', require('./routes/token'))
 // app.use('/users', require('./routes/users'))
 
 app.use('/drives', drives)
-// app.use('/files', require('./routes/files'))
+app.use('/files', files)
 // app.use('/media', require('./routes/media'))
 
 app.use('/authtest', require('./routes/authtest'))
