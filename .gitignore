@@ -43,6 +43,7 @@ node_modules
 public/bundle.js
 
 tmptest/
+tmpTestFoder/
 build/
 .DS_Store
 ._.DS_Store
