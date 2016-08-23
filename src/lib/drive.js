@@ -59,6 +59,8 @@ class Drive extends ProtoMapTree {
 
     super(proto)
 
+    // this may not be a good idea to put all configuration information
+    // in this object TODO
     this.label = conf.label
     this.fixedOwner = conf.fixedOwner
     this.URI = conf.URI
@@ -73,10 +75,16 @@ class Drive extends ProtoMapTree {
   }
 
   setRootpath(rootpath) {
+
+    if (this.cacheState !== 'NONE') throw new Error('rootpath can only be set when cacheState is NONE')
+
     this.rootpath = rootpath
+    if (this.cache) this.buildCache() 
   }
 
-  startBuildCache() {
+  buildCache() {
+
+    if (this.cacheState !== 'NONE') throw new Error('buildCache can only be called when cacheState is NONE')
 
     this.cacheState = 'CREATING'
     this.createNode(null, {
@@ -85,7 +93,7 @@ class Drive extends ProtoMapTree {
       owner: this.owner,
       writelist: this.writelist,
       readlist: this.readlist,
-      name: '' // FIXME
+      name: path.basename(this.rootpath)
     })
 
     let drive = this
@@ -95,9 +103,7 @@ class Drive extends ProtoMapTree {
     })
   }
 
-  removeMemTree() {
-  } 
-
+  // FIXME no state guard
   unsetRootpath() {
     this.rootpath = null
   }

@@ -30,13 +30,9 @@ class Repo extends EventEmitter {
     fs.stat(drvpath, (err, stat) => {
 
       if (err) return callback(err)
-      
       let drive = createDrive(conf)
+      drive.on('driveCached', () => this.emit('driveCached', drive))
       drive.setRootpath(drvpath)
-      if (conf.cache) {
-        drive.on('driveCached', () => this.emit('driveCached', drive))
-        drive.startBuildCache()
-      }
       callback(null, drive)
     })
   }
@@ -102,14 +98,9 @@ class Repo extends EventEmitter {
     return uuid
   }
 
-  //////////////////////////////////////////////////////////////////////////  
-
-  findTreeInDriveByUUID(uuid) {
-    return this.drives.find(tree => tree.uuidMap.get(uuid))
-  }
-
   findNodeInDriveByUUID(uuid) {
     for (let i = 0; i < this.drives.length; i++) {
+      if (this.drives[i].cacheState !== 'CREATED') continue
       let x = this.drives[i].uuidMap.get(uuid)
       if (x) return x
     }
@@ -160,8 +151,6 @@ class Repo extends EventEmitter {
   
   createFileInDrive(userUUID, srcpath, targetDirUUID, filename, callback) {
 
-    //let tree = findTreeInDriveByUUID(userUUID)
-    //if (!tree) return callback    
     let node = this.findNodeInDriveByUUID(targetDirUUID)
     if (!node) return callback(new Error('uuid not found')) 
 
@@ -171,8 +160,6 @@ class Repo extends EventEmitter {
   }
 
   createDriveFolder(userUUID, folderName, targetDirUUID,callback) {
-    // let tree = this.findTreeInDriveByUUID(userUUID)
-    // if (!tree) return callback(new Error('tree not found')) 
 
     let node = this.findNodeInDriveByUUID(targetDirUUID)
     if (!node) return callback(new Error('uuid not found')) 

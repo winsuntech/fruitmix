@@ -25,6 +25,7 @@ const setRootAsync = async (rootpath) => {
   await mkdirpAsync(join('models'))
   await mkdirpAsync(join('drives'))
   await mkdirpAsync(join('pools'))
+  await mkdirpAsync(join('upload'))
   await mkdirpAsync(join('etc'))
   await mkdirpAsync(join('tmp'))
 }
@@ -47,6 +48,7 @@ const getPath = (name) => {
   case 'models':
   case 'drives':
   case 'pools':
+  case 'upload':
   case 'etc':
   case 'tmp':
     return join(name)
