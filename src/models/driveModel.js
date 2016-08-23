@@ -2,6 +2,8 @@ import Promise from 'bluebird'
 
 import validator from 'validator'
 
+import { openOrCreateCollectionAsync } from './collection'
+
 /** 
 
 Schema
@@ -41,11 +43,11 @@ class DriveModel {
   }
 }
 
-const openDriveModelAsync = async (filepath, tmpfolder) => {
+const createDriveModelAsync = async (filepath, tmpfolder) => {
 
   let collection = await openOrCreateCollectionAsync(filepath, tmpfolder)
   if (collection) 
-    return new DriveConfs(collection)
+    return new DriveModel(collection)
   return null
 }
 
