@@ -1,4 +1,5 @@
 import path from 'path'
+import EventEmitter from 'events'
 
 import Promise from 'bluebird'
 
@@ -11,25 +12,6 @@ import { nodeUserReadable, nodeUserWritable} from './perm'
 import { createDrive } from './drive'
 
 // currying
-const createFruitmixDrive = (dir) => {
-
-  return async (conf) => {
-
-    let drive = createDrive(conf.uuid, conf.owner, conf.writelist, conf.readlist, conf.fixedOwner)
-    let drvpath = path.join(dir, conf.uuid)
-    let inspect = await fs.statAsync(drvpath).reflect()
-    
-    if (inspect.isFulfilled() && inspect.value().isDirectory()) {
-      drive.setRootpath(drvpath)  
-      if (conf.memCache) 
-        drive.buildMemTreeAsync().then(r=>{}).catch(e=>{}) 
-    }    
-
-    return drive
-  }
-}
-
-// currying
 const createOtherDrive = (whatever) => {
 
   return async (conf) => {
@@ -37,19 +19,39 @@ const createOtherDrive = (whatever) => {
   }
 }
 
-class Repo {
+class Repo extends EventEmitter {
 
   constructor(paths, model) {
 
+    super()
     this.paths = paths
     this.model = model
-
-    this.drives = null
-
+    this.drives = []
     this.initState = 'IDLE' // 'INITIALIZING', 'INITIALIZED', 'DEINITIALIZING',
   }
 
-  async init() {
+  createFruitmixDrive(dir) {
+
+    return async (conf) => {
+
+      let drive = createDrive(conf.uuid, conf.owner, conf.writelist, conf.readlist, conf.fixedOwner)
+      let drvpath = path.join(dir, conf.uuid)
+      let inspect = await fs.statAsync(drvpath).reflect()
+      
+      if (inspect.isFulfilled() && inspect.value().isDirectory()) {
+        drive.setRootpath(drvpath)  
+        if (conf.memCache) {
+          drive.on('driveCached', () => this.emit('driveCached', drive))
+          drive.startBuildCache()
+        }
+      }    
+
+      console.log('fruitmixDrive created')
+      return drive
+    }
+  }
+
+  init(callback) {
 
     // check state
     if (this.initState !== 'IDLE') return new Error('invalid state')
@@ -57,16 +59,36 @@ class Repo {
     this.initState = 'INITIALIZING'
 
     // retrieve drive directory 
-    let dir = this.paths.get('drives')
-
-    this.drives = await Promise.all(this.model.collection.map(conf => {
-      if (conf.URI === 'fruitmix')
-        return createFruitmixDrive(dir)(conf)
-      else
-        return createOtherDrive()(conf)
-    }))
-
-    this.initState = 'INITIALIZED'
+    let dir = this.paths.path('drives')
+    let list = this.model.collection.list
+    let count = list.length
+    if (count) {
+      list.forEach(conf => {
+        if (conf.URI === 'fruitmix') {
+          this.createFruitmixDrive(dir)(conf)
+            .then(drv => {
+              this.drives.push(drv)
+              count--
+              if (count === 0) {
+                this.initState = 'INITIALIZED'
+                callback(null)
+              }
+            })
+            .catch(e => {
+              console.log(e)
+              count--
+              if (count === 0) {
+                this.initState = 'INITIALIZED'
+                callback(null)
+              }
+            })
+        }
+      })
+    }
+    else {
+      this.initState = 'INITIALIZED'
+      callback(null)
+    }
   }
 
   // SERVICE API: create new fruitmix drive
@@ -77,7 +99,7 @@ class Repo {
   // readlist, uuid array
   // memCache, true or false
   // return uuid 
-  async createFruitmixDrive({label, fixedOwner, owner, writelist, readlist, memCache}) {
+  async apiCreateFruitmixDrive({label, fixedOwner, owner, writelist, readlist, memCache}) {
 
     let uuid = UUID.v4()          
     let dir = this.paths.get('drives')
@@ -245,7 +267,7 @@ async function createRepoAsync(rootpath) {
   return new Repo(rootpath)
 }
 
-const createRepo = (paths, models) => new Repo(paths, models)
+const createRepo = (paths, model) => new Repo(paths, model)
 
 const testing = {
 }

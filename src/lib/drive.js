@@ -65,7 +65,7 @@ class Drive extends ProtoMapTree {
     this.readlist = readlist
     this.fixedOwner = fixedOwner
 
-    this.memtreeState = 'NONE'
+    this.cacheState = 'NONE'
 
     this.rootpath = null
   }
@@ -76,7 +76,7 @@ class Drive extends ProtoMapTree {
 
   async buildMemTreeAsync() {
 
-    this.memtreeState = 'CREATING'
+    this.cacheState = 'CREATING'
   
     // create root node
     this.createNode(null, {
@@ -90,7 +90,8 @@ class Drive extends ProtoMapTree {
 
     return new Promise(resolve => {
       visit(this.rootpath, this.root, driveVisitor, () => {
-        drive.memtreeState = 'CREATED'
+        drive.cacheState = 'CREATED'
+        drive.emit('driveCached', drive)
         resolve()
       })
     })
@@ -98,7 +99,9 @@ class Drive extends ProtoMapTree {
 
   startBuildCache() {
 
-    this.memtreeState = 'CREATING'
+    console.log('startBuildCache <<<<')
+
+    this.cacheState = 'CREATING'
     this.createNode(null, {
       uuid: this.uuid,
       type: 'folder',
@@ -110,7 +113,9 @@ class Drive extends ProtoMapTree {
 
     let drive = this
     visit(this.rootpath, this.root, driveVisitor, () => {
-      drive.memtreeState = 'CREATED'
+      console.log('endBuildCache >>>>')
+      drive.cacheState = 'CREATED'
+      drive.emit('driveCached', drive)
     })
   }
 
