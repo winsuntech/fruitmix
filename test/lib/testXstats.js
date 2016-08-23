@@ -12,6 +12,7 @@ import {
 	updateXattrOwner,
 	updateXattrPermission,
 	updateXattrHash,
+	updateXattrHashMagic,
 	testing
 } from '../../src/lib/xstat.js';
 
@@ -46,9 +47,9 @@ describe('xstat.js', function(){
 		before(function(done){
 			let uuid = UUID.v4();
 			rimraf(tmpFoder, function(err){
-				if (err) { return done(err); }
+				if(err) return done(err);
 				mkdirp(tmpFoder ,function(err){
-					if (err) { return done(err); }
+					if(err) return done(err);
 					fs.stat(fpath, function(err, stats){
 						if (err) { return done(err); }
 						timeStamp = stats.mtime.getTime();
@@ -59,7 +60,7 @@ describe('xstat.js', function(){
 		});
 		it('should read timeStamp', function(done){
 			readTimeStamp(fpath, function(err, mtime){
-				if (err) { return done(); }
+				if(err) return done(err);
 				expect(mtime).to.equal(timeStamp);
 				done();
 			});
@@ -70,9 +71,9 @@ describe('xstat.js', function(){
 
 		beforeEach(done => {
 			rimraf(tmpFoder, err => {
-				if (err) return done(err);
+				if(err) return done(err);
 				mkdirp(tmpFoder, err => {
-					if (err) return done(err);
+					if(err) return done(err);
 					done();
 				});
 			});
@@ -87,7 +88,7 @@ describe('xstat.js', function(){
 
 		it('should return null if the second argument is null', function(done){
 			readXstat(fpath, null, function(err, attr){
-				if (err) { return done(err); }
+				if(err) return done(err);
 				expect(attr).to.be.null;
 				done();
 			});
@@ -95,7 +96,7 @@ describe('xstat.js', function(){
 
 		it('should return default object if xattr non-exist', function(done){
 			readXstat(fpath, function(err, attr){
-				if (err) { return done(err); }
+				if(err) return done(err);
 				expect(isUUID(attr.uuid)).to.be.true;
 				expect(attr.isDirectory()).to.be.ture;
 				expect(attr.abspath).to.equal(fpath);
@@ -109,9 +110,9 @@ describe('xstat.js', function(){
 				name: 'panda',
 				age : 23
 			}), function(err){
-				if (err) { return done(err); }
+				if(err) return done(err);
 				readXstat(fpath, function(err, attr){
-					if (err) { return done(err); }
+					if(err) return done(err);
 					expect(attr.name).to.equal('panda');
 					expect(attr.age).to.equal(23);
 					expect(attr.isDirectory()).to.be.ture;
@@ -363,8 +364,9 @@ describe('xstat.js', function(){
 						owner: [uuidArr[1]],
 						hash: sha256_1
 					}), err => {
-						if(err) done(err);
+						if(err) return done(err);
 						readXstat(ffpath, (err, attr) => {
+							if(err) return done(err);
 							expect(attr.uuid).to.deep.equal(uuidArr[0]);
 							expect(attr.owner).to.deep.equal([uuidArr[1]]);
 							expect(attr.writelist).to.be.an('undefined');
@@ -388,8 +390,9 @@ describe('xstat.js', function(){
 						hash: sha256_1,
 						htime: stat.mtime.getTime()
 					}), err => {
-						if(err) done(err);
+						if(err) return done(err);
 						readXstat(ffpath, (err, attr) => {
+							if(err) return done(err);
 							expect(attr.uuid).to.deep.equal(uuidArr[0]);
 							expect(attr.owner).to.deep.equal([uuidArr[1]]);
 							expect(attr.writelist).to.be.an('undefined');
@@ -414,8 +417,9 @@ describe('xstat.js', function(){
 						hash: 'panda',
 						htime: stat.mtime.getTime()
 					}), err => {
-						if(err) done(err);
+						if(err) return done(err);
 						readXstat(ffpath, (err, attr) => {
+							if(err) return done(err);
 							expect(attr.uuid).to.deep.equal(uuidArr[0]);
 							expect(attr.owner).to.deep.equal([uuidArr[1]]);
 							expect(attr.writelist).to.be.an('undefined');
@@ -440,8 +444,9 @@ describe('xstat.js', function(){
 						hash: { name: 'panda' },
 						htime: stat.mtime.getTime()
 					}), err => {
-						if(err) done(err);
+						if(err) return done(err);
 						readXstat(ffpath, (err, attr) => {
+							if(err) return done(err);
 							expect(attr.uuid).to.deep.equal(uuidArr[0]);
 							expect(attr.owner).to.deep.equal([uuidArr[1]]);
 							expect(attr.writelist).to.be.an('undefined');
@@ -465,8 +470,9 @@ describe('xstat.js', function(){
 						hash: [],
 						htime: stat.mtime.getTime()
 					}), err => {
-						if(err) done(err);
+						if(err) return done(err);
 						readXstat(ffpath, (err, attr) => {
+							if(err) return done(err);
 							expect(attr.uuid).to.deep.equal(uuidArr[0]);
 							expect(attr.owner).to.deep.equal([uuidArr[1]]);
 							expect(attr.writelist).to.be.an('undefined');
@@ -492,8 +498,9 @@ describe('xstat.js', function(){
 						hash: sha256_1,
 						htime: stat.mtime.getTime()
 					}), err => {
-						if(err) done(err);
+						if(err) return done(err);
 						readXstat(ffpath, (err, attr) => {
+							if(err) return done(err);
 							expect(attr.uuid).to.deep.equal(uuidArr[0]);
 							expect(attr.owner).to.deep.equal([uuidArr[1]]);
 							expect(attr.writelist).to.deep.equal([uuidArr[2]]);
@@ -518,12 +525,13 @@ describe('xstat.js', function(){
 						hash: sha256_1,
 						htime: stat.mtime.getTime()
 					}), err => {
-						if(err) done(err);
+						if(err) return done(err);
 						readXstat(ffpath, (err, attr) => {
+							if(err) return done(err);
 							expect(attr.uuid).to.deep.equal(uuidArr[0]);
 							expect(attr.owner).to.deep.equal([uuidArr[1]]);
-							expect(attr.writelist).to.be.an('undefined');
-							expect(attr.readlist).to.be.an('undefined');
+							expect(attr.writelist).to.deep.equal([uuidArr[2]]);
+							expect(attr.readlist).to.deep.equal([]);
 							expect(attr.hash).to.deep.equal(sha256_1);
 							expect(attr.abspath).to.deep.equal(ffpath);
 							done();
@@ -544,12 +552,13 @@ describe('xstat.js', function(){
 						hash: sha256_1,
 						htime: stat.mtime.getTime()
 					}), err => {
-						if(err) done(err);
+						if(err) return done(err);
 						readXstat(ffpath, (err, attr) => {
+							if(err) return done(err);
 							expect(attr.uuid).to.deep.equal(uuidArr[0]);
 							expect(attr.owner).to.deep.equal([uuidArr[1]]);
-							expect(attr.writelist).to.be.an('undefined');
-							expect(attr.readlist).to.be.an('undefined');
+							expect(attr.writelist).to.deep.equal([]);
+							expect(attr.readlist).to.deep.equal([uuidArr[2]]);
 							expect(attr.hash).to.deep.equal(sha256_1);
 							expect(attr.abspath).to.deep.equal(ffpath);
 							done();
@@ -561,7 +570,7 @@ describe('xstat.js', function(){
 
 	});
 
-	describe('test update data', () => {
+	describe('update data', () => {
 
 		beforeEach(done => {
 			rimraf(tmpFoder, err => {
@@ -595,13 +604,13 @@ describe('xstat.js', function(){
 			});
 		});
 
-		describe('test updateXattrOwner', () => {
+		describe('updateXattrOwner', () => {
 
 			it('should returns the owner value after the change', done => {
 				fs.stat(ffpath, (err, stat) => {
-					if(err) done(err);
+					if(err) return done(err);
 					updateXattrOwner(ffpath, uuidArr[0], [uuidArr[4],uuidArr[5]], (err, attr) => {
-						if(err) done(err);
+						if(err) return done(err);
 						expect(attr.uuid).to.deep.equal(uuidArr[0]);
 						expect(attr.owner).to.deep.equal([uuidArr[4],uuidArr[5]]);
 						expect(attr.writelist).to.deep.equal([uuidArr[2]]);
@@ -615,13 +624,13 @@ describe('xstat.js', function(){
 
 		});
 
-		describe('test updateXattrPermission', () => {
+		describe('updateXattrPermission', () => {
 
 			it('should returns the permission value after the change', done => {
 				fs.stat(ffpath, (err, stat) => {
-					if(err) done(err);
+					if(err) return done(err);
 					updateXattrPermission(ffpath, uuidArr[0], [uuidArr[4]], [uuidArr[5]], (err, attr) => {
-						if(err) done(err);
+						if(err) return done(err);
 						expect(attr.uuid).to.deep.equal(uuidArr[0]);
 						expect(attr.owner).to.deep.equal([uuidArr[1]]);
 						expect(attr.writelist).to.deep.equal([uuidArr[4]]);
@@ -635,13 +644,13 @@ describe('xstat.js', function(){
 
 		});
 
-		describe('test updateXattrHash', () => {
+		describe('updateXattrHash', () => {
 
 			it('should returns the hash value after the change', done => {
 				fs.stat(ffpath, (err, stat) => {
-					if(err) done(err);
+					if(err) return done(err);
 					updateXattrHash(ffpath, uuidArr[0], sha256_2, stat.mtime.getTime(), (err, attr) => {
-						if(err) done(err);
+						if(err) return done(err);
 						expect(attr.uuid).to.deep.equal(uuidArr[0]);
 						expect(attr.owner).to.deep.equal([uuidArr[1]]);
 						expect(attr.writelist).to.deep.equal([uuidArr[2]]);
@@ -655,9 +664,9 @@ describe('xstat.js', function(){
 
 			it('should returns undefined if mtime non-equal', done => {
 				fs.stat(ffpath, (err, stat) => {
-					if(err) done(err);
+					if(err) return done(err);
 					updateXattrHash(ffpath, uuidArr[0], sha256_2, 123, (err, attr) => {
-						if(err) done(err);
+						if(err) return done(err);
 						expect(attr.uuid).to.deep.equal(uuidArr[0]);
 						expect(attr.owner).to.deep.equal([uuidArr[1]]);
 						expect(attr.writelist).to.deep.equal([uuidArr[2]]);
@@ -667,6 +676,30 @@ describe('xstat.js', function(){
 						done();
 					});
 				});
+			});
+
+		});
+
+		describe('updateXattrHashMagic', () => {
+
+			it('unknow', done => {
+				fs.stat(ffpath, (err, stat) => {
+					if(err) return done(err);
+					console.log(uuidArr[0]);
+					// updateXattrHashMagic(target, uuid, 		hash, 		magic, 		htime, 							callback)
+					updateXattrHashMagic(ffpath, uuidArr[0], sha256_1, 'audio', stat.mtime.getTime(), (err, attr) => {
+						if(err) return done(err);
+						expect(attr.uuid).to.deep.equal(uuidArr[0]);
+						expect(attr.owner).to.deep.equal([uuidArr[1]]);
+						expect(attr.writelist).to.deep.equal([uuidArr[2]]);
+						expect(attr.readlist).to.deep.equal([uuidArr[3]]);
+						expect(attr.hash).to.deep.equal(sha256_1);
+						expect(attr.magic).to.deep.equal('audio');
+						expect(attr.htime).to.deep.equal(stat.mtime.getTime());
+						done();
+					});
+				});
+
 			});
 
 		});

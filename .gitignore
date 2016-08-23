@@ -51,6 +51,8 @@ npm-debug.log
 
 docs/
 testdata/
+tmpTestFoder/
+tmpTestFolder/
 
 graph.png
 graph.pdf

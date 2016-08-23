@@ -17,7 +17,7 @@ const join = (name) => path.join(root, name)
 // set fruitmix root, mkdirp all internal folders
 const setRootAsync = async (rootpath) => {
 
-  if (!path.isAbosolute(rootpath)) throw new Error('rootpath must be absolute path')     
+  if (!path.isAbsolute(rootpath)) throw new Error('rootpath must be absolute path')     
 
   root = rootpath
 
@@ -47,10 +47,11 @@ const _path = (name) => {
   case 'models':
   case 'drives':
   case 'pools':
-  case 'tmps':
+  case 'etc':
+  case 'tmp':
     return join(name)
   default:
-    throw new Error('unknown fruitmix path name')
+    throw new Error(`unknown fruitmix path name: ${name}`)
   }
 }
 

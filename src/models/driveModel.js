@@ -2,16 +2,16 @@ import Promise from 'bluebird'
 
 import validator from 'validator'
 
+import { openOrCreateCollectionAsync } from './collection'
+
 /** 
 
 Schema
 
 {
   label: a string
-  ownership: 'fixed', exactly one owner allowed, only visible to this owner,
-             'variable', zero to many owner allowed, visible to all owners, as well as system administrator.
 
-  fixedOwner: 
+  fixedOwner: true: only one owner, cannot be changed; false: shared drive
 
   URI: 'fruitmix', 'appifi', 'peripheral:uuid=', 'peripheral:label=', 
       noticing that the uuid or label are file system uuid or label, not partition uuid or label, 
@@ -29,24 +29,27 @@ Schema
 
 **/
 
-class DriveConfs {
+class DriveModel {
 
   constructor(collection) {
     this.collection = collection
   }
 
-  async create({ label, ownership, URI, uuid, writelist, readlist, indexing }) {
-    let def = {label, ownership, URI, uuid, writelist, readlist, indexing}
+  async createDrive({ label, fixedOwner, URI, uuid, writelist, readlist, memCache }) {
+    // TODO
+    let def = {label, ownership, URI, uuid, writelist, readlist, memCache}
     await this.collection.updateAsync(list, [...list, def])   
+    return uuid
   }
 }
 
-const openDriveConfsAsync = async (filepath, tmpfolder) => {
+const createDriveModelAsync = async (filepath, tmpfolder) => {
 
   let collection = await openOrCreateCollectionAsync(filepath, tmpfolder)
-  if (collection) return new DriveConfs(collection)
+  if (collection) 
+    return new DriveModel(collection)
   return null
 }
 
-export { openDriveConfsAsync }
+export { createDriveModelAsync }
 
