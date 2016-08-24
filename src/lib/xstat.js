@@ -131,7 +131,7 @@ const readXstat = (target, ...args) => {
 
     if (err) return callback(err)
     if (!(stats.isDirectory() || stats.isFile())) return callback(new Error('not a folder or file'))
-    if (!stats.isDirectory() && opts) return callback(new Error('not a folder (opts)'))
+    if (!stats.isDirectory() && opts && (opts.writelist || opts.readlist)) return callback(new Error('not a folder (opts)'))
 
     xattr.get(target, FRUITMIX, (err, attr) => {
 
@@ -218,7 +218,21 @@ const updateXattrHashMagic = (target, uuid, hash, magic, htime, callback) => {
   })
 }
 
+const copyXattr = (dst, src, callback) => {
+
+  xattr.get(src, 'user.fruitmix', (err, attr) => {
+
+    // src has not xattr, nothing to copy
+    if (err && err.code === 'ENODATA') return callback(null)
+    if (err) return callback(err)
+    
+    xattr.set(dst, 'user.fruitmix', err => 
+      err ? callback(err) : callback(null))
+  })
+}
+
 const readXstatAsync = Promise.promisify(readXstat)
+const copyXattrAsync = Promise.promisify(copyXattr)
 
 const testing = {}
 
@@ -230,6 +244,8 @@ export {
   updateXattrPermission,
   updateXattrHash,
   updateXattrHashMagic,
+  copyXattr,
+  copyXattrAsync,
   testing
 }
 

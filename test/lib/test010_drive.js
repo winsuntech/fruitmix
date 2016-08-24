@@ -251,7 +251,8 @@ describe(path.basename(__filename), function() {
         expect(node.owner).to.deep.equal([uuid1])
 
         xattr.get(path.join(cwd, 'tmptest', 'folder1', 'hello'), 'user.fruitmix', (err, attr) => {
-          try {
+          if (err) return done(err)
+          try { // TODO use deep equal !
             let stamp = JSON.parse(attr)
             expect(stamp.owner).to.deep.equal([uuid1])
             expect(stamp.uuid).to.equal(node.uuid)
@@ -276,11 +277,77 @@ describe(path.basename(__filename), function() {
     it('should return error if folder exists (in subfolder)', function(done) {
 
       let folder1 = drive.root.children.find(c => c.name === 'folder1') 
-
       drive.createFolder(uuid1, folder1, 'folder3', (err, node) => {
         expect(err).to.be.an('Error')
         done()
       }) 
+    })
+  })
+
+  describe('test import file', function() {
+    
+    let drive
+
+    beforeEach(function(done) {
+      rimrafAsync('tmptest')
+        .then(() => mkdirpAsync('tmptest/driveroot/folder1'))
+        .then(() => mkdirpAsync('tmptest/tmp'))
+        .then(() => fs.writeFileAsync('tmptest/tmp/testfile', 'hello world'))
+        .then(() => {
+          drive = createDrive(fixed01)
+          drive.on('driveCached', drv => {
+            done()
+          })
+          drive.setRootpath(path.join(cwd, 'tmptest/driveroot'))
+        })
+        .catch(e => done(e))
+    })
+
+    afterEach(function() {
+      drive = undefined
+    })
+
+    it('should import a new file into root folder', function(done) {
+      let srcpath = path.join(cwd, 'tmptest/tmp/testfile')
+      let dstpath = path.join(cwd, 'tmptest/driveroot/test')
+      drive.importFile(uuid1, srcpath, drive.root, 'test', (err, node) => {
+        expect(node.parent).to.equal(drive.root)
+        expect(node.name).to.equal('test')
+        expect(node.owner).to.deep.equal([uuid1])
+        expect(node.hasOwnProperty('writelist')).to.be.false
+        expect(node.hasOwnProperty('readlist')).to.be.false
+
+        xattr.get(dstpath, 'user.fruitmix', (err, attr) => {
+          if (err) return done(err)
+          expect(JSON.parse(attr)).to.deep.equal({
+            owner: [uuid1],
+            uuid: node.uuid
+          })
+          done()
+        })
+      })
+    })
+
+    it('should import a new file into non-root folder', function(done) {
+      let srcpath = path.join(cwd, 'tmptest/tmp/testfile')
+      let dstpath = path.join(cwd, 'tmptest/driveroot/folder1/test')
+      let folder1 = drive.root.children[0]
+      drive.importFile(uuid1, srcpath, folder1, 'test', (err, node) => {
+        expect(node.parent).to.equal(folder1)
+        expect(node.name).to.equal('test')
+        expect(node.owner).to.deep.equal([uuid1])
+        expect(node.hasOwnProperty('writelist')).to.be.false
+        expect(node.hasOwnProperty('readlist')).to.be.false
+
+        xattr.get(dstpath, 'user.fruitmix', (err, attr) => {
+          if (err) return done(err)
+          expect(JSON.parse(attr)).to.deep.equal({
+            owner: [uuid1],
+            uuid: node.uuid
+          })
+          done()
+        })
+      })
     })
   })
 })

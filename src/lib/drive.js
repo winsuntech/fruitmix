@@ -102,6 +102,7 @@ class Drive extends ProtoMapTree {
     })
   }
 
+  // get absolute path of node
   abspath(node) {
 
     if (!this.rootpath) throw new Error('rootpath not set')
@@ -113,17 +114,17 @@ class Drive extends ProtoMapTree {
   }
 
   // this function tried to create a new folder
-  createFolder(userUUID, targetNode, folderName, callback) {
+  createFolder(userUUID, targetNode, name, callback) {
 
-    if (targetNode.getChildren().find(c => c.name === folderName))
+    if (targetNode.getChildren().find(c => c.name === name))
       return callback(new Error('folder exists'))
 
-    let targetpath = path.join(this.abspath(targetNode), folderName)
+    let targetpath = path.join(this.abspath(targetNode), name)
 
     fs.mkdir(targetpath, err => {
       if (err) return callback(err)
       readXstat(targetpath, { owner: [userUUID] }, (err, xstat) => {
-        if (err) return callback(err) // FIXME 
+        if (err) return callback(err)
         let obj = mapXstatToObject(xstat)
         let node = targetNode.tree.createNode(targetNode, obj)
         callback(null, node)
@@ -131,13 +132,36 @@ class Drive extends ProtoMapTree {
     })
   }
 
+  _importFile(userUUID, srcpath, targetNode, filename) {
+    
+  }
+
+  // this function may OVERWRITE existing file
   importFile(userUUID, srcpath, targetNode, filename, callback) {
 
     let targetpath = path.join(this.abspath(targetNode), filename) 
+    let existing = targetNode.getChildren().find(c => c.name === filename)
+    if (existing) {
+      // !!! reverse order
+      return copyXattr(srcpath, targetpath, err => {
+        if (err) return callback(err)
+        fs.rename(srcpath, targetpath, err => {
+          if (err) return callback(err)
+          readXstat(targetpath, (err, xstat) => {
+            if (err) return callback(err)
+            let obj = mapXstatToObject(xstat)
+            let tree = existing.tree
+            tree.updateNode(existing, obj)
+            callback(null, existing)
+          })
+        })
+      })
+    }
+
     fs.rename(srcpath, targetpath, err => {
       if (err) return callback(err)
       readXstat(targetpath, { owner: [userUUID] }, (err, xstat) => {
-        if (err) return callback(err) // FIXME should fake xstat
+        if (err) return callback(err)
         let obj = mapXstatToObject(xstat)
         let node = targetNode.tree.createNode(targetNode, obj)
         callback(null, node) 
