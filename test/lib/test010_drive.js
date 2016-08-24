@@ -126,7 +126,7 @@ describe(path.basename(__filename), function() {
       drive.setRootpath(path.join(cwd, 'tmptest'))
     })
 
-    it('should build cache on simple folder hierarchy w/o xattr', function() {
+    it('should build cache on simple folder hierarchy w/o xattr', function(done) {
 
       const named = (list, name) => {
         let l = list.find(l => l.name === name)
@@ -134,14 +134,14 @@ describe(path.basename(__filename), function() {
         return l
       }
 
-      return mkdirpAsync('tmptest/folder1/folder2')
+      mkdirpAsync('tmptest/folder1/folder2')
         .then(() => mkdirpAsync('tmptest/folder3'))
-        .then(() => new Promise((resolve, reject) => {
+        .then(() => {
+
           let drive = createDrive(fixed01)
           drive.on('driveCached', drv => {
 
             let list = drv.print()
-
             expect(named(list, 'folder1').parent).to.equal(fixed01.uuid)
             expect(named(list, 'folder2').parent).to.equal(named(list, 'folder1').uuid)
             expect(named(list, 'folder3').parent).to.equal(fixed01.uuid)
@@ -154,10 +154,133 @@ describe(path.basename(__filename), function() {
                 expect(l.writelist).to.be.undefined
                 expect(l.readlist).to.be.undefined
               })
-            resolve(null)
+            done()
+          })
+
+          drive.setRootpath(path.join(cwd, 'tmptest'))
+        })
+        .catch(e => done(e))
+    })
+  })
+
+  describe('test abspath', function() {
+
+    beforeEach(function(done) {
+      rimrafAsync('tmptest')
+        .then(() => mkdirpAsync('tmptest'))
+        .then(() => done())
+        .catch(e => done(e))
+    })
+
+    it('should return absolute path of node', function(done) {      
+      mkdirpAsync('tmptest/folder1')
+        .then(() => {
+          
+          let drive = createDrive(fixed01)
+          drive.on('driveCached', drv => {
+            let root = drive.root
+            expect(drive.abspath(root)).to.equal(path.join(cwd, 'tmptest'))
+            let child = root.children[0]
+            expect(drive.abspath(child)).to.equal(path.join(cwd, 'tmptest/folder1'))
+            done()
+          })
+
+          drive.setRootpath(path.join(cwd, 'tmptest'))
+        })
+    })
+  })
+
+  describe('test createFolder', function() {
+
+    let drive
+
+    beforeEach(function(done) {
+      rimrafAsync('tmptest')
+        .then(() => mkdirpAsync('tmptest/folder1/folder3'))
+        .then(() => mkdirpAsync('tmptest/folder2'))
+        .then(() => {
+          drive = createDrive(fixed01)
+          drive.on('driveCached', drv => {
+            done()
           })
           drive.setRootpath(path.join(cwd, 'tmptest'))
-        }))
+        })
+        .catch(e => done(e))
+    })
+
+    afterEach(function() {
+      drive = undefined
+    })
+
+    it('should create a folder in root folder with given owner', function(done) {
+
+      drive.createFolder(uuid1, drive.root, 'hello', (err, node) => {
+
+        expect(node.parent).to.equal(drive.root)
+        expect(node.name).to.equal('hello')
+        expect(node.writelist).to.be.undefined
+        expect(node.readlist).to.be.undefined
+        expect(node.owner).to.deep.equal([uuid1])
+
+        xattr.get(path.join(cwd, 'tmptest', 'hello'), 'user.fruitmix', (err, attr) => {
+          try { 
+            let stamp = JSON.parse(attr)
+            expect(stamp.owner).to.deep.equal([uuid1])
+            expect(stamp.uuid).to.equal(node.uuid)
+            expect(stamp.hasOwnProperty('writelist')).to.be.false
+            expect(stamp.hasOwnProperty('readlist')).to.be.false
+            done()
+          }
+          catch(e) {
+            done(e)
+          }
+        })
+      })
+    }) 
+
+    it('should create a folder in subfolder with given owner', function(done) {
+
+      let folder1 = drive.root.children.find(c => c.name === 'folder1')
+      
+      drive.createFolder(uuid1, folder1, 'hello', (err, node) => {
+        
+        expect(node.parent).to.equal(folder1)
+        expect(node.name).to.equal('hello')
+        expect(node.writelist).to.be.undefined
+        expect(node.readlist).to.be.undefined
+        expect(node.owner).to.deep.equal([uuid1])
+
+        xattr.get(path.join(cwd, 'tmptest', 'folder1', 'hello'), 'user.fruitmix', (err, attr) => {
+          try {
+            let stamp = JSON.parse(attr)
+            expect(stamp.owner).to.deep.equal([uuid1])
+            expect(stamp.uuid).to.equal(node.uuid)
+            expect(stamp.hasOwnProperty('writelist')).to.be.false
+            expect(stamp.hasOwnProperty('readlist')).to.be.false
+            done()
+          }
+          catch(e) {
+            done(e)
+          }
+        })
+      }) 
+    })
+
+    it('should return error if folder exists (in root)', function(done) {
+      drive.createFolder(uuid1, drive.root, 'folder2', (err, node) => {
+        expect(err).to.be.an('Error')
+        done()
+      })
+    })
+
+    it('should return error if folder exists (in subfolder)', function(done) {
+
+      let folder1 = drive.root.children.find(c => c.name === 'folder1') 
+
+      drive.createFolder(uuid1, folder1, 'folder3', (err, node) => {
+        expect(err).to.be.an('Error')
+        done()
+      }) 
     })
   })
 })

@@ -27,7 +27,7 @@ const createDrive = (conf) => {
 }  
 
 /**
-  memcache state: 
+  cache state: 
 
             ---------auto---------------------------------- (REMOVING)
             |                                                  ^
@@ -102,16 +102,33 @@ class Drive extends ProtoMapTree {
     })
   }
 
-  // FIXME no state guard
-  unsetRootpath() {
-    this.rootpath = null
-  }
-
   abspath(node) {
+
+    if (!this.rootpath) throw new Error('rootpath not set')
+
     let nodepath = node.nodepath().map(n => n.name)
     let prepend = path.resolve(this.rootpath, '..')
     nodepath.unshift(prepend)
     return path.join(...nodepath)
+  }
+
+  // this function tried to create a new folder
+  createFolder(userUUID, targetNode, folderName, callback) {
+
+    if (targetNode.getChildren().find(c => c.name === folderName))
+      return callback(new Error('folder exists'))
+
+    let targetpath = path.join(this.abspath(targetNode), folderName)
+
+    fs.mkdir(targetpath, err => {
+      if (err) return callback(err)
+      readXstat(targetpath, { owner: [userUUID] }, (err, xstat) => {
+        if (err) return callback(err) // FIXME 
+        let obj = mapXstatToObject(xstat)
+        let node = targetNode.tree.createNode(targetNode, obj)
+        callback(null, node)
+      })
+    })
   }
 
   importFile(userUUID, srcpath, targetNode, filename, callback) {
@@ -128,24 +145,6 @@ class Drive extends ProtoMapTree {
     })
   }
 
-  createFolder(userUUID, targetNode, folderName, callback) {
-    
-    let nodepath = targetNode.nodepath().map(n => n.name)
-    let prepend = path.resolve(targetNode.tree.rootpath, '..')
-    nodepath.unshift(prepend)
-    nodepath.push(folderName)
-    let targetpath = path.join(...nodepath)
-
-    fs.mkdir(targetpath, err => {
-      if (err) return callback(err)
-      readXstat(targetpath, { owner: [userUUID] }, (err, xstat) => {
-        if (err) return callback(err) // FIXME 
-        let obj = mapXstatToObject(xstat)
-        let node = targetNode.tree.createNode(targetNode, obj)
-        callback(null, node)
-      })
-    })
-  }
 
   renameFileOrFolder(node, newName, callback) {
     fs.rename(this.abspath(node),this.abspath(node.parent)+'/'+newName,(err)=>{
@@ -199,7 +198,6 @@ class Drive extends ProtoMapTree {
       queue.push(obj)
     })
 
-    // console.log(queue)
     return queue
   }
 }
