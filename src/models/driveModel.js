@@ -24,7 +24,7 @@ Schema
   writelist: []
   readlist: []
 
-  memCache: true or false
+  cache: true or false
 }
 
 **/
@@ -35,11 +35,21 @@ class DriveModel {
     this.collection = collection
   }
 
-  async createDrive({ label, fixedOwner, URI, uuid, writelist, readlist, memCache }) {
-    // TODO
-    let def = {label, ownership, URI, uuid, writelist, readlist, memCache}
-    await this.collection.updateAsync(list, [...list, def])   
-    return uuid
+  // this function requires the uuid to be passed in
+  // because the folder should be created before update model database
+  async createDrive({ 
+    label, 
+    fixedOwner, 
+    URI, 
+    uuid, 
+    owner,
+    writelist, 
+    readlist, 
+    cache 
+  }) {
+    // TODO check
+    let conf = {label, fixedOwner, URI, uuid, owner, writelist, readlist, cache}
+    await this.collection.updateAsync(list, [...list, conf])   
   }
 }
 

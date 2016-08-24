@@ -11,18 +11,10 @@ import { nodeUserReadable, nodeUserWritable} from './perm'
 
 import { createDrive } from './drive'
 
-// currying
-const createOtherDrive = (whatever) => {
-
-  return async (conf) => {
-    return createDrive(conf.uuid, conf.owner, conf.writelist, conf.readlist, conf.fixedOwner)
-  }
-}
-
 class Repo extends EventEmitter {
 
+  // repo constructor
   constructor(paths, model) {
-
     super()
     this.paths = paths
     this.model = model
@@ -30,65 +22,52 @@ class Repo extends EventEmitter {
     this.initState = 'IDLE' // 'INITIALIZING', 'INITIALIZED', 'DEINITIALIZING',
   }
 
-  createFruitmixDrive(dir) {
+  // create a fruitmix drive object (not create a drive model!)
+  createFruitmixDrive(conf, callback) {
 
-    return async (conf) => {
+    let dir = this.paths.get('drives')
+    let drvpath = path.join(dir, conf.uuid)
+    fs.stat(drvpath, (err, stat) => {
 
-      let drive = createDrive(conf.uuid, conf.owner, conf.writelist, conf.readlist, conf.fixedOwner)
-      let drvpath = path.join(dir, conf.uuid)
-      let inspect = await fs.statAsync(drvpath).reflect()
-      
-      if (inspect.isFulfilled() && inspect.value().isDirectory()) {
-        drive.setRootpath(drvpath)  
-        if (conf.memCache) {
-          drive.on('driveCached', () => this.emit('driveCached', drive))
-          drive.startBuildCache()
-        }
-      }    
-
-      console.log('fruitmixDrive created')
-      return drive
-    }
+      if (err) return callback(err)
+      let drive = createDrive(conf)
+      drive.on('driveCached', () => this.emit('driveCached', drive))
+      drive.setRootpath(drvpath)
+      callback(null, drive)
+    })
   }
 
+  // retrieve all drives from configuration
+  // TODO there may be a small risk that a user is deleted but drive not
   init(callback) {
 
-    // check state
     if (this.initState !== 'IDLE') return new Error('invalid state')
 
     this.initState = 'INITIALIZING'
 
     // retrieve drive directory 
-    let dir = this.paths.path('drives')
+    let dir = this.paths.get('drives')
     let list = this.model.collection.list
     let count = list.length
-    if (count) {
-      list.forEach(conf => {
-        if (conf.URI === 'fruitmix') {
-          this.createFruitmixDrive(dir)(conf)
-            .then(drv => {
-              this.drives.push(drv)
-              count--
-              if (count === 0) {
-                this.initState = 'INITIALIZED'
-                callback(null)
-              }
-            })
-            .catch(e => {
-              console.log(e)
-              count--
-              if (count === 0) {
-                this.initState = 'INITIALIZED'
-                callback(null)
-              }
-            })
-        }
-      })
-    }
-    else {
+
+    if (!count) {
       this.initState = 'INITIALIZED'
-      callback(null)
+      return callback()
     }
+
+    list.forEach(conf => {
+      if (conf.URI === 'fruitmix') {
+        this.createFruitmixDrive(conf, (err, drive) => {
+          if (!err) this.drives.push(drive)
+          if (!--count) {
+            this.initState = 'INITIALIZED'
+            callback()
+          }
+        })
+      }
+      else if (!--count)
+        callback()
+    })
   }
 
   // SERVICE API: create new fruitmix drive
@@ -119,14 +98,9 @@ class Repo extends EventEmitter {
     return uuid
   }
 
-  //////////////////////////////////////////////////////////////////////////  
-
-  findTreeInDriveByUUID(uuid) {
-    return this.drives.find(tree => tree.uuidMap.get(uuid))
-  }
-
   findNodeInDriveByUUID(uuid) {
     for (let i = 0; i < this.drives.length; i++) {
+      if (this.drives[i].cacheState !== 'CREATED') continue
       let x = this.drives[i].uuidMap.get(uuid)
       if (x) return x
     }
@@ -177,8 +151,6 @@ class Repo extends EventEmitter {
   
   createFileInDrive(userUUID, srcpath, targetDirUUID, filename, callback) {
 
-    //let tree = findTreeInDriveByUUID(userUUID)
-    //if (!tree) return callback    
     let node = this.findNodeInDriveByUUID(targetDirUUID)
     if (!node) return callback(new Error('uuid not found')) 
 
@@ -187,17 +159,15 @@ class Repo extends EventEmitter {
     })
   }
 
-  createDriveFolder(userUUID, folderName, targetDirUUID,callback) {
-    // let tree = this.findTreeInDriveByUUID(userUUID)
-    // if (!tree) return callback(new Error('tree not found')) 
-
+  // tested briefly
+  createFolder(userUUID, folderName, targetDirUUID, callback) {
+    
     let node = this.findNodeInDriveByUUID(targetDirUUID)
-    if (!node) return callback(new Error('uuid not found')) 
+    if (!node) return callback(new Error('uuid not found'))
 
-    node.tree.createFolder(node,folderName,(err,node) => {
-      err?callback(err) : callback(null,node) 
-    })
-  }  
+    node.tree.createFolder(node, folderName, (err, node) => 
+      err ? callback(err) : callback(null, node))
+  }
 
   /** read **/  
   readDriveFileorFolderInfo(uuid){
@@ -238,33 +208,6 @@ class Repo extends EventEmitter {
       err ? callback(err) : callback(null, node)
     })
   }
-
-  // deprecated
-  printTree(keys) {
-
-    let queue = []
-    if (!this.tree) return console.log('no tree attached')
-
-    this.tree.root.preVisit(node => {
-
-      let obj = {
-        parent: node.parent === null ? null : node.parent.uuid,
-        parentName: node.parent === null ? null : node.parent.attribute.name,
-        children: node.children.map(n => n.uuid),
-        childrenName: node.children.map(n => n.attribute.name)
-      }
-       
-      queue.push(obj)
-    })
-    console.log(queue)
-  }
-}
-
-async function createRepoAsync(rootpath) {
-
-  mkdirpAsync(path.join(rootpath, 'drive'))
-  mkdirpAsync(path.join(rootpath, 'library'))
-  return new Repo(rootpath)
 }
 
 const createRepo = (paths, model) => new Repo(paths, model)

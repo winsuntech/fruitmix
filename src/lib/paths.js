@@ -25,6 +25,7 @@ const setRootAsync = async (rootpath) => {
   await mkdirpAsync(join('models'))
   await mkdirpAsync(join('drives'))
   await mkdirpAsync(join('pools'))
+  await mkdirpAsync(join('upload'))
   await mkdirpAsync(join('etc'))
   await mkdirpAsync(join('tmp'))
 }
@@ -39,7 +40,7 @@ const setRoot = (rootpath, callback) =>
 const unsetRoot = () => root = undefined
 
 // get path by name, throw if root unset or name unknown
-const _path = (name) => {
+const getPath = (name) => {
 
   if (!root) throw new Error('fruitmix root not set')
 
@@ -47,6 +48,7 @@ const _path = (name) => {
   case 'models':
   case 'drives':
   case 'pools':
+  case 'upload':
   case 'etc':
   case 'tmp':
     return join(name)
@@ -59,6 +61,6 @@ export default {
   setRoot,
   setRootAsync,
   unsetRoot,
-  path: _path
+  get: getPath
 }
 

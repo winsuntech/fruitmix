@@ -49,57 +49,42 @@ const createDrive = (uuid, owner, writelist, readlist, fixedOwner) => {
 // a drive tree is a in-memory caching and indexing layer for given virtual drive.
 class Drive extends ProtoMapTree {
 
-  constructor(uuid, owner, writelist, readlist, fixedOwner) {
+  constructor(conf) {
 
     let proto = { 
-      owner: fixedOwner ? owner : [],
+      owner: conf.fixedOwner ? conf.owner : [],
       writelist: undefined,
       readlist: undefined
     }
 
     super(proto)
 
-    this.uuid = uuid
-    this.owner = owner
-    this.writelist = writelist
-    this.readlist = readlist
-    this.fixedOwner = fixedOwner
+    // this may not be a good idea to put all configuration information
+    // in this object TODO
+    this.label = conf.label
+    this.fixedOwner = conf.fixedOwner
+    this.URI = conf.URI
+    this.uuid = conf.uuid
+    this.owner = conf.owner
+    this.writelist = conf.writelist
+    this.readlist = conf.readlist
+    this.cache = conf.cache
 
     this.cacheState = 'NONE'
-
     this.rootpath = null
   }
 
   setRootpath(rootpath) {
+
+    if (this.cacheState !== 'NONE') throw new Error('rootpath can only be set when cacheState is NONE')
+
     this.rootpath = rootpath
+    if (this.cache) this.buildCache() 
   }
 
-  async buildMemTreeAsync() {
+  buildCache() {
 
-    this.cacheState = 'CREATING'
-  
-    // create root node
-    this.createNode(null, {
-      uuid: this.uuid,
-      type: 'folder',
-      writelist: this.writelist,
-      readlist: this.readlist
-    })
-
-    let drive = this
-
-    return new Promise(resolve => {
-      visit(this.rootpath, this.root, driveVisitor, () => {
-        drive.cacheState = 'CREATED'
-        drive.emit('driveCached', drive)
-        resolve()
-      })
-    })
-  }
-
-  startBuildCache() {
-
-    console.log('startBuildCache <<<<')
+    if (this.cacheState !== 'NONE') throw new Error('buildCache can only be called when cacheState is NONE')
 
     this.cacheState = 'CREATING'
     this.createNode(null, {
@@ -108,20 +93,17 @@ class Drive extends ProtoMapTree {
       owner: this.owner,
       writelist: this.writelist,
       readlist: this.readlist,
-      name: '' // FIXME
+      name: path.basename(this.rootpath)
     })
 
     let drive = this
     visit(this.rootpath, this.root, driveVisitor, () => {
-      console.log('endBuildCache >>>>')
       drive.cacheState = 'CREATED'
       drive.emit('driveCached', drive)
     })
   }
 
-  removeMemTree() {
-  } 
-
+  // FIXME no state guard
   unsetRootpath() {
     this.rootpath = null
   }
@@ -131,10 +113,6 @@ class Drive extends ProtoMapTree {
     let prepend = path.resolve(this.rootpath, '..')
     nodepath.unshift(prepend)
     return path.join(...nodepath)
-  }
-
-  scan(callback) {
-    visit(this.rootpath, this.root, driveVisitor, () => callback())    
   }
 
   importFile(srcpath, targetNode, filename, callback) {
@@ -161,7 +139,7 @@ class Drive extends ProtoMapTree {
 
     fs.mkdir(targetpath, err => {
       if (err) return callback(err)
-      readXstat2(targetpath, { owner: targetNode.tree.root.owner }, (err, xstat) => {
+      readXstat(targetpath, (err, xstat) => {
         if (err) return callback(err) // FIXME 
         let obj = mapXstatToObject(xstat)
         let node = targetNode.tree.createNode(targetNode, obj)
@@ -196,6 +174,32 @@ class Drive extends ProtoMapTree {
     updateXattrPermissionAsync(this.abspath(node),fruitmix)
     updateXattrHashAsync(this.abspath(node),fruitmix.hash,fruitmix.htime)
     callback(null, node)
+  }
+
+  print(uuid) {
+    
+    let node = this.uuidMap.get(uuid)
+    if (!node) {
+      console.log(`no node found to have uuid: ${uuid}`)
+      return
+    }
+
+    let queue = []
+    node.preVisit(n => {
+      let obj = {
+        parent: n.parent === null ? null : n.parent.uuid,
+        uuid: n.uuid,
+        type: n.type,
+        owner: n.owner,
+        writelist: n.writelist,
+        readlist: n.readlist,
+        name: n.name
+      }
+      queue.push(obj)
+    })
+
+    // console.log(queue)
+    return queue
   }
 }
 

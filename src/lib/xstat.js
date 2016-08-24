@@ -113,9 +113,15 @@ const readXstat = (target, ...args) => {
 
   // now opts is either null or object
   if (opts) { // not null
-    if (opts.owner && opts.owner === validateUserList(opts.owner) &&
-        opts.writelist && opts.writelist === validateUserList(opts.writelist) &&
-        opts.readlist && opts.readlist === validateUserList(opts.readlist)) {}
+    if  (
+          opts.owner && opts.owner === validateUserList(opts.owner) &&
+          (
+            (opts.writelist && opts.writelist === validateUserList(opts.writelist) && opts.readlist && opts.readlist === validateUserList(opts.readlist))
+              ||
+            (opts.writelist === undefined && opts.readlist === undefined)
+          )
+        )
+    { }
     else
       return process.nextTick(callback, new TypeError('opts invalid'))
   }
@@ -135,6 +141,8 @@ const readXstat = (target, ...args) => {
 
         if (opts === null) return callback(null, null)
         if (opts === undefined) opts = { uuid: UUID.v4(), owner: [] }
+        else opts.uuid = UUID.v4()
+
         return xattr.set(target, FRUITMIX, JSON.stringify(opts), err => 
           err ? callback(err) : callback(null, Object.assign(stats, opts, { abspath: target })))
       }
@@ -191,20 +199,19 @@ const updateXattrHash = (target, uuid, hash, htime, callback) => {
 }
 
 const updateXattrHashMagic = (target, uuid, hash, magic, htime, callback) => {
-
+  
   readXstat(target, (err, xstat) => {
     if (err) return callback(err)
 
     // uuid mismatch
-    console.log(xstat.uuid + '------' + uuid);
     if (xstat.uuid !== uuid) return callback(InstanceMismatch())
     // invalid hash or magic
     if (!isHashValid(hash) || typeof magic !== 'string' || magic.length === 0) return callback(EInvalid())
     // timestamp mismatch
-    if (xstat.mtime !== htime) return callback(TimestampMismatch())
+    if (xstat.mtime.getTime() !== htime) return callback(TimestampMismatch())
 
-    let { uuid, owner, writelist, readlist } = xstat
-    let newXattr = { uuid, owner, writelist, readlist, hash, magic, htime }
+    let { owner, writelist, readlist } = xstat
+    let newXattr = { uuid: xstat.uuid, owner, writelist, readlist, hash, magic, htime: xstat.htime }
     xattr.set(target, FRUITMIX, JSON.stringify(newXattr), err => {
       err ? callback(err) : callback(null, Object.assign(xstat, { hash, magic, htime, abspath:target }))
     })
