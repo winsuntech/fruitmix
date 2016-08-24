@@ -21,10 +21,9 @@ const driveVisitor = (dir, node, entry, callback) => {
   })
 }
 
-const createDrive = (uuid, owner, writelist, readlist, fixedOwner) => {
+const createDrive = (conf) => {
 
-  // 
-  return new Drive(uuid, owner, writelist, readlist, fixedOwner)
+  return new Drive(conf)
 }  
 
 /**
@@ -115,12 +114,12 @@ class Drive extends ProtoMapTree {
     return path.join(...nodepath)
   }
 
-  importFile(srcpath, targetNode, filename, callback) {
+  importFile(userUUID, srcpath, targetNode, filename, callback) {
 
     let targetpath = path.join(this.abspath(targetNode), filename) 
     fs.rename(srcpath, targetpath, err => {
       if (err) return callback(err)
-      readXstat2(targetpath, { owner: targetNode.tree.root.owner }, (err, xstat) => {
+      readXstat(targetpath, { owner: [userUUID] }, (err, xstat) => {
         if (err) return callback(err) // FIXME should fake xstat
         let obj = mapXstatToObject(xstat)
         let node = targetNode.tree.createNode(targetNode, obj)
@@ -129,7 +128,7 @@ class Drive extends ProtoMapTree {
     })
   }
 
-  createFolder(targetNode, folderName, callback) {
+  createFolder(userUUID, targetNode, folderName, callback) {
     
     let nodepath = targetNode.nodepath().map(n => n.name)
     let prepend = path.resolve(targetNode.tree.rootpath, '..')
@@ -139,7 +138,7 @@ class Drive extends ProtoMapTree {
 
     fs.mkdir(targetpath, err => {
       if (err) return callback(err)
-      readXstat(targetpath, (err, xstat) => {
+      readXstat(targetpath, { owner: [userUUID] }, (err, xstat) => {
         if (err) return callback(err) // FIXME 
         let obj = mapXstatToObject(xstat)
         let node = targetNode.tree.createNode(targetNode, obj)
@@ -177,6 +176,8 @@ class Drive extends ProtoMapTree {
   }
 
   print(uuid) {
+
+    if (!uuid) uuid = this.root.uuid
     
     let node = this.uuidMap.get(uuid)
     if (!node) {
