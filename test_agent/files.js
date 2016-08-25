@@ -133,7 +133,7 @@ describe(path.basename(__filename) + ': test repo', function() {
 
     it('POST /files should create a folder', function(done) {
       request(app)
-        .post(`/files`)
+        .post('/files')
         .set('Authorization', 'JWT ' + token)
         .set('Accept', 'applicatoin/json')
         .send({ target: drv001UUID, name: 'hello' }) 
@@ -141,21 +141,38 @@ describe(path.basename(__filename) + ': test repo', function() {
         .end((err, res) => {
           if (err) return done(err)
           
-          let { uuid, type, name } = res.body
+          let { uuid, type, name, owner } = res.body
           expect(uuid).to.be.a('string')
           expect(validator.isUUID(uuid)).to.be.true
           expect(type).to.equal('folder')
           expect(name).to.equal('hello') 
+          expect(owner).to.deep.equal([userUUID])
 
+          // from the view point of blackbox test, the following is not necessary
+          // even if such structural info should be verified, using REST api to do it
           let repo = models.getModel('repo')
           let drv = repo.drives.find(drv => drv.uuid === drv001UUID)
           let list = drv.print(drv001UUID) 
-                   
-          // assert relationship
-          // FIXME assert more
           expect(list.find(node => node.uuid === uuid && node.parent === drv001UUID)).to.be.an('object')
           done()
         }) 
     })
+
+    it('POST /files (multipart) should create a file', function(done) {
+      request(app)
+        .post('/files') 
+        .set('Authorization', 'JWT ' + token)
+        .set('Accept', 'application/json')
+        .field('target', drv001UUID)
+        .attach('file', 'graph.png')
+        .field('size', 7744)
+        .field('digest', '7a44a28d1da4e2b99eda6060aab85168fe9d09fa7f91831f9ef7c137cdca5751')
+        .end((err, res) => {
+          console.log(res.body)
+          if (err) return done(err)
+          done()
+        })
+    })
+
   })
 })

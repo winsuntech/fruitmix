@@ -98,6 +98,15 @@ class Repo extends EventEmitter {
     return uuid
   }
 
+  // FIXME real implementation should maintain a table
+  getTmpDirForDrive(drive) {
+    return this.paths.get('tmp') 
+  }
+  
+  findNodeByUUID(uuid) {
+    return this.findNodeInDriveByUUID(uuid)
+  }
+
   findNodeInDriveByUUID(uuid) {
     for (let i = 0; i < this.drives.length; i++) {
       if (this.drives[i].cacheState !== 'CREATED') continue
@@ -154,7 +163,7 @@ class Repo extends EventEmitter {
     let node = this.findNodeInDriveByUUID(targetDirUUID)
     if (!node) return callback(new Error('uuid not found')) 
 
-    node.tree.importFile(srcpath, node, filename, (err, node) => {
+    node.tree.importFile(userUUID, srcpath, node, filename, (err, node) => {
       err ? callback(err) : callback(null, node)
     })
   }
@@ -165,7 +174,7 @@ class Repo extends EventEmitter {
     let node = this.findNodeInDriveByUUID(targetDirUUID)
     if (!node) return callback(new Error('uuid not found'))
 
-    node.tree.createFolder(node, folderName, (err, node) => 
+    node.tree.createFolder(userUUID, node, folderName, (err, node) => 
       err ? callback(err) : callback(null, node))
   }
 

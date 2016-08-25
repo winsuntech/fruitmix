@@ -21,14 +21,13 @@ const driveVisitor = (dir, node, entry, callback) => {
   })
 }
 
-const createDrive = (uuid, owner, writelist, readlist, fixedOwner) => {
+const createDrive = (conf) => {
 
-  // 
-  return new Drive(uuid, owner, writelist, readlist, fixedOwner)
+  return new Drive(conf)
 }  
 
 /**
-  memcache state: 
+  cache state: 
 
             ---------auto---------------------------------- (REMOVING)
             |                                                  ^
@@ -103,25 +102,66 @@ class Drive extends ProtoMapTree {
     })
   }
 
-  // FIXME no state guard
-  unsetRootpath() {
-    this.rootpath = null
-  }
-
+  // get absolute path of node
   abspath(node) {
+
+    if (!this.rootpath) throw new Error('rootpath not set')
+
     let nodepath = node.nodepath().map(n => n.name)
     let prepend = path.resolve(this.rootpath, '..')
     nodepath.unshift(prepend)
     return path.join(...nodepath)
   }
 
-  importFile(srcpath, targetNode, filename, callback) {
+  // this function tried to create a new folder
+  createFolder(userUUID, targetNode, name, callback) {
+
+    if (targetNode.getChildren().find(c => c.name === name))
+      return callback(new Error('folder exists'))
+
+    let targetpath = path.join(this.abspath(targetNode), name)
+
+    fs.mkdir(targetpath, err => {
+      if (err) return callback(err)
+      readXstat(targetpath, { owner: [userUUID] }, (err, xstat) => {
+        if (err) return callback(err)
+        let obj = mapXstatToObject(xstat)
+        let node = targetNode.tree.createNode(targetNode, obj)
+        callback(null, node)
+      })
+    })
+  }
+
+  _importFile(userUUID, srcpath, targetNode, filename) {
+    
+  }
+
+  // this function may OVERWRITE existing file
+  importFile(userUUID, srcpath, targetNode, filename, callback) {
 
     let targetpath = path.join(this.abspath(targetNode), filename) 
+    let existing = targetNode.getChildren().find(c => c.name === filename)
+    if (existing) {
+      // !!! reverse order
+      return copyXattr(srcpath, targetpath, err => {
+        if (err) return callback(err)
+        fs.rename(srcpath, targetpath, err => {
+          if (err) return callback(err)
+          readXstat(targetpath, (err, xstat) => {
+            if (err) return callback(err)
+            let obj = mapXstatToObject(xstat)
+            let tree = existing.tree
+            tree.updateNode(existing, obj)
+            callback(null, existing)
+          })
+        })
+      })
+    }
+
     fs.rename(srcpath, targetpath, err => {
       if (err) return callback(err)
-      readXstat2(targetpath, { owner: targetNode.tree.root.owner }, (err, xstat) => {
-        if (err) return callback(err) // FIXME should fake xstat
+      readXstat(targetpath, { owner: [userUUID] }, (err, xstat) => {
+        if (err) return callback(err)
         let obj = mapXstatToObject(xstat)
         let node = targetNode.tree.createNode(targetNode, obj)
         callback(null, node) 
@@ -129,24 +169,6 @@ class Drive extends ProtoMapTree {
     })
   }
 
-  createFolder(targetNode, folderName, callback) {
-    
-    let nodepath = targetNode.nodepath().map(n => n.name)
-    let prepend = path.resolve(targetNode.tree.rootpath, '..')
-    nodepath.unshift(prepend)
-    nodepath.push(folderName)
-    let targetpath = path.join(...nodepath)
-
-    fs.mkdir(targetpath, err => {
-      if (err) return callback(err)
-      readXstat(targetpath, (err, xstat) => {
-        if (err) return callback(err) // FIXME 
-        let obj = mapXstatToObject(xstat)
-        let node = targetNode.tree.createNode(targetNode, obj)
-        callback(null, node)
-      })
-    })
-  }
 
   renameFileOrFolder(node, newName, callback) {
     fs.rename(this.abspath(node),this.abspath(node.parent)+'/'+newName,(err)=>{
@@ -177,6 +199,8 @@ class Drive extends ProtoMapTree {
   }
 
   print(uuid) {
+
+    if (!uuid) uuid = this.root.uuid
     
     let node = this.uuidMap.get(uuid)
     if (!node) {
@@ -198,7 +222,6 @@ class Drive extends ProtoMapTree {
       queue.push(obj)
     })
 
-    // console.log(queue)
     return queue
   }
 }

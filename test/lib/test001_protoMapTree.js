@@ -697,8 +697,6 @@ describe(path.basename(__filename), function() {
           })
         }) 
       })
-
-
     }) // end of create drive file 
   })
 
