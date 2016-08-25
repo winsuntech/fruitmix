@@ -1,18 +1,18 @@
 import { Router } from 'express'
 import Models from '../models/models'
-
 const UserModel = require('src/models/userModel')
+
 const router = Router()
 
 
-
 router.get('/', (req, res) => {
-  let r = UserModel.data.collection.list.reduce((pre, cur) => pre.concat([{'uuid':cur.uuid, 'avatar':cur.avatar==null?'':cur.avatar, 'username':cur.username}]), [])
+  //console.log(UserModel.data.collection.list);
+  let r = UserModel.data.collection.list.reduce((pre, cur) => pre.concat([{'uuid':cur.uuid, 'avatar':cur.avatar==null?'':cur.avatar, 'email':cur.email, 'username':cur.username}]), [])
+  //res.status(200).end()
   res.status(200).json(r)
 })
 
-
-router.post('/', (req, res) => {
+router.post('/users', (req, res) => {
 
   let User = Models.getModel('user')
 

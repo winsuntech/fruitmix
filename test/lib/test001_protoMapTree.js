@@ -23,7 +23,7 @@ const testData1 = () => {
       node.name = c
       return node
     })
-
+  
   let object = {
     a:          null,
     b:        'a',
@@ -61,7 +61,7 @@ describe(path.basename(__filename), function() {
       it('nodeK path should be a h j k', function(done) { 
         let arr = testData1()
         let nodeK = arr.find(node => node.name === 'k')
-        expect(nodeK.nodepath().map(n => n.name)).to.deep.equal(['a', 'h', 'j', 'k'])
+  	expect(nodeK.nodepath().map(n => n.name)).to.deep.equal(['a', 'h', 'j', 'k'])
         done()
       })
 
@@ -71,7 +71,21 @@ describe(path.basename(__filename), function() {
         expect(nodeG.nodepath().map(n => n.name)).to.deep.equal(['a', 'e', 'g'])
         done()
       })
+
+      
     })
+    
+    describe('children', function() {
+      
+      it ('nodeA children should be b c e h', function(done) {
+        let arr = testData1()
+        let nodeA = arr.find(node => node.name === 'a')
+ 	expect(nodeA.children.map(n => n.name)).to.deep.equal(['b', 'c', 'e', 'h'])
+        done()
+      })
+
+    })
+
   })
 
   describe('new ProtoMapTree()', function() {
@@ -182,6 +196,100 @@ describe(path.basename(__filename), function() {
     })
   })
 
+  describe('modify tree', function() {
+    it('set a new child', function() {
+      let arr = testData1();
+      let nodeA = arr.find(node => node.name === 'a')
+      let nodeZ = arr.find(node => node.name === 'z')
+      nodeA.setChild(nodeZ);  
+      expect(nodeA.children.map(n => n.name)).to.deep.equal(['b', 'c', 'e', 'h', 'z'])
+    })
+    
+    it('unset a new child', function() {
+      let arr = testData1();
+      let nodeA = arr.find(node => node.name === 'a')
+      let nodeB = arr.find(node => node.name === 'b')
+      nodeA.unsetChild(nodeB);  
+      expect(nodeA.children.map(n => n.name)).to.deep.equal(['c', 'e', 'h'])
+    })
+
+    it('attach parent', function() {
+      let arr=testData1();
+      let nodeA = arr.find(node => node.name === 'a')
+      let nodeZ = arr.find(node => node.name === 'z')
+      nodeZ.attach(nodeA);  
+      expect(nodeA.children.map(n => n.name)).to.deep.equal(['b', 'c', 'e', 'h', 'z'])
+    })
+    
+    it('detach parent', function() {
+      let arr=testData1();
+      let nodeA = arr.find(node => node.name === 'a')
+      let nodeB = arr.find(node => node.name === 'b')
+      nodeB.detach();  
+      expect(nodeA.children.map(n => n.name)).to.deep.equal(['c', 'e', 'h'])
+    })
+
+  })
+
+  describe('get part of tree', function() {
+    it('get children by getChildren()', function(){
+      let arr = testData1();
+      let nodeA = arr.find(node => node.name === 'a')
+      expect(nodeA.children.map(n => n.name)).to.deep.equal(['b', 'c', 'e', 'h'])
+    })
+  })
+  
+  describe('traversal tree', function() {
+    it('upEach', function() { 
+        let arr = testData1()
+        let nodeG = arr.find(node => node.name === 'g')
+        let arr2 = []
+        nodeG.upEach(node => arr2.push(node))
+        expect(arr2.map(n=>n.name)).to.deep.equal(['g', 'e', 'a'])
+    })
+    
+    it('upFind', function() {
+      let arr = testData1()
+      let nodeG = arr.find(node => node.name === 'g')
+
+      expect(nodeG.upFind(node => node.name==='e').name==='e');
+      expect(nodeG.upFind(node => node.name==='z')===undefined);
+ 
+    }) 
+    
+    it('preVisit', function() {
+      let arr = testData1()
+      let nodeA = arr.find(node => node.name === 'a')
+      let arr2 = []
+      nodeA.preVisit(node => arr2.push(node.name));
+      expect(arr2).to.deep.equal([ 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n' ]) 
+    })
+    
+   it('postVisit', function() {
+      let arr = testData1()
+      let nodeA = arr.find(node => node.name === 'a')
+      let arr2 = []
+      nodeA.postVisit(node => arr2.push(node.name)); 
+      expect(arr2).to.deep.equal([ 'b', 'd', 'c', 'f', 'g', 'e', 'i', 'k', 'j', 'm', 'n', 'l', 'h', 'a' ]) 
+    })
+
+    it('preVisitEol', function() {
+      let arr = testData1()
+      let nodeA = arr.find(node => node.name === 'a')
+      let arr2 = []
+      nodeA.preVisitEol(node => ( arr2.push(node.name), node.name!=='e')); 
+      expect(arr2).to.deep.equal([ 'a', 'b', 'c', 'd', 'e', 'h', 'i', 'j', 'k', 'l', 'm', 'n' ]) 
+    })
+    
+    it('preVisitFind', function() {
+      let arr = testData1()
+      let nodeA = arr.find(node => node.name === 'a')
+      expect(nodeA.preVisitFind(node => node.name==='e').name==='e'); 
+      expect(nodeA.preVisitFind(node => node.name==='z')===undefined); 
+    })
+
+  })
+/*
   describe('drive file operation', function() {
 
     describe('import drive file', function() {
@@ -505,4 +613,182 @@ describe(path.basename(__filename), function() {
       })
     }) // end of create drive file 
   })
+
+  describe('library file operation', function() {
+
+    describe('import library file', function() {
+      // tmptest/${userUUID}/ <- target folder
+      // tmptest/hello <- file to be moved
+
+      let userUUID1 = UUID.v4()
+      let drivepath = path.join(process.cwd(), `tmptest/${userUUID1}`)
+      let srcpath = path.join(process.cwd(), 'tmptest', 'hello')
+
+      it('should import a file into given library folder', function(done) {
+
+        rimraf('tmptest', err => {
+          if (err) return done(err)
+          mkdirp(`tmptest/${userUUID1}/`, err => {
+            if (err) return done(err)
+            let preset = {
+              uuid: UUID.v4(),
+              owner: [UUID.v4()],
+              writelist: [UUID.v4()],
+              readlist: [UUID.v4()],
+              hash: '123456',
+              htime: -1
+            }
+
+            xattr.set(drivepath, 'user.fruitmix', JSON.stringify(preset), err => {
+              if (err) return done(err)
+              fs.writeFile('tmptest/hello', preset.hash, err => {
+                if (err) return done(err) 
+                createProtoMapTree(drivepath, 'library', (err, tree) => {
+                  if (err) return done(err)
+
+                  tree.importFile(srcpath, tree.root, preset.hash, (err, node) => {
+                    if (err) return done(err) 
+                    fs.stat(path.join(drivepath, preset.hash), (err, stat) => {
+                      if (err) return done(err)
+
+                      let children = tree.root.children
+                      let child = children[0]
+                      expect(children.length).to.equal(1)
+                      expect(child.type).to.equal('file')
+                      expect(child.name).to.equal('123456')
+                      done()
+                    })
+                  })
+                })
+              })
+            })
+          })
+        }) 
+      })
+
+      it('should update a file', function(done) {
+
+        rimraf('tmptest', err => {
+          if (err) return done(err)
+          mkdirp(`tmptest/${userUUID1}/`, err => {
+            if (err) return done(err)
+            let preset = {
+              uuid: 'ced8e0b0-071d-442b-94e2-b3574002000a',
+              owner: ['ced8e0b0-071d-442b-94e2-b3574002000b'],
+              writelist: ['ced8e0b0-071d-442b-94e2-b3574002000c'],
+              readlist: ['ced8e0b0-071d-442b-94e2-b3574002000d'],
+              hash: '654321',
+              htime: -1
+            }
+
+            let newset = {
+              uuid: 'ced8e0b0-071d-442b-94e2-b3574002000e',
+              owner: ['ced8e0b0-071d-442b-94e2-b3574002000f'],
+              writelist: ['ced8e0b0-071d-442b-94e2-b3574002000g'],
+              readlist: ['ced8e0b0-071d-442b-94e2-b3574002000h'],
+              hash: '123456',
+              htime: 0
+            }
+
+            xattr.set(drivepath, 'user.fruitmix', JSON.stringify(preset), err => {
+              if (err) return done(err)
+              fs.writeFile('tmptest/hello', 'world', err => {
+                if (err) return done(err) 
+                createProtoMapTree(drivepath, 'library', (err, tree) => {
+                  if (err) return done(err)
+                  tree.scan(() => {
+    
+                    tree.importFile(srcpath, tree.root.children[0], '654321', (err, node) => {
+                      if (err) return done(err) 
+                      fs.stat(path.join(drivepath, '654321'), (err, stat) => {
+                        if (err) return done(err)
+
+                        let children = tree.root.children[0].children
+                        let child = children[0]
+                        expect(children.length).to.equal(1)
+                        expect(child.type).to.equal('file')
+                        expect(child.name).to.equal('654321')
+                        tree.updateLibraryFile(tree.root.children[0].children[0],newset,err=>{
+                          expect(tree.root.children[0].children[0].uuid).to.equal('ced8e0b0-071d-442b-94e2-b3574002000e')
+                          expect(tree.root.children[0].children[0].owner).to.deep.equal(['ced8e0b0-071d-442b-94e2-b3574002000f'])
+                          expect(tree.root.children[0].children[0].writelist).to.deep.equal(['ced8e0b0-071d-442b-94e2-b3574002000g'])
+                          expect(tree.root.children[0].children[0].readlist).to.deep.equal(['ced8e0b0-071d-442b-94e2-b3574002000h'])
+                          expect(tree.root.children[0].children[0].hash).to.equal('123456')
+                          expect(tree.root.children[0].children[0].name).to.equal('123456')
+                          expect(tree.root.children[0].children[0].htime).to.equal(0)
+                          done()
+                        })
+                      })
+                    })
+                  })
+                })
+              })
+            })
+          })
+        }) 
+      })
+
+      // it('should update a folder', function(done) {
+
+      //   rimraf('tmptest', err => {
+      //     if (err) return done(err)
+      //     mkdirp(`tmptest/${userUUID1}/world`, err => {
+      //       if (err) return done(err)
+      //       let preset = {
+      //         uuid: "ced8e0b0-071d-442b-94e2-b3574002000a",
+      //         owner: ["ced8e0b0-071d-442b-94e2-b3574002000b"],
+      //         writelist: ["ced8e0b0-071d-442b-94e2-b3574002000c"],
+      //         readlist: ["ced8e0b0-071d-442b-94e2-b3574002000d"],
+      //         hash: null,
+      //         htime: -1
+      //       }
+
+      //       let newset = {
+      //         uuid: "ced8e0b0-071d-442b-94e2-b3574002000e",
+      //         owner: ["ced8e0b0-071d-442b-94e2-b3574002000f"],
+      //         writelist: ["ced8e0b0-071d-442b-94e2-b3574002000g"],
+      //         readlist: ["ced8e0b0-071d-442b-94e2-b3574002000h"],
+      //         hash: "123456",
+      //         htime: 0
+      //       }
+
+      //       xattr.set(drivepath, 'user.fruitmix', JSON.stringify(preset), err => {
+      //         if (err) return done(err)
+      //         fs.writeFile('tmptest/hello', 'world', err => {
+      //           if (err) return done(err) 
+      //           createProtoMapTree(drivepath, 'drive', (err, tree) => {
+      //             if (err) return done(err)
+      //             tree.scan(() => {
+
+      //               tree.importFile(srcpath, tree.root.children[0], 'hello', (err, node) => {
+      //                 if (err) return done(err) 
+      //                 fs.stat(path.join(drivepath, 'world', 'hello'), (err, stat) => {
+      //                   if (err) return done(err)
+
+      //                   let children = tree.root.children[0].children
+      //                   let child = children[0]
+      //                   expect(children.length).to.equal(1)
+      //                   expect(child.type).to.equal('file')
+      //                   expect(child.name).to.equal('hello')
+      //                   tree.updateDriveFile(tree.root.children[0],newset,err=>{
+      //                     expect(tree.root.children[0].uuid).to.equal('ced8e0b0-071d-442b-94e2-b3574002000e')
+      //                     expect(tree.root.children[0].owner).to.deep.equal(['ced8e0b0-071d-442b-94e2-b3574002000f'])
+      //                     expect(tree.root.children[0].writelist).to.deep.equal(['ced8e0b0-071d-442b-94e2-b3574002000g'])
+      //                     expect(tree.root.children[0].readlist).to.deep.equal(['ced8e0b0-071d-442b-94e2-b3574002000h'])
+      //                     expect(tree.root.children[0].hash).to.equal('123456')
+      //                     expect(tree.root.children[0].htime).to.equal(0)
+      //                     done()
+      //                   })
+      //                 })
+      //               })
+      //             })
+      //           })
+      //         })
+      //       })
+      //     })
+      //   }) 
+      // })
+
+    }) // end of create library file 
+})*/
 })

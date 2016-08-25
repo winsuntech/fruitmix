@@ -11,6 +11,7 @@ import auth from './middleware/auth'
 import system from './lib/system'
 
 import init from './routes/init'
+import users from './routes/users'
 import login from './routes/login'
 import files from './routes/files'
 import drives from './routes/drives'
@@ -37,7 +38,7 @@ app.use('/login', login)
 
 app.use('/token', require('./routes/token'))
 
-// app.use('/users', require('./routes/users'))
+app.use('/users', users)
 
 app.use('/drives', drives)
 app.use('/files', files)
