@@ -23,10 +23,10 @@ describe("src/routes/users.js", function() {
   })
 
 
-  describe('GET /login', () => {
+  describe('GET /users', () => {
     it('return empty set when no user exists', (done) => {
       request(app)
-        .get('/login')
+        .get('/users')
         .set('Accept', 'application/json')
         .expect(200)
         .end((err, res) => { 
@@ -39,12 +39,12 @@ describe("src/routes/users.js", function() {
     it('return full set when user exists', (done) => {
       UserModel.data.createUser(createData).then(()=>{
         request(app)
-          .get('/login')
+          .get('/users')
           .set('Accept', 'application/json')
           .expect(200)
           .end((err, res) => { 
              if(err) return done(err);
-             expect(res.body).to.deep.equal([{'avatar':'', 'username':'u1', 'uuid':UserModel.data.collection.list[0].uuid}]);
+             expect(res.body).to.deep.equal([{'avatar':'', 'email':'aaa@bbb.com', 'username':'u1', 'uuid':UserModel.data.collection.list[0].uuid}]);
              done();
            })
       })

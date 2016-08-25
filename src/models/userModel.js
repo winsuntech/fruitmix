@@ -52,7 +52,6 @@ class UserModel {
     type = type || 'user'
 
     let uuid = UUID.v4()    
-
     let salt = await bcrypt.genSaltAsync(10)     
     let hash = await bcrypt.hashAsync(password, salt)
 
