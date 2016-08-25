@@ -22,11 +22,11 @@ const driveVisitor = (dir, node, entry, callback) => {
 }
 
 const createDrive = (conf) => {
-
   return new Drive(conf)
 }  
 
-/**
+/****
+
   cache state: 
 
             ---------auto---------------------------------- (REMOVING)
@@ -44,7 +44,8 @@ const createDrive = (conf) => {
             ----auto------------- (ABORTING)
 
 
-**/
+****/
+
 // a drive tree is a in-memory caching and indexing layer for given virtual drive.
 class Drive extends ProtoMapTree {
 
@@ -106,7 +107,6 @@ class Drive extends ProtoMapTree {
   abspath(node) {
 
     if (!this.rootpath) throw new Error('rootpath not set')
-
     let nodepath = node.nodepath().map(n => n.name)
     let prepend = path.resolve(this.rootpath, '..')
     nodepath.unshift(prepend)
@@ -114,7 +114,12 @@ class Drive extends ProtoMapTree {
   }
 
   // this function tried to create a new folder
-  createFolder(userUUID, targetNode, name, callback) {
+  createFolder(userUUID, targetNode, name, opts, callback) {
+
+    if (typeof opts === 'function') {
+      callback = opts
+      opts = {}
+    }
 
     if (targetNode.getChildren().find(c => c.name === name))
       return callback(new Error('folder exists'))
@@ -132,8 +137,11 @@ class Drive extends ProtoMapTree {
     })
   }
 
-  _importFile(userUUID, srcpath, targetNode, filename) {
+  // this function is used to check if it is allowed and viable to do importFile
+  // return true or false
+  importFileCheck(userUUID, targetNode, filename) {
     
+    return true
   }
 
   // this function may OVERWRITE existing file
@@ -169,12 +177,32 @@ class Drive extends ProtoMapTree {
     })
   }
 
+  // rename 
+  renameFileOrFolder(userUUID, targetNode, newName, opts, callback) {
 
-  renameFileOrFolder(node, newName, callback) {
-    fs.rename(this.abspath(node),this.abspath(node.parent)+'/'+newName,(err)=>{
+    if (typeof opts === 'function') {
+      callback = opts
+      opts = {}
+    }
+
+    if (!this.uuidMap.has(targetNode.uuid))
+      return process.netTick(callback, new Error('node does not belong to this drive'))
+
+    if (targetNode === this.root)
+      return process.nextTick(callback, new Error('root node cannot be renamed'))
+
+    if (!opts.priviledged) {
+      // do permission check here TODO
+    }
+
+    let targetpath = this.abspath(targetNode)
+    let parentpath = this.abspath(targetNode.parent)
+    let newpath = path.join(parentpath, newName)
+
+    fs.rename(targetpath, newpath, err => {
       if (err) return callback(err)
-      node.name=newName
-      callback(null,node)
+      targetNode.name = newName
+      callback(null,targetNode)
     })
   }
 
@@ -186,22 +214,9 @@ class Drive extends ProtoMapTree {
     })
   }
 
-  updateDriveFile(node,fruitmix,callback) {
-    node.writelist=fruitmix.writelist
-    node.readlist = fruitmix.readlist
-    node.owner = fruitmix.owner
-    node.hash = fruitmix.hash
-    node.uuid = fruitmix.uuid
-    node.htime = fruitmix.htime
-    updateXattrPermissionAsync(this.abspath(node),fruitmix)
-    updateXattrHashAsync(this.abspath(node),fruitmix.hash,fruitmix.htime)
-    callback(null, node)
-  }
-
   print(uuid) {
 
     if (!uuid) uuid = this.root.uuid
-    
     let node = this.uuidMap.get(uuid)
     if (!node) {
       console.log(`no node found to have uuid: ${uuid}`)

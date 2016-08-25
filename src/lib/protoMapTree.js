@@ -134,7 +134,7 @@ class ProtoMapTree extends EventEmitter {
     // file only, for file without hashmagic
     this.hashless = new Set()
     // folder only, for folder with writer/reader other than drive owner
-    this.shares = new Set()
+    this.shared = new Set()
 
     this.root = null
   } 
@@ -143,6 +143,8 @@ class ProtoMapTree extends EventEmitter {
     return this.root.uuid
   }
 
+  // using whitelist for props, aka, builder pattern, this will
+  // ease the indexing maintenance when updating props
   createNode(parent, flatObject) {
 
     if (!flatObject.uuid) throw new Error('node object must have uuid property')
@@ -220,6 +222,82 @@ class ProtoMapTree extends EventEmitter {
     let parent = this.uuidMap.get(parentUUID)
     if (!parent) return null
     return this.createProtoNode(parent, content)
+  }
+
+  fileHashInstall(node, hash, magic) {
+
+    if (!hash) {
+      this.hashless.add(node)
+      return
+    }
+    
+    let digestObj = this.hashMap.get(hash)
+    if (digestObj) {
+      digestObj.nodes.push(node)
+      return 
+    } 
+
+    let meta = magicToMeta(magic)
+    if (meta) {
+      digestObj = {
+        meta,
+        nodes: [node]
+      }
+      this.hashMap.set(hash, digestObj)
+      node.hash = hash
+    }
+  }
+
+  fileHashUninstall(node) {
+
+    // if no hash
+    if (!node.hash) {
+      if (this.hashless.has(node)) 
+        this.hashless.delete(node)
+      return
+    }
+
+    // retrieve digest object
+    let digestObj = this.hashMap.get(node.hash)
+    if (!digestObj) throw new Error('hash (' + node.hash + ') not found in hashmap)')
+    
+    // find in node array
+    let index = digestObj.nodes.find(x => x === node)
+    if (index === -1) throw new Error('hash (' + node.hash + ') not found in digest object node array')
+
+    // remove and delete hash property
+    digestObj.nodes.splice(index, 1)
+    delete node.hash
+
+    // destory digest object if this is last one
+    if (digestObj.nodes.length === 0)
+      this.hashMap.delete(hash)
+  }
+
+  updateFileHash(node, hash, magic) {
+  
+    fileHashUninstall(node)
+    fileHashInstall(node, hash, magic)
+  }
+
+  sharedInstall( ) {
+  }
+
+  sharedUninstall() {
+  }
+
+  updatePermission(node, writelist, readlist) {
+    
+    if (this.shared.has(node)) this.shared.delete(node)
+    
+    let driveOwner = node.tree.root.owner
+    
+  }
+
+  updateOwner(node, owner) {
+  }
+
+  updateMtime(node, mtime) {
   }
 
   // there are several reasons to change a node

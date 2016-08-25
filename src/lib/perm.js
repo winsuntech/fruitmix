@@ -1,9 +1,5 @@
 
-// nodeWriteList
-// nodeReadList
-// nodeRootOwner
 
-// node is Node, or at least, has parent
 
 class PermCheck {
 
@@ -64,3 +60,4 @@ const nodeUserReadable = (node, user) => {
 }
 
 export { nodeUserReadable,nodeUserWritable}
+
