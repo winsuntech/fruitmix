@@ -1,6 +1,7 @@
 import EventEmitter from 'events'
 import deepEqual from 'deep-equal'
 
+// These are tree node operations
 const nodeProperties = {
 
   root() {
@@ -79,8 +80,16 @@ const nodeProperties = {
 
   preVisitFind(func) {
     if (func(this)) return this
-    if(this.children==undefined) return undefined
+    if(this.children === undefined) return undefined
     return this.children.find(child => child.preVisitFind(func))
+  },
+
+  isFile() {
+    this.type === 'file'
+  },
+
+  isDirectory() {
+    this.type === 'folder'
   }
 }
 
@@ -140,23 +149,38 @@ class ProtoMapTree extends EventEmitter {
     this.root = null
   } 
 
+  //
+  verify(node) {
+    
+  }
+
   uuid() {
     return this.root.uuid
   }
 
+  // parent, children 
+  // uuid, type
+  // owner, writelist, readlist
+  // mtime, size
+  // hash
+
   // using whitelist for props, aka, builder pattern, this will
   // ease the indexing maintenance when updating props
-  createNode(parent, flatObject) {
+  createNode(parent, props) {
 
-    if (!flatObject.uuid) throw new Error('node object must have uuid property')
-    if (!flatObject.type) throw new Error('node object must have type property')
-    if (flatObject.type !== 'file' && flatObject.type !== 'folder') 
-      throw new Error('node object type must be either file or folder')
-
-    if (parent === null && flatObject.type !== 'folder')
-      throw new Error('root object type must be folder')
-  
+    // create empty object
     let node = Object.create(this.proto)
+
+    // set uuid
+    if (!props.uuid) throw new Error('props must have uuid property')
+    node.uuid = props.uuid 
+
+    // set type
+    if (!props.type) throw new Error('props must have type property')
+    if (props.type !== 'file' && props.type !== 'folder') throw new Error('type must be file or folder')
+    if (parent === null && props.type !== 'folder') throw new Error('root object type must be folder')
+    node.type = props.type
+ /** 
     for (let prop in flatObject) {
       if (flatObject.hasOwnProperty(prop) && 
           !deepEqual(flatObject[prop], this.proto[prop])) {
@@ -164,7 +188,28 @@ class ProtoMapTree extends EventEmitter {
         node[prop] = flatObject[prop]
       }
     }
+**/
+    // set name
+    node.name = props.name
 
+    // set owner if different from proto
+    if (!deepEqual(props.owner, this.proto.owner)) {
+      node.owner = props.owner
+    }
+
+    // set writelist and readlist if any
+    if (props.writelist) {
+      node.writelist = props.writelist
+      node.readlist = props.readlist
+    }
+
+    // size and mtime
+    if (node.isFile()) {
+      node.size = props.size
+      node.mtime = props.mtime
+    }
+
+    // set structural relationship
     if (parent === null) {
       if (this.root) throw new Error('root already set')
       node.parent = null // TODO: should have a test case for this !!! this may crash forEach
@@ -173,48 +218,18 @@ class ProtoMapTree extends EventEmitter {
     else {
       node.attach(parent)
     }
-
+     
     // set uuid indexing
     this.uuidMap.set(node.uuid, node)
 
     // set digest indexing
-    if (node.type === 'file') {
-      if (node.magic) {
-        let digestObj = this.hashMap.get(node.hash)
-        if (digestObj) {
-          // if digest obj exists, add node to list
-          digestObj.nodes.push(node)
-        }
-        else {
-          // extract meta from magic
-          let meta = magicToMeta(node.magic)
-          if (meta) {
-            // if meta, create new digest obj  
-            digestObj = {
-              meta: meta,
-              nodes: [node]
-            }  
-            this.hashMap.set(node.hash, digestObj)
-          }
-          else {
-            // no meta, then remove hash and magic, they are not interested anymore
-            delete node.hash
-            delete node.magic
-          }
-        }
-      }
-      else { // hashless
-        this.hashless.add(this.node)
-      }
+    if (node.isFile()) {
+      fileHashInstall(node, props.hash, props.magic)
     }
-    else if (node.type === 'folder') {
-      // TODO logic for share
-    }
-    else {
-      // do nothing or throw an error if you wish
+    else if (node.isDirectory()) {
+      if (node.writelist) this.shared.add(node)  
     }
 
-    // this.hashMapSet(node)
     return node
   }
 
@@ -258,6 +273,8 @@ class ProtoMapTree extends EventEmitter {
       return
     }
 
+    let hash = node.hash // TODO
+
     // retrieve digest object
     let digestObj = this.hashMap.get(node.hash)
     if (!digestObj) throw new Error('hash (' + node.hash + ') not found in hashmap)')
@@ -281,33 +298,20 @@ class ProtoMapTree extends EventEmitter {
     fileHashInstall(node, hash, magic)
   }
 
-  sharedInstall( ) {
-  }
+  updatePermission(node, rwObj) {
+    
+    let obj = Object.assign({
+      writelist: node.writelist,
+      readlist: node.readlist,  
+    }, rwObj)
 
-  sharedUninstall() {
-  }
-
-  updatePermission(node, writelist, readlist) {
-    
-    if (this.shared.has(node)) this.shared.delete(node)
-    
-    let driveOwner = node.tree.root.owner
-    
+     
   }
 
   updateOwner(node, owner) {
   }
 
   updateMtime(node, mtime) {
-  }
-
-  // there are several reasons to change a node
-  // 1. structural change, that is, change parent, equivalent to move
-  // 2. permission change, writelist, readlist, owner (which is not used probably)
-  // 3. file metadata change (name)
-  // 4. file data change (mtime, size possibly)
-  updateNode(node, props) {
-    // this method should be split into several ones. 
   }
 
   // this function delete one leaf node

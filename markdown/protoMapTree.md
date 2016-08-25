@@ -29,7 +29,12 @@ The tree (class) object looks like:
   children: array,      // structural, undefined or node array, if array is empty, must be undefined
 
   uuid: string,         // identity, can not be changed
+
   type: string,         // folder or file, can not be changed
+
+  owner: uuid array,    // may be []
+  writelist: uuid array,  // may be [] or undefined
+  readlist: uuid array,   // may be [] or undefined
 
   mtime: number,        // folder and file
   size: number,         // file only
