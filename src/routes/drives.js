@@ -33,7 +33,6 @@ router.get('/', auth.jwt(), (req, res) => {
   let repo = Models.getModel('repo')
   let { drives } = repo
   
-  // console.log(drives)
   let objs = drives.map(drv => {
 
     let obj = {
@@ -55,7 +54,7 @@ router.get('/', auth.jwt(), (req, res) => {
         obj.uuidMapSize = drv.uuidMap.size 
         obj.hashMapSize = drv.hashMap.size
         obj.hashlessSize = drv.hashless.size
-        obj.sharesSize = drv.shares.size
+        obj.sharedSize = drv.shared.size
       }
     }
 
@@ -64,6 +63,5 @@ router.get('/', auth.jwt(), (req, res) => {
 
   return res.status(200).json(objs)
 }) 
-
 
 export default router

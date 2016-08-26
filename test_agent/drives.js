@@ -136,6 +136,9 @@ describe(path.basename(__filename) + ': test repo', function() {
         .set('Accept', 'application/json')
         .expect(200)
         .end(function(err, res) {
+
+          if (err) return done(err)          
+
           let arr = res.body
           // sort by label
           arr.sort(function(a, b) {
@@ -158,7 +161,7 @@ describe(path.basename(__filename) + ': test repo', function() {
               uuidMapSize: 1,
               hashMapSize: 0,
               hashlessSize: 0,
-              sharesSize: 0 
+              sharedSize: 0 
             },
             { 
               label: 'drv002',
@@ -174,7 +177,7 @@ describe(path.basename(__filename) + ': test repo', function() {
               uuidMapSize: 1,
               hashMapSize: 0,
               hashlessSize: 0,
-              sharesSize: 0 
+              sharedSize: 0 
             } 
           ]
           expect(arr).to.deep.equal(expected) 

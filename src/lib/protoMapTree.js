@@ -154,6 +154,7 @@ class ProtoMapTree extends EventEmitter {
     
   }
 
+  //
   uuid() {
     return this.root.uuid
   }
@@ -180,15 +181,7 @@ class ProtoMapTree extends EventEmitter {
     if (props.type !== 'file' && props.type !== 'folder') throw new Error('type must be file or folder')
     if (parent === null && props.type !== 'folder') throw new Error('root object type must be folder')
     node.type = props.type
- /** 
-    for (let prop in flatObject) {
-      if (flatObject.hasOwnProperty(prop) && 
-          !deepEqual(flatObject[prop], this.proto[prop])) {
 
-        node[prop] = flatObject[prop]
-      }
-    }
-**/
     // set name
     node.name = props.name
 
@@ -222,7 +215,7 @@ class ProtoMapTree extends EventEmitter {
     // set uuid indexing
     this.uuidMap.set(node.uuid, node)
 
-    // set digest indexing
+    // set digest indexing for file, or shared for folder
     if (node.isFile()) {
       fileHashInstall(node, props.hash, props.magic)
     }
@@ -293,31 +286,57 @@ class ProtoMapTree extends EventEmitter {
   }
 
   updateFileHash(node, hash, magic) {
-  
+
     fileHashUninstall(node)
     fileHashInstall(node, hash, magic)
   }
 
-  updatePermission(node, rwObj) {
-    
-    let obj = Object.assign({
-      writelist: node.writelist,
-      readlist: node.readlist,  
-    }, rwObj)
-
-     
+  updateOwner(node, owner) {
+    node.owner = owner 
   }
 
-  updateOwner(node, owner) {
+  updateShare(node, writelist, readlist) {
+
+    if (writelist) 
+      node.writelist = writelist
+    else
+      delete node.writelist
+
+    if (readlist)
+      node.readlist = readlist
+    else
+      delete node.readlist
+
+    if (node.writelist)
+      this.shared.add(node)
+    else
+      this.shared.delete(node)
+  }
+
+  updateName(node, name) {
+    node.name = name
   }
 
   updateMtime(node, mtime) {
+    if (!node.isFile()) throw new Error('only file allows mtime update')
+    node.mtime = mtime
   }
 
   // this function delete one leaf node
   // for delete a sub tree, using higher level method
   deleteNode(node) {
+
+    if (node === this.root) throw new Error('deleting root disallowed')
     if (node.children) throw new Error('node has children, cannot be deleted')
+
+    if (node.isFile()) {
+      fileHashUninstall(node)
+    }
+    else if (node.isDirectory()) {
+      this.shared.delete(node) // ignore true or false
+    }
+    
+    this.uuidMap.delete(node.uuid) 
     node.detach()
     return node
   }
@@ -326,6 +345,10 @@ class ProtoMapTree extends EventEmitter {
     let node = this.uuidMap.get(uuid)
     if (!node) return null
     return this.deleteNode(node)
+  }
+
+  deleteSubTree(node) {
+    node.postVisit(n => n.tree.deleteNode(n)) 
   }
 }
 

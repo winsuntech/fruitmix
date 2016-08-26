@@ -13,13 +13,13 @@ class FlyWeightList {
   getIndex(userlist) {
 
     if (userlist === '*') return 0
-    if (Array.isArray(userlist) && userlist.length === 0) return 1
+    if (Array.isArray(userlist) && !userlist.length) return 1
     
     let dedup = [...userlist].sort()
       .filter((item, index, array) => 
         !index || item !== array[index - 1])
 
-    let join = dedup.join(':')
+    let join = dedup.join()
 
     let index = this.map.get(join) 
     if (index !== undefined) return index

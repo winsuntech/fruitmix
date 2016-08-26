@@ -61,7 +61,7 @@ describe(path.basename(__filename), function() {
       it('nodeK path should be a h j k', function(done) { 
         let arr = testData1()
         let nodeK = arr.find(node => node.name === 'k')
-  	expect(nodeK.nodepath().map(n => n.name)).to.deep.equal(['a', 'h', 'j', 'k'])
+  	    expect(nodeK.nodepath().map(n => n.name)).to.deep.equal(['a', 'h', 'j', 'k'])
         done()
       })
 
@@ -80,7 +80,7 @@ describe(path.basename(__filename), function() {
       it ('nodeA children should be b c e h', function(done) {
         let arr = testData1()
         let nodeA = arr.find(node => node.name === 'a')
- 	expect(nodeA.children.map(n => n.name)).to.deep.equal(['b', 'c', 'e', 'h'])
+ 	      expect(nodeA.children.map(n => n.name)).to.deep.equal(['b', 'c', 'e', 'h'])
         done()
       })
 
@@ -125,8 +125,12 @@ describe(path.basename(__filename), function() {
   describe('create root', function() {
 
     let uuid1 = '1e15e8ce-7ae4-43f4-8d9f-285c1f28dfac'
+    let uuid2 = '5da92303-33a1-4f79-8d8f-a7b6becde6c3'
+    let uuid3 = 'b9aa7c34-8b86-4306-9042-396cf8fa1a9c'
+    let uuid4 = 'f97f9e1f-848b-4ed4-bd47-1ddfa82b2777'
+
     let digest1 = 'e14bfc54f20117011c716706ba9c4879a07f6a882d34766eda70ec5bbfe54e0e'
-    let root = { uuid: uuid1, hash: digest1, type:'folder', a: 1 }
+    let root = { uuid: uuid1, hash: digest1, type:'folder' }
     let proto = { x: 1, y: 2, z: ['hello', 1] }
     let t
   
@@ -157,12 +161,26 @@ describe(path.basename(__filename), function() {
 
     it('root should preserve root object props', function() {
 
+      let root = { 
+        uuid: uuid1, 
+        type: 'folder', 
+        owner: [uuid2],  
+        writelist: [uuid3],
+        readlist: [uuid4],
+        name: 'hello',
+        mtime: 123456,
+        hash: 234567
+      }
       t.createNode(null, root)
 
-      expect(t.root.a).to.equal(root.a)
       expect(t.root.uuid).to.equal(root.uuid)
-      expect(t.root.hash).to.equal(root.hash)
       expect(t.root.type).to.equal(root.type)
+      expect(t.root.owner).to.deep.equal(root.owner)
+      expect(t.root.writelist).to.deep.equal(root.writelist)
+      expect(t.root.readlist).to.deep.equal(root.readlist)
+      expect(t.root.name).to.equal(root.name)
+      expect(t.root.hasOwnProperty('mtime')).to.be.false
+      expect(t.root.hasOwnProperty('hash')).to.be.false
     }) 
 
     it('root should have correct parent/children set', function() {

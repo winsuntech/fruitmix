@@ -199,9 +199,10 @@ class Drive extends ProtoMapTree {
     let parentpath = this.abspath(targetNode.parent)
     let newpath = path.join(parentpath, newName)
 
+    // rename file first
     fs.rename(targetpath, newpath, err => {
       if (err) return callback(err)
-      targetNode.name = newName
+      this.updateName(targetNode)
       callback(null,targetNode)
     })
   }
