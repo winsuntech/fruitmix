@@ -292,7 +292,7 @@ class ProtoMapTree extends EventEmitter {
       this.hashMap.delete(hash)
   }
 
-  updateFileHash(node, hash, magic) {
+  updateHashMagic(node, hash, magic) {
 
     this.fileHashUninstall(node)
     this.fileHashInstall(node, hash, magic)
