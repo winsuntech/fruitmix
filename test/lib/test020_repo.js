@@ -95,7 +95,6 @@ describe(path.basename(__filename), function() {
       return prepare()
     })      
   
-    // TODO should split
     it('should create a repo, with paths, driveModel, drive, and state properly set', function() {
       let driveModel = models.getModel('drive')
       let repo = createRepo(paths, driveModel)
@@ -104,6 +103,25 @@ describe(path.basename(__filename), function() {
       expect(repo.drives).to.be.an('array')
       expect(repo.drives.length).to.equal(0)
       expect(repo.initState).to.equal('IDLE')
+    })
+  })
+
+  describe('repo init', function(done) {
+    
+    beforeEach(function() {
+      return prepare()
+    }) 
+
+    it('should transit to INITIALIZING state then INITIALIZED, with two drives with correct uuid', function(done) {
+      let driveModel = models.getModel('drive')
+      let repo = createRepo(paths, driveModel)
+      repo.init(() => {
+        expect(repo.initState).to.equal('INITIALIZED')
+        expect(repo.drives.length).to.equal(2)
+        expect(repo.drives.map(drv => drv.uuid).sort()).to.deep.equal([drv002UUID, drv001UUID])
+        done()
+      })
+      expect(repo.initState).to.equal('INITIALIZING')
     })
   })
 

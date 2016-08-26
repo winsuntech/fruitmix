@@ -85,11 +85,11 @@ const nodeProperties = {
   },
 
   isFile() {
-    this.type === 'file'
+    return this.type === 'file'
   },
 
   isDirectory() {
-    this.type === 'folder'
+    return this.type === 'folder'
   }
 }
 
@@ -217,7 +217,7 @@ class ProtoMapTree extends EventEmitter {
 
     // set digest indexing for file, or shared for folder
     if (node.isFile()) {
-      fileHashInstall(node, props.hash, props.magic)
+      this.fileHashInstall(node, props.hash, props.magic)
     }
     else if (node.isDirectory()) {
       if (node.writelist) this.shared.add(node)  
@@ -294,8 +294,8 @@ class ProtoMapTree extends EventEmitter {
 
   updateFileHash(node, hash, magic) {
 
-    fileHashUninstall(node)
-    fileHashInstall(node, hash, magic)
+    this.fileHashUninstall(node)
+    this.fileHashInstall(node, hash, magic)
   }
 
   updateOwner(node, owner) {
@@ -336,7 +336,7 @@ class ProtoMapTree extends EventEmitter {
     if (node.children) throw new Error('node has children, cannot be deleted')
 
     if (node.isFile()) {
-      fileHashUninstall(node)
+      this.fileHashUninstall(node)
     }
     else if (node.isDirectory()) {
       this.shared.delete(node) // ignore true or false

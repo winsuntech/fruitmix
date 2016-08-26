@@ -93,7 +93,7 @@ describe(path.basename(__filename), function() {
 
     let { uuid, owner, writelist, readlist } = fixed01
 
-    before(function() {
+    beforeEach(function() {
       return (async () => {
         await rimrafAsync('tmptest')
         await mkdirpAsync('tmptest')
@@ -155,6 +155,29 @@ describe(path.basename(__filename), function() {
                 expect(l.readlist).to.be.undefined
               })
             done()
+          })
+
+          drive.setRootpath(path.join(cwd, 'tmptest'))
+        })
+        .catch(e => done(e))
+    })
+
+    it('should emit hashlessNonEmpty event for single file in root', function(done) {
+    
+      fs.writeFileAsync('tmptest/testfile', 'hello world!')
+        .then(() => {
+
+          let hashlessEmitted = false
+          let cachedEmitted = false
+
+          let drive = createDrive(fixed01)
+          drive.on('hashlessNonEmpty', () => {
+            hashlessEmitted = true
+            if (cachedEmitted) done()
+          })
+          drive.on('driveCached', () => {
+            cachedEmitted = true
+            if (hashlessEmitted) done()
           })
 
           drive.setRootpath(path.join(cwd, 'tmptest'))
@@ -350,6 +373,8 @@ describe(path.basename(__filename), function() {
       })
     })
   })
+
+  /* end of all groups */
 })
 
 
