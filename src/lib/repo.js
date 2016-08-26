@@ -14,10 +14,10 @@ import { createDrive } from './drive'
 class Repo extends EventEmitter {
 
   // repo constructor
-  constructor(paths, model) {
+  constructor(paths, driveModel) {
     super()
     this.paths = paths
-    this.model = model
+    this.driveModel = driveModel
     this.drives = []
     this.initState = 'IDLE' // 'INITIALIZING', 'INITIALIZED', 'DEINITIALIZING',
   }
@@ -32,6 +32,8 @@ class Repo extends EventEmitter {
       if (err) return callback(err)
       let drive = createDrive(conf)
       drive.on('driveCached', () => this.emit('driveCached', drive))
+      drive.on('hashlessNonEmpty', () => console.log(`drive ${drive.uuid}: emits hashlessNonEmpty`))
+      drive.on('hashlessEmpty', () => console.log(`drive ${drive.uuid}: emits hashlessEmpty`))
       drive.setRootpath(drvpath)
       callback(null, drive)
     })
@@ -47,7 +49,7 @@ class Repo extends EventEmitter {
 
     // retrieve drive directory 
     let dir = this.paths.get('drives')
-    let list = this.model.collection.list
+    let list = this.driveModel.collection.list
     let count = list.length
 
     if (!count) {
@@ -86,8 +88,8 @@ class Repo extends EventEmitter {
     // create foldre in drive dir
     await mkdirpAsync(path.join(dir, uuid))
 
-    // save to model
-    await this.model.createDrive({
+    // save to driveModel
+    await this.driveModel.createDrive({
       label, fixedOwner, URI: 'fruitmix', uuid, owner, writelist, readlist, memCache
     })
    
@@ -219,7 +221,7 @@ class Repo extends EventEmitter {
   }
 }
 
-const createRepo = (paths, model) => new Repo(paths, model)
+const createRepo = (paths, driveModel) => new Repo(paths, driveModel)
 
 const testing = {
 }

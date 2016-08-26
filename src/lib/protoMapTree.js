@@ -237,6 +237,9 @@ class ProtoMapTree extends EventEmitter {
 
     if (!hash) {
       this.hashless.add(node)
+      if (this.hashless.size === 1) {
+        this.emit('hashlessNonEmpty')
+      }
       return
     }
     
@@ -261,8 +264,12 @@ class ProtoMapTree extends EventEmitter {
 
     // if no hash
     if (!node.hash) {
-      if (this.hashless.has(node)) 
+      if (this.hashless.has(node)) {
         this.hashless.delete(node)
+        if (this.hashless.size === 0) {
+          this.emit('hashlessEmpty')
+        }
+      }
       return
     }
 
@@ -326,7 +333,6 @@ class ProtoMapTree extends EventEmitter {
   // for delete a sub tree, using higher level method
   deleteNode(node) {
 
-    if (node === this.root) throw new Error('deleting root disallowed')
     if (node.children) throw new Error('node has children, cannot be deleted')
 
     if (node.isFile()) {
@@ -337,14 +343,18 @@ class ProtoMapTree extends EventEmitter {
     }
     
     this.uuidMap.delete(node.uuid) 
-    node.detach()
-    return node
+    if (node === this.root) {
+      this.root = null
+    }
+    else {
+      node.detach()
+    }
   }
 
   deleteNodeByUUID(uuid) {
     let node = this.uuidMap.get(uuid)
     if (!node) return null
-    return this.deleteNode(node)
+    this.deleteNode(node)
   }
 
   deleteSubTree(node) {

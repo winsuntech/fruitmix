@@ -111,11 +111,13 @@ describe("src/lib/digester.js", function() {
       expect(child_process.spawn.callCount===0)
       child_process.spawn.restore();
     })
-   
+
+/**   
     it('works fine', function(done) {
       myDigester.digest('test/res/test1.txt')
       setTimeout(()=>{ console.log(myDigester.hash); done()}, 1500); 
     })
+**/
   })
 })
 
