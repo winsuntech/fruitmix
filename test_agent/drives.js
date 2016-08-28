@@ -13,6 +13,8 @@ import { createRepo } from 'src/lib/repo'
 import request from 'supertest'
 import { mkdirpAsync, rimrafAsync, fs } from 'test/util/async'
 
+import { initFamilyRoot, genUserToken } from './family'
+
 let userUUID = '9f93db43-02e6-4b26-8fae-7d6f51da12af'
 let drv001UUID = 'ceacf710-a414-4b95-be5e-748d73774fc4'  
 let drv002UUID = '6586789e-4a2c-4159-b3da-903ae7f10c2a' 
@@ -68,14 +70,10 @@ const createRepoCached = (paths, model, callback) => {
   let count = 0
   let repo = createRepo(paths, model) 
   repo.on('driveCached', drv => {
-    // console.log('repo driveCached')
     count++
-    // console.log('count: ' + count)
-    // console.log('repo drives length: ' + repo.drives.length)
     if (count === repo.drives.length) callback(null)
   })
   repo.init(e => {
-    // console.log('repo initialized')
     if (e) callback(e)
     else callback(null, repo)
   })
@@ -161,7 +159,7 @@ describe(path.basename(__filename) + ': test repo', function() {
               uuidMapSize: 1,
               hashMapSize: 0,
               hashlessSize: 0,
-              sharedSize: 0 
+              sharedSize: 1 // root folder
             },
             { 
               label: 'drv002',
@@ -177,7 +175,7 @@ describe(path.basename(__filename) + ': test repo', function() {
               uuidMapSize: 1,
               hashMapSize: 0,
               hashlessSize: 0,
-              sharedSize: 0 
+              sharedSize: 1 // root folder
             } 
           ]
           expect(arr).to.deep.equal(expected) 
@@ -186,3 +184,18 @@ describe(path.basename(__filename) + ': test repo', function() {
     })
   })
 })
+
+describe(path.basename(__filename) + ': family version', function() {
+
+  beforeEach(function() {
+    return (async () => {
+      await initFamilyRoot(path.join(process.cwd(), 'family'))
+      await Promise.promisify(createRepoCached)(paths, models.getModel('drive'))
+    })()
+  })
+  
+  it('demo alice drive', function() {
+        
+  })
+})
+

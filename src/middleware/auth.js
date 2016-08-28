@@ -3,7 +3,7 @@ import { BasicStrategy } from 'passport-http'
 import { Strategy as JwtStrategy, ExtractJwt } from 'passport-jwt'
 
 import Models from '../models/models'
-import { secret } from '../config/passport_jwt'
+import { secret } from '../config/passportJwt'
 
 const httpBasicVerify = (username, password, done) => 
   Models.getModel('user')
