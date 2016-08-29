@@ -5,6 +5,8 @@ import { expect } from 'chai'
 import UUID from 'node-uuid'
 import { UINT32 } from 'cuint'
 
+import xxhash from 'xxhash'
+
 import {
   uuidToUint8Array,
   XORD,
@@ -132,6 +134,76 @@ describe('test encode', function() {
   })  
 })
 
+describe('test uuid fill buffer perf', function() {
+
+  let million = 1000000
+  let keys = []
+  let hexKeys = []
+  before(function() {
+    this.timeout(0)
+    for (let i = 0; i < million; i++) {
+      let uuid = UUID.v4().replace(/-/g, '')
+      keys.push(uuid)
+      let hex = new Buffer(16).fill(uuid, 'hex')
+      hexKeys.push(hex)
+    } 
+  })
+
+  it('fill node buffer and xord one million uuid (by uint8)', function() {
+    this.timeout(0)
+
+    // scratch pad
+    // let uuidBuf = new Buffer(16)
+    let target = new Buffer(16).fill(0)
+
+    for (let i = 0; i < million; i++) {
+      // uuidBuf.fill(keys[i], 'hex')
+      let uuidBuf = hexKeys[i]
+      target[0] = target[0] ^ uuidBuf[0]
+      target[1] = target[1] ^ uuidBuf[1]
+      target[2] = target[2] ^ uuidBuf[2]
+      target[3] = target[3] ^ uuidBuf[3]
+      target[4] = target[4] ^ uuidBuf[4]
+      target[5] = target[5] ^ uuidBuf[5]
+      target[6] = target[6] ^ uuidBuf[6]
+      target[7] = target[7] ^ uuidBuf[7]
+      target[8] = target[8] ^ uuidBuf[8]
+      target[9] = target[9] ^ uuidBuf[9]
+      target[10] = target[10] ^ uuidBuf[10]
+      target[11] = target[11] ^ uuidBuf[11]
+      target[12] = target[12] ^ uuidBuf[12]
+      target[13] = target[13] ^ uuidBuf[13]
+      target[14] = target[14] ^ uuidBuf[14]
+      target[15] = target[15] ^ uuidBuf[15]
+    }
+  })
+
+  it('fill node buffer and xord one million uuid (by int32)', function() {
+    this.timeout(0)
+
+    // scratch pad
+    let uuidBuf = new Buffer(16)
+    let target = new Buffer(16).fill(0)
+
+    for (let i = 0; i < million; i++) {
+      uuidBuf.fill(keys[i], 'hex')
+      // target.writeInt32LE(target.readInt32LE(0) ^ uuidBuf.readInt32LE(0), 0)
+      // target.writeInt32LE(target.readInt32LE(4) ^ uuidBuf.readInt32LE(4), 4)
+      // target.writeInt32LE(target.readInt32LE(8) ^ uuidBuf.readInt32LE(8), 8)
+      // target.writeInt32LE(target.readInt32LE(12) ^ uuidBuf.readInt32LE(12), 12)
+    }
+  })
+
+  it('xxhash 1 million', function() {
+    let val = 0
+    let seed = 1234
+    for (let i = 0; i < million; i++) {
+      seed = xxhash.hash(hexKeys[i], seed)
+    }
+    console.log(seed)
+  })
+})
+
 describe('test INSERT perf', function() {
 
   let keys = [], B
@@ -152,5 +224,35 @@ describe('test INSERT perf', function() {
     B.ENCODE(keys)
     console.log(B)
   })  
+})
+
+describe('test buffer allocate', function() {
+
+  it('allocate 1 million buffer from hex', function() {
+    let u = uuid1.replace(/-/g, '')
+    let b
+    for (let i = 0; i < 1000000; i++)
+      b = new Buffer(u, 'hex')
+  })
+
+  it('allocate 1 million uint32array from hex', function() {
+
+    this.timeout(0)
+
+    let u = uuid1.replace(/-/g, '')
+    console.log('>>>')
+    console.log(u)
+
+    let b, count = 0
+    for (let i = 0; i < 1000000; i++) {
+      b = new Uint8Array(16)
+      //
+      //for(let j = 0; j < 16; j++)
+      //  b[j] = parseInt(u.substr(j * 2, 2))
+      
+      // count += xxhash.hash(b, 1234) 
+    }
+    console.log(count)
+  })
 })
 
