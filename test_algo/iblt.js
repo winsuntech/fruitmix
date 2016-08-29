@@ -9,10 +9,14 @@ import XXH from 'xxhashjs'
 import xxhash from 'xxhash'
 
 import {
-  uuidToUint8Array,
-  XORD,
-  encode,
-  XXIBLT
+  createIBF,
+  hashToDistinctIndices,
+  IBFInsert,
+  IBFRemove,
+  IBFEncode,
+  IBFSubtract,
+  IBFDecode,
+  isZero 
 } from 'src/algo/iblt'
 
 
@@ -48,85 +52,109 @@ describe('demo', function() {
     let r = b.toString('hex')
     expect(r).to.equal(u)
   })
-})
 
-describe('test XORD', function() {
+  it('xxhashjs("abcd", 0x01020304).toNumber() generate 3521953717', function() {
+    let r = XXH.h32('abcd', 0x01020304).toNumber()
+    expect(r).to.equal(3521953717)
+  })
 
-  it('should return 92 for 5A ^ C8', function() {
-    let dst = new Buffer('5a', 'hex')
-    let src = new Buffer('c8', 'hex')
+  it('xxhash.hash(new Buffer("abcd"), 0x01020304) generate 3521953717', function() {
+    let r = xxhash.hash(new Buffer("abcd"), 0x01020304)  
+    expect(r).to.equal(3521953717)
+  })
 
-    XORD(dst, src)
-    expect(dst.toString('hex')).to.equal('92')
+  it('xxhash.hash(new Buffer("abcd"), 0x01020304, enc) generate LE UINT32 in buffer', function() {
+    let enc = new Buffer(4)
+    let r = xxhash.hash(new Buffer("abcd"), 0x01020304, enc) 
+    expect(enc.readUInt32LE()).to.equal(3521953717)
+  })
+
+  // notice this test, the passed argument is BIG ENDIAN !!!
+  // which means if we want to reuse enc buffer as new seed, we must read LE and write BE !!!
+  it('xxhash.hash(new Buffer("abcd"), new Buffer("01020304", "hex")) <- BIG ENDIAN !!!', function() {
+    let r = xxhash.hash(new Buffer("abcd"), new Buffer("01020304", "hex"))
+    expect(r).to.equal(3521953717)
+  })
+
+
+  // fail to use returned enc as new seed, using number insteads (a bit slower)
+  it('xxhashjs, xxhash, twice, expect 2847076442', function() {
+
+    let js1 = XXH.h32("abcd", 0x01020304).toNumber()
+    let js2 = XXH.h32("abcd", js1).toNumber()
+
+    let buf = new Buffer("abcd")
+    let ntv1 = xxhash.hash(buf, 0x01020304)
+    let ntv2 = xxhash.hash(buf, ntv1)
+
+    let enc = new Buffer(4)
+    let enc2 = new Buffer(4)
+    xxhash.hash(buf, 0x01020304, enc)
+
+    expect(enc.equals(new Buffer('b5bfecd1', 'hex'))).to.be.true
+
+    xxhash.hash(buf, enc.readUInt32LE(), enc)
+    expect(enc.readUInt32LE()).to.equal(2847076642)
   })
 })
 
-describe('test XORD perf', function() {
+describe('test IBF', function() {
 
-  let data = []
+  let ids = []
+  before(function() {
+    ids.push(new Buffer('01020304', 'hex'))
+    ids.push(new Buffer('01020305', 'hex'))
+    ids.push(new Buffer('01020306', 'hex'))
+  }) 
+
+  it('should create new IBF, insert then remove, get empty ibf', function() {
+    let ibf = createIBF(4, 4, 2, 0xABCD)
+    ids.forEach(id => IBFInsert(ibf, id))
+    expect(isZero(ibf)).to.be.false
+    ids.forEach(id => IBFRemove(ibf, id))
+    expect(isZero(ibf)).to.be.true
+  })
+
+  it('should subtract and decode 1 positive diff', function() {
+    let ibf1 = createIBF(4, 4, 2, 0xABCD)
+    let ibf2 = createIBF(4, 4, 2, 0xABCD)
+
+    IBFInsert(ibf1, ids[0])
+    IBFInsert(ibf1, ids[1])
+    IBFInsert(ibf1, ids[2])
+
+    IBFInsert(ibf2, ids[0])
+    IBFInsert(ibf2, ids[1])
+
+    let ibf = IBFSubtract(ibf1, ibf2)
+    let r = IBFDecode(ibf)
+    expect(r).to.be.true
+    expect(ibf.decode.positive[0].equals(ids[2])).to.be.true
+    expect(ibf.decode.negative.length).to.equal(0)
+  }) 
+})
+
+describe('test 1 million IBFInsert perf', function() {
+  let m = 1000000
+  let ids = [], ibf
+
   before(function() {
     this.timeout(0)
-    for (let i = 0; i < 1000000; i++)
-      data.push(uuidToUint8Array(UUID.v4())) 
+    for (let i = 0; i < m; i++) {
+      let id = Buffer.from(UUID.v4().replace(/-/g, ''), 'hex')
+      ids.push(id)
+    }
+
+    ibf = createIBF(10, 16, 4, 0xABCD) 
   })
+
+  it('1 million IBFInsert (k=4)', function() {
+    this.timeout(0)
+    ids.forEach(id => IBFInsert(ibf, id))
+  })
+})
 
 /**
-  it('calc 1 million XORD for uuids', function(){
-    for (let i = 1; i < 1000000; i++)
-      XORD(data[0], data[i])
-  })
-**/
-})
-
-describe('test encode', function() {
-
-  let set1, set2
-  before(function() {
-    set1 = {
-      exponent: 4,
-      keySize: 4,
-      valSize: 4,
-      k: 1,
-      seed: 12345,
-      pairs: [
-        {
-          key: new Buffer('1e2a3390', 'hex'),
-          value: new Buffer('25310223', 'hex')
-        }
-      ]
-    }
-
-    set2 = {
-      exponent: 4,
-      keySize: 4,
-      valSize: 4,
-      k: 1,
-      seed: 12345,
-      pairs: [
-        {
-          key: new Buffer('1e2a3390', 'hex'),
-          val: new Buffer('25310223', 'hex'),
-        }
-      ]
-    }
-  })
-  
-  it('should GET back INSERTed value (a collision example)', function() {
-
-    let b = new XXIBLT(4, 2, 2, 23345)    
-    let key1 = new Buffer('1023', 'hex')
-    let key2 = new Buffer('33aa', 'hex')
-    b.INSERT(key1)
-    b.INSERT(key2)
-    b.print()
-    b.DELETE(key1)
-    b.DELETE(key2)
-    b.print() 
-  })  
-
-  
-})
-
 describe('test uuid fill buffer perf', function() {
 
   let million = 1000000
@@ -244,6 +272,7 @@ describe('test uuid fill buffer perf', function() {
     for (let i = 0; i < million; i++)
       XXH.h32(keys[i], 1234)
   })
+
 })
 
 describe('test INSERT perf', function() {
@@ -268,6 +297,8 @@ describe('test INSERT perf', function() {
   })  
 })
 
+**/
+
 describe('test buffer allocate', function() {
 
   it('allocate 1 million buffer from hex', function() {
@@ -280,21 +311,12 @@ describe('test buffer allocate', function() {
   it('allocate 1 million uint32array from hex', function() {
 
     this.timeout(0)
-
     let u = uuid1.replace(/-/g, '')
-    console.log('>>>')
-    console.log(u)
 
     let b, count = 0
     for (let i = 0; i < 1000000; i++) {
       b = new Uint8Array(16)
-      //
-      //for(let j = 0; j < 16; j++)
-      //  b[j] = parseInt(u.substr(j * 2, 2))
-      
-      // count += xxhash.hash(b, 1234) 
     }
-    console.log(count)
   })
 })
 
