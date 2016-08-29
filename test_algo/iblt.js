@@ -4,6 +4,7 @@ import { expect } from 'chai'
 
 import UUID from 'node-uuid'
 import { UINT32 } from 'cuint'
+import XXH from 'xxhashjs'
 
 import xxhash from 'xxhash'
 
@@ -27,16 +28,6 @@ let uuid8 = "0a54e78c-3093-498a-b728-466a49c1e091"
 let uuid9 = "bf3b7147-0d47-4fcc-b008-a53a79fa2288"
 
 
-
-let x = UUID.v4()
-let y = uuidToUint8Array(x)
-console.log(x)
-console.log(y)
-
-console.log(y instanceof Uint8Array)
-console.log(y instanceof Buffer)
-console.log(y.toString('hex'))
-console.log(y.length)
 
 describe('demo', function() {
   
@@ -132,6 +123,8 @@ describe('test encode', function() {
     b.DELETE(key2)
     b.print() 
   })  
+
+  
 })
 
 describe('test uuid fill buffer perf', function() {
@@ -139,6 +132,7 @@ describe('test uuid fill buffer perf', function() {
   let million = 1000000
   let keys = []
   let hexKeys = []
+  let uint8array = []
   before(function() {
     this.timeout(0)
     for (let i = 0; i < million; i++) {
@@ -146,10 +140,14 @@ describe('test uuid fill buffer perf', function() {
       keys.push(uuid)
       let hex = new Buffer(16).fill(uuid, 'hex')
       hexKeys.push(hex)
+      let uint8 = new Uint8Array(16)
+      for (let i = 0; i < 16; i++)
+        uint8[i] = hex.readUInt8(i)
+      uint8array.push(uint8)
     } 
   })
 
-  it('fill node buffer and xord one million uuid (by uint8)', function() {
+  it('fill node buffer and xord one million uuid, using pre-filled node buffer for uuid key', function() {
     this.timeout(0)
 
     // scratch pad
@@ -157,7 +155,6 @@ describe('test uuid fill buffer perf', function() {
     let target = new Buffer(16).fill(0)
 
     for (let i = 0; i < million; i++) {
-      // uuidBuf.fill(keys[i], 'hex')
       let uuidBuf = hexKeys[i]
       target[0] = target[0] ^ uuidBuf[0]
       target[1] = target[1] ^ uuidBuf[1]
@@ -178,7 +175,21 @@ describe('test uuid fill buffer perf', function() {
     }
   })
 
-  it('fill node buffer and xord one million uuid (by int32)', function() {
+  it('fill node buffer and xord one million uuid, using pre-filled node buffer for uuid key, not unloop', function() {
+    this.timeout(0)
+
+    // scratch pad
+    // let uuidBuf = new Buffer(16)
+    let target = new Buffer(16).fill(0)
+
+    for (let i = 0; i < million; i++) {
+      let uuidBuf = hexKeys[i]
+      for (let j = 0; j < 16; j++)
+        target[j] = target[j] ^ uuidBuf[j]
+    }
+  })
+
+  it('fill node buffer and xord one million uuid, using hex string fill buffer each time', function() {
     this.timeout(0)
 
     // scratch pad
@@ -187,20 +198,51 @@ describe('test uuid fill buffer perf', function() {
 
     for (let i = 0; i < million; i++) {
       uuidBuf.fill(keys[i], 'hex')
-      // target.writeInt32LE(target.readInt32LE(0) ^ uuidBuf.readInt32LE(0), 0)
-      // target.writeInt32LE(target.readInt32LE(4) ^ uuidBuf.readInt32LE(4), 4)
-      // target.writeInt32LE(target.readInt32LE(8) ^ uuidBuf.readInt32LE(8), 8)
-      // target.writeInt32LE(target.readInt32LE(12) ^ uuidBuf.readInt32LE(12), 12)
+      target[0] = target[0] ^ uuidBuf[0]
+      target[1] = target[1] ^ uuidBuf[1]
+      target[2] = target[2] ^ uuidBuf[2]
+      target[3] = target[3] ^ uuidBuf[3]
+      target[4] = target[4] ^ uuidBuf[4]
+      target[5] = target[5] ^ uuidBuf[5]
+      target[6] = target[6] ^ uuidBuf[6]
+      target[7] = target[7] ^ uuidBuf[7]
+      target[8] = target[8] ^ uuidBuf[8]
+      target[9] = target[9] ^ uuidBuf[9]
+      target[10] = target[10] ^ uuidBuf[10]
+      target[11] = target[11] ^ uuidBuf[11]
+      target[12] = target[12] ^ uuidBuf[12]
+      target[13] = target[13] ^ uuidBuf[13]
+      target[14] = target[14] ^ uuidBuf[14]
+      target[15] = target[15] ^ uuidBuf[15]
     }
   })
 
-  it('xxhash 1 million', function() {
-    let val = 0
+  it('xxhash 1 million, using node buffer for each key, int for seed', function() {
     let seed = 1234
     for (let i = 0; i < million; i++) {
-      seed = xxhash.hash(hexKeys[i], seed)
+      xxhash.hash(hexKeys[i], seed)
     }
-    console.log(seed)
+  })
+
+  it('xxhash 1 million, using uint8array for each key, int for seed', function() {
+    let seed = 1234
+    for (let i = 0; i < million; i++) {
+      xxhash.hash(uint8array[i], seed)
+    }
+  })
+
+  it('xxhash 1 milling using node buffer for each key, node buffer for seed (should be fastest)', function() {
+    let seed = new Buffer(4)
+    seed.writeUInt32LE(1234, 0)
+    for (let i = 0; i < million; i++) {
+      xxhash.hash(hexKeys[i], seed, seed)
+    }
+  })
+
+  it('xxhashjs 1 million', function() {
+    this.timeout(0)
+    for (let i = 0; i < million; i++)
+      XXH.h32(keys[i], 1234)
   })
 })
 

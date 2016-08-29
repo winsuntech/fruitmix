@@ -144,15 +144,12 @@ export class XXIBLT {
       for (let i = 0; i < keySize; i++) 
         this.buf[offset + i] = this.buf[offset + i] ^ key[i]
 
-      // xxhash.hash(key, this.seed, this.CHECKSUM)
-      let checksum = xxhash.hash(key, this.seed)
-/*
+      xxhash.hash(key, this.seed, this.CHECKSUM)
+
       this.buf[offset + keySize + 0] = this.buf[offset + keySize + 0] ^ this.CHECKSUM[0]
       this.buf[offset + keySize + 1] = this.buf[offset + keySize + 1] ^ this.CHECKSUM[1]
       this.buf[offset + keySize + 2] = this.buf[offset + keySize + 2] ^ this.CHECKSUM[2]
       this.buf[offset + keySize + 3] = this.buf[offset + keySize + 3] ^ this.CHECKSUM[3]
-*/
-      this.buf.writeUInt32LE((this.buf.readUInt32LE(offset + keySize) ^ checksum) >>> 0, offset + keySize)
     }
   }
 
