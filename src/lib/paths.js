@@ -5,7 +5,8 @@ import Promise from 'bluebird'
 import mkdirp from 'mkdirp'
 import rimraf from 'rimraf'
 
-const mkdirpAsync = Promise.promisify(mkdirp)
+const Util = require( './util.js')
+
 
 // holds fruitmix root path, something like /run/wisnuc/[UUID]/wisnuc/fruitmix
 // either absolute path or undefined
@@ -16,18 +17,17 @@ const join = (name) => path.join(root, name)
 
 // set fruitmix root, mkdirp all internal folders
 const setRootAsync = async (rootpath) => {
-
   if (!path.isAbsolute(rootpath)) throw new Error('rootpath must be absolute path')     
 
   root = rootpath
 
-  await mkdirpAsync(root)
-  await mkdirpAsync(join('models'))
-  await mkdirpAsync(join('drives'))
-  await mkdirpAsync(join('pools'))
-  await mkdirpAsync(join('upload'))
-  await mkdirpAsync(join('etc'))
-  await mkdirpAsync(join('tmp'))
+  await Util.mkdirpAsync(root)
+  await Util.mkdirpAsync(join('models'))
+  await Util.mkdirpAsync(join('drives'))
+  await Util.mkdirpAsync(join('pools'))
+  await Util.mkdirpAsync(join('upload'))
+  await Util.mkdirpAsync(join('etc'))
+  await Util.mkdirpAsync(join('tmp'))
 }
 
 // callback version of setRoot

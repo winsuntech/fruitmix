@@ -1,9 +1,9 @@
 const Paths=require("../../src/lib/paths.js")
-import { expect } from 'chai'
+import { expect, assert } from 'chai'
 import mkdirp from 'mkdirp'
 const sinon = require ('sinon')
 const child_process=require('child_process')
-
+const Util = require( '../../src/lib/util.js')
 
 describe("src/lib/paths.js", function() {
   
@@ -14,16 +14,22 @@ describe("src/lib/paths.js", function() {
   })
   
   
-  describe('setRootAsync(...)', function(done) {
-    it('it works!', function(done) {
-      (async () => {
-        //mkdirp.mkdirp="";
-        console.log(mkdirp.mkdirp);
-	sinon.stub(mkdirp, 'mkdirp').returns(1);
-        console.log(Paths);
-        await Paths.default.setRootAsync('/aaa');
-	assert(fs.setRootAsync.calledWith('/aaa/models')) 
-      })().then(()=>done(), (r)=>done(r))
+  describe('setRootAsync(...)', (done) => {
+    it('it works!', () => {
+	    sinon.stub(Util, 'mkdirpAsync').returns(1);
+      Paths.default.setRootAsync('/aaa').then((r) => {
+	      assert(Util.mkdirpAsync.calledWith('/aaa/models')) 
+	      assert(Util.mkdirpAsync.calledWith('/aaa/drives')) 
+	      assert(Util.mkdirpAsync.calledWith('/aaa/pools')) 
+	      assert(Util.mkdirpAsync.calledWith('/aaa/upload')) 
+	      assert(Util.mkdirpAsync.calledWith('/aaa/etc')) 
+	      assert(Util.mkdirpAsync.calledWith('/aaa/tmp')) 
+        Util.mkdirpAsync.restore()
+        done()
+      }).catch((e) => {
+        Util.mkdirpAsync.restore()
+        done()
+      }) 
     })
   })
  /* 

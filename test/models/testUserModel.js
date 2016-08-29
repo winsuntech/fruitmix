@@ -33,7 +33,12 @@ describe("src/models/userModel.js", function() {
 
   describe('createUserModelAsync(...)', function() {  
     it('collections should be of Collection type', function(done) {
-      expect(myUserModel.collection).to.be.an.instanceof(Collection.Collection);
+      expect(myUserModel.collection.filepath).to.equal("aaa");
+      expect(myUserModel.collection.tmpfolder).to.equal("bbb");
+      expect(myUserModel.collection.list).to.be.deep.equal([]);
+      expect(myUserModel.collection.locked).to.equal(false);
+      
+      //expect(myUserModel.collection).to.be.an.instanceof(Collection.Collection);
       done();
     })
   })
