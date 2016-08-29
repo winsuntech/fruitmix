@@ -1,4 +1,5 @@
 import path from 'path'
+import crypto from 'crypto'
 
 import Promise from 'bluebird'
 
@@ -162,7 +163,8 @@ describe(path.basename(__filename), function() {
         .catch(e => done(e))
     })
 
-    it('should emit hashlessNonEmpty event for single file in root', function(done) {
+    // FIXME this test case should be moved to protoMapTree
+    it('should emit hashlessNonEmpty event for single (hashless) file in root', function(done) {
     
       fs.writeFileAsync('tmptest/testfile', 'hello world!')
         .then(() => {
@@ -178,6 +180,30 @@ describe(path.basename(__filename), function() {
           drive.on('driveCached', () => {
             cachedEmitted = true
             if (hashlessEmitted) done()
+          })
+
+          drive.setRootpath(path.join(cwd, 'tmptest'))
+        })
+        .catch(e => done(e))
+    })
+
+    // FIXME this test case should be moved to protoMapTree
+    it('should emit hashlessEmpty event for single (hashless) file in root, after hash update', function(done) {
+
+      let hash = crypto.createHash('sha256')
+      hash.update('hello world!')
+      let digest = hash.digest('hex')
+
+      fs.writeFileAsync('tmptest/testfile', 'hello world!')
+        .then(() => {
+          let drive = createDrive(fixed01)
+          drive.on('hashlessEmpty', () => {
+            expect(drive.hashless.size).to.equal(0)
+            done()
+          })
+          drive.on('driveCached', () => {
+            expect(drive.hashless.size).to.equal(1)
+            drive.updateHashMagic(drive.root.children[0], digest, 'ASCII text, with no line terminators')
           })
 
           drive.setRootpath(path.join(cwd, 'tmptest'))

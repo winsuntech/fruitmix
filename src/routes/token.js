@@ -1,12 +1,12 @@
 const router = require('express').Router()
 const jwt = require('jwt-simple')
-const conf = require('../config/passport_jwt')
+import { secret } from '../config/passportJwt'
 import auth from '../middleware/auth'
 
 router.get('/', auth.basic(), (req, res) => {
   res.status(200).json({
     type: 'JWT',
-    token: jwt.encode({ uuid: req.user.uuid }, conf.secret)
+    token: jwt.encode({ uuid: req.user.uuid }, secret)
   })  
 })
 

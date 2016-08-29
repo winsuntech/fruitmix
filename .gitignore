@@ -50,10 +50,12 @@ build/
 
 npm-debug.log
 
+
 docs/
 testdata/
 tmpTestFoder/
 tmpTestFolder/
+family/
 
 graph.png
 graph.pdf
