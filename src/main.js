@@ -1,6 +1,14 @@
+var path = require('path')
 var debug = require('debug')('server')
 var http = require('http')
-var app = require('./app.js')
+var system = require('./lib/system').default
+var app = require('./app')
+
+var familyPath = path.join(process.cwd(), 'family')
+console.log(`familyPath is set to ${familyPath}`)
+
+system.init(familyPath, err => 
+  err ? console.log(err) : console.log('fruitmix init'))
 
 var port = normalizePort(process.env.PORT || '80')
 app.set('port', port)

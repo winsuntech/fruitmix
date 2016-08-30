@@ -8,8 +8,6 @@ import logger from 'morgan'
 import bodyParser from 'body-parser'
 
 import auth from './middleware/auth'
-import system from './lib/system'
-
 import init from './routes/init'
 import users from './routes/users'
 import login from './routes/login'

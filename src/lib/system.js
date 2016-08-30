@@ -4,6 +4,9 @@ import path from 'path'
 import Promise from 'bluebird'
 import paths from './paths'
 import models from '../models/models'
+import { createUserModelAsync } from '../models/userModel'
+import { createDriveModelAsync } from '../models/driveModel'
+import { createRepo } from '../lib/repo'
 
 let initialized = false
 
@@ -13,21 +16,24 @@ const initAsync = async (sysroot) => {
 
   // set sysroot to paths
   await paths.setRootAsync(sysroot)
+  console.log(`sysroot is set to ${sysroot}`)
 
-  // retrieve tmp path
-  let repo = createRepo()
-
-  let sysDrivePath = paths.get('drives')
-  // scan drives and add to repo
-
+  let modelPath = paths.get('models')
   let tmpPath = paths.get('tmp')
 
   // create and set user model
-  let userFilePath = path.join(paths.get('models'), 'userModel.json')
-  let userModel = await createUserModelAsync(userFilePath, repo, tmpPath)
+  let userModelPath = path.join(modelPath, 'users.json')
+  let userModel = await createUserModelAsync(userModelPath, tmpPath)
   models.setModel('user', userModel)
 
-  intialized = true
+  let driveModelPath = path.join(modelPath, 'drives.json')
+  let driveModel = await createDriveModelAsync(driveModelPath, tmpPath)
+  models.setModel('drive', driveModel)
+
+  let repo = createRepo(paths, driveModel)
+  models.setModel('repo', repo)
+  
+  initialized = true
 }
 
 const deinit = () => {
@@ -38,7 +44,10 @@ const deinit = () => {
 
 const system = {
   avail,
-  init: (callback) => initAsync(sysroot).then(r => {}).catch(e => {})
+  init: (sysroot, callback) => 
+    initAsync(sysroot)
+      .then(r => callback(null))
+      .catch(e => callback(e))
 }
 
 export default system
