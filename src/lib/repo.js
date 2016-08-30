@@ -6,7 +6,6 @@ import Promise from 'bluebird'
 import { fs, mkdirpAsync, rimrafAsync } from '../util/async'
 
 import { readXstat, readXstatAsync } from './xstat'
-import { createProtoMapTree } from './protoMapTree'
 import { nodeUserReadable, nodeUserWritable} from './perm'
 
 import { createDrive } from './drive'

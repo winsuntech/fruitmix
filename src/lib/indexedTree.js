@@ -96,7 +96,7 @@ const nodeProperties = {
 // to prevent unexpected modification
 Object.freeze(nodeProperties)
 
-class ProtoMapTree extends EventEmitter {
+class IndexedTree extends EventEmitter {
 
   // proto can be any plain JavaScript object
   // root should have at least the uuid for this general data structure
@@ -333,5 +333,5 @@ class ProtoMapTree extends EventEmitter {
   }
 }
 
-export { nodeProperties, ProtoMapTree } 
+export { nodeProperties, IndexedTree } 
 

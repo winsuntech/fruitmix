@@ -9,9 +9,8 @@ import { expect } from 'chai'
 
 import { 
   nodeProperties, 
-  ProtoMapTree, 
-  createProtoMapTree, 
-} from '../../src/lib/protoMapTree'
+  IndexedTree, 
+} from '../../src/lib/indexedTree'
 
 const testData1 = () => {
 
@@ -88,13 +87,13 @@ describe(path.basename(__filename), function() {
 
   })
 
-  describe('new ProtoMapTree()', function() {
+  describe('new IndexedTree()', function() {
    
     let proto = { x: 1, y: 2, z: ['hello', 1] } 
     let t
 
     beforeEach(function() {
-      t = new ProtoMapTree(proto) 
+      t = new IndexedTree(proto) 
     })
     
     it('should preserve proto object props', function() {
@@ -135,7 +134,7 @@ describe(path.basename(__filename), function() {
     let t
   
     beforeEach(function() {
-      t = new ProtoMapTree(proto)
+      t = new IndexedTree(proto)
     })
 
     it('should throw if root no uuid', function() {
@@ -338,7 +337,7 @@ describe(path.basename(__filename), function() {
               if (err) return done(err)
               fs.writeFile('tmptest/hello', 'world', err => {
                 if (err) return done(err) 
-                createProtoMapTree(drivepath, 'drive', (err, tree) => {
+                createIndexedTree(drivepath, 'drive', (err, tree) => {
                   if (err) return done(err)
                   tree.scan(() => {
 
@@ -386,7 +385,7 @@ describe(path.basename(__filename), function() {
               if (err) return done(err)
               fs.writeFile('tmptest/hello', 'world', err => {
                 if (err) return done(err) 
-                createProtoMapTree(drivepath, 'drive', (err, tree) => {
+                createIndexedTree(drivepath, 'drive', (err, tree) => {
                   if (err) return done(err)
                   tree.scan(() => {
 
@@ -434,7 +433,7 @@ describe(path.basename(__filename), function() {
               if (err) return done(err)
               fs.writeFile('tmptest/hello', 'world', err => {
                 if (err) return done(err) 
-                createProtoMapTree(drivepath, 'drive', (err, tree) => {
+                createIndexedTree(drivepath, 'drive', (err, tree) => {
                   if (err) return done(err)
                   tree.scan(() => {
 
@@ -481,7 +480,7 @@ describe(path.basename(__filename), function() {
               if (err) return done(err)
               fs.writeFile('tmptest/hello', 'world', err => {
                 if (err) return done(err) 
-                createProtoMapTree(drivepath, 'drive', (err, tree) => {
+                createIndexedTree(drivepath, 'drive', (err, tree) => {
                   if (err) return done(err)
                   tree.scan(() => {
 
@@ -537,7 +536,7 @@ describe(path.basename(__filename), function() {
               if (err) return done(err)
               fs.writeFile('tmptest/hello', 'world', err => {
                 if (err) return done(err) 
-                createProtoMapTree(drivepath, 'drive', (err, tree) => {
+                createIndexedTree(drivepath, 'drive', (err, tree) => {
                   if (err) return done(err)
                   tree.scan(() => {
 
@@ -598,7 +597,7 @@ describe(path.basename(__filename), function() {
               if (err) return done(err)
               fs.writeFile('tmptest/hello', 'world', err => {
                 if (err) return done(err) 
-                createProtoMapTree(drivepath, 'drive', (err, tree) => {
+                createIndexedTree(drivepath, 'drive', (err, tree) => {
                   if (err) return done(err)
                   tree.scan(() => {
 
@@ -662,7 +661,7 @@ describe(path.basename(__filename), function() {
               if (err) return done(err)
               fs.writeFile('tmptest/hello', preset.hash, err => {
                 if (err) return done(err) 
-                createProtoMapTree(drivepath, 'library', (err, tree) => {
+                createIndexedTree(drivepath, 'library', (err, tree) => {
                   if (err) return done(err)
 
                   tree.importFile(srcpath, tree.root, preset.hash, (err, node) => {
@@ -713,7 +712,7 @@ describe(path.basename(__filename), function() {
               if (err) return done(err)
               fs.writeFile('tmptest/hello', 'world', err => {
                 if (err) return done(err) 
-                createProtoMapTree(drivepath, 'library', (err, tree) => {
+                createIndexedTree(drivepath, 'library', (err, tree) => {
                   if (err) return done(err)
                   tree.scan(() => {
     
@@ -775,7 +774,7 @@ describe(path.basename(__filename), function() {
       //         if (err) return done(err)
       //         fs.writeFile('tmptest/hello', 'world', err => {
       //           if (err) return done(err) 
-      //           createProtoMapTree(drivepath, 'drive', (err, tree) => {
+      //           createIndexedTree(drivepath, 'drive', (err, tree) => {
       //             if (err) return done(err)
       //             tree.scan(() => {
 

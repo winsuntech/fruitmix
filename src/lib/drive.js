@@ -5,7 +5,7 @@ import Promise from 'bluebird'
 import rimraf from 'rimraf'
 
 import { readXstat } from './xstat'
-import { ProtoMapTree } from './protoMapTree'
+import { IndexedTree } from './indexedTree'
 import { mapXstatToObject } from './tools'
 import { visit } from './visitors'
 
@@ -47,7 +47,7 @@ const createDrive = (conf) => {
 ****/
 
 // a drive tree is a in-memory caching and indexing layer for given virtual drive.
-class Drive extends ProtoMapTree {
+class Drive extends IndexedTree {
 
   constructor(conf) {
 
