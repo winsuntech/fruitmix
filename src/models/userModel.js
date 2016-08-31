@@ -69,6 +69,14 @@ class UserModel {
     return uuid
   }
 
+  async deleteUser(uuid) {
+    if(typeof uuid !== 'string') throwInvalid('invalid uuid')
+    if(this.collection.locked) throwBusy()
+    if(this.collection.list.find((v)=>v.uuid==uuid).length==0) throwInvalid('invalid uuid')
+    await this.collection.updateAsync(this.collection.list, this.collection.list.filter((v)=>v.uuid!==uuid))
+    return true 
+  }
+
   /** change signature **/
   async verifyPassword(useruuid, password) {
     
