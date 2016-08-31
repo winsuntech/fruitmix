@@ -96,7 +96,7 @@ const createUserModelAsync = async (filepath, tmpfolder) => {
   return null
 }
 
-export { createUserModelAsync, UserModel }
+export { createUserModelAsync }
 
 
 
