@@ -23,14 +23,6 @@ describe("src/models/userModel.js", function() {
     fs.unlink("aaa", (r) => {done()});
   }) 
   
-  describe('UserModel.constructor(...)', function() {
-    
-    it('collections should be identical to the one passed as the argument', function() {
-      myUserModel=new UserModel.UserModel("aaa");
-      expect(myUserModel.collection).to.equal("aaa"); 
-    })
-  })
-
   describe('createUserModelAsync(...)', function() {  
     it('collections should be of Collection type', function(done) {
       expect(myUserModel.collection.filepath).to.equal("aaa");
