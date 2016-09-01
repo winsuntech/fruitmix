@@ -4,8 +4,6 @@ var http = require('http')
 var system = require('./lib/system').default
 var app = require('./app')
 
-
-
 var familyPath = path.join(process.cwd(), 'family')
 console.log(`familyPath is set to ${familyPath}`)
 
