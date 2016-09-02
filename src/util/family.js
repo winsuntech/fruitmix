@@ -72,29 +72,54 @@ const nicoleUUID  = "4ba43b18-326a-4011-90ce-ec78afca9c43"
 const nicoleHome  = "6790cdcb-8bce-4c67-9768-202a90aad8bf"
 const nicoleLib   = "8359f954-ade1-43e1-918e-8ca9d2dc81a0"
 
-/**
- "ff490ac4-138a-4491-9c23-b021fa403a8e",
- "4a1ecce8-00af-4726-b0e7-03412a12a2b0",
- "97e352f8-5535-473d-9dac-8706ffb79abb",
- "adde641e-2ab0-4d73-895f-78844d30cd97",
- "2e770755-3ff7-4e10-b79b-9cd0337f940f",
- "5e5393ca-0bd3-4f39-83d3-b0518340f292",
- "76121355-8a44-4739-b1f6-3f6dcdbe4ae3",
- "592ae12f-b997-4a7d-ada7-50c9e53a0465",
- "75b5dac2-591a-4c63-8e5e-a955ce51b576",
- "d5c9bb7b-6558-42ee-87da-a7c32abf2907",
- "a474d150-a7d4-47f2-8338-3733fa4b8783",
- "cd14ff07-c35f-48f0-81be-5b8fcaad38b2",
- "ccadabf0-1af4-41a5-8028-8e3dfe09e94e",
- "cc1daf1c-adcb-45ea-a09d-6ec51b1e037e",
- "b8106597-7ad7-4913-92fe-86757f9d5e0d",
- "2648a820-6f84-4c29-a989-a6f0dd3e75e1",
- "1a72fc51-668a-4740-807f-ca625592dfa2",
- "8d2dfcfa-5dcc-4683-80f0-3d4020615143",
- "a8eec3c8-70e5-411b-90fd-ee3e181254b9",
- "620cadb0-cd2a-4716-bb61-93255448bc8e",
- "b24b168a-25b7-4e8a-b2f8-200b3d6745d9",
-**/ 
+const oliviaUUID  = "ff490ac4-138a-4491-9c23-b021fa403a8e"
+const oliviaHome  = "4a1ecce8-00af-4726-b0e7-03412a12a2b0"
+const oliviaLib   = "97e352f8-5535-473d-9dac-8706ffb79abb"
+
+const peterUUID   = "adde641e-2ab0-4d73-895f-78844d30cd97"
+const peterHome   = "2e770755-3ff7-4e10-b79b-9cd0337f940f"
+const peterLib    = "5e5393ca-0bd3-4f39-83d3-b0518340f292"
+
+const quinnUUID   = "76121355-8a44-4739-b1f6-3f6dcdbe4ae3"
+const quinnHome   = "592ae12f-b997-4a7d-ada7-50c9e53a0465"
+const quinnLib    = "75b5dac2-591a-4c63-8e5e-a955ce51b576"
+
+const robbieUUID  = "d5c9bb7b-6558-42ee-87da-a7c32abf2907"
+const robbieHome  = "a474d150-a7d4-47f2-8338-3733fa4b8783"
+const robbieLib   = "cd14ff07-c35f-48f0-81be-5b8fcaad38b2"
+
+const sophieUUID  = "ccadabf0-1af4-41a5-8028-8e3dfe09e94e"
+const sophieHome  = "cc1daf1c-adcb-45ea-a09d-6ec51b1e037e"
+const sophieLib   = "b8106597-7ad7-4913-92fe-86757f9d5e0d"
+
+const tomUUID     = "2648a820-6f84-4c29-a989-a6f0dd3e75e1"
+const tomHome     = "1a72fc51-668a-4740-807f-ca625592dfa2"
+const tomLib      = "8d2dfcfa-5dcc-4683-80f0-3d4020615143"
+
+const ulyssesUUID = "69790809-251d-42bf-a1ab-182aa730a640"
+const ulyssesHome = "dbe8957e-c0cc-451d-abd4-6d0b7a276a21"
+const ulyssesLib  = "e6d8729b-a120-4658-a91c-c53a16b5517f"
+
+const vincentUUID = "d22fc1ea-aa3e-4fef-ac8e-8c5db9437ace"
+const vincentHome = "8f2826a0-22e6-402d-8052-0a828ebdee7e"
+const vincentLib  = "11579501-c662-4ad6-981f-6f2ed6978186"
+
+const williamUUID = "5655a5a0-eb8e-4be1-9705-bae2a5bfcb24"
+const williamHome = "b6092e10-b58c-4e9a-af5d-e0e571126374"
+const williamLib  = "905ea680-9501-4ffe-b471-685bc241f9a5"
+
+const xenaUUID    = "a71beb7c-1df0-4211-849e-e8f77ce005c1"
+const xenaHome    = "2eb5446c-88f3-4cbb-a523-c6de17ee64a8"
+const xenaLib     = "294251fe-bd53-4492-8544-dc83b479c86a"
+
+const yvonneUUID  = "3cef7502-df7c-4845-96db-6a0eb10faf67"
+const yvonneHome  = "faef4600-51a3-400f-b367-a3020b1a6b1a"
+const yvonneLib   = "a1662400-003a-451e-b8f1-be797298533f"
+
+const zoeyUUID    = "634385bc-31c0-418d-b340-92cf0e0a038e"
+const zoeyHome    = "c7b74342-b169-425f-8929-546cadbec232"
+const zoeyLib     = "2bf5aa45-166e-405d-ac9b-f935f7b9131e"
+
 
 const users = [
   {
@@ -226,6 +251,114 @@ const users = [
     home: nicoleHome,
     library: nicoleLib
   },
+  {
+    uuid: oliviaUUID,
+    username: 'Olivia',
+    password: null,
+    avatar: null,
+    email: null,
+    home: oliviaHome,
+    library: oliviaLib
+  },
+  {
+    uuid: peterUUID,
+    username: 'Peter',
+    password: null,
+    avatar: null,
+    email: null,
+    home: peterHome,
+    library: peterLib,
+  },
+  {
+    uuid: quinnUUID,
+    username: 'Quinn',
+    password: null,
+    avatar: null,
+    email: null,
+    home: quinnHome,
+    library: quinnLib
+  },
+  {
+    uuid: robbieUUID,
+    username: 'Robbie',
+    password: null,
+    avatar: null,
+    email: null,
+    home: robbieHome,
+    library: robbieLib,
+  },
+  {
+    uuid: sophieUUID,
+    username: 'Sophie',
+    password: null,
+    avatar: null,
+    email: null,
+    home: sophieHome,
+    library: sophieLib
+  },
+  {
+    uuid: tomUUID,
+    username: 'Tom',
+    password: null,
+    avatar: null,
+    email: null,
+    home: tomHome,
+    library: tomLib
+  },
+  {
+    uuid: ulyssesUUID,
+    username: 'Ulysses',
+    password: null,
+    avatar: null,
+    email: null,
+    home: ulyssesHome,
+    library: ulyssesLib
+  },
+  {
+    uuid: vincentUUID,
+    username: 'Vincent',
+    password: null,
+    avatar: null,
+    email: null,
+    home: vincentHome,
+    library: vincentLib
+  },
+  {
+    uuid: williamUUID,
+    username: 'William',
+    password: null,
+    avatar: null,
+    email: null,
+    home: williamHome,
+    library: williamLib
+  },
+  {
+    uuid: xenaUUID,
+    username: 'Xena',
+    password: null,
+    avatar: null,
+    email: null,
+    home: xenaHome,
+    library: xenaLib
+  },
+  {
+    uuid: yvonneUUID,
+    username: 'Yvonne',
+    password: null,
+    avatar: null,
+    email: null,
+    home: yvonneHome,
+    library: yvonneLib
+  },
+  {
+    uuid: zoeyUUID,
+    username: 'Zoey',
+    password: null,
+    avatar: null,
+    email: null,
+    home: zoeyHome,
+    library: zoeyLib,
+  }
 ]
 
 
@@ -490,6 +623,247 @@ let drives = [
     readlist: [],
     cache: true
   },
+  {
+    label: 'Olivia home',
+    fixedOwner: true,
+    URI: 'fruitmix',
+    uuid: oliviaHome,
+    owner: [ oliviaUUID ],
+    writelist: [],
+    readlist: [],
+    cache: true
+  },
+  {
+    label: 'Olivia library',
+    fixedOwner: true,
+    URI: 'fruitmix',
+    uuid: oliviaLib,
+    owner: [ oliviaUUID ],
+    writelist: [],
+    readlist: [],
+    cache: true
+  },
+  {
+    label: 'Peter home',
+    fixedOwner: true,
+    URI: 'fruitmix',
+    uuid: peterHome,
+    owner: [ peterUUID ],
+    writelist: [],
+    readlist: [],
+    cache: true
+  },
+  {
+    label: 'Peter library',
+    fixedOwner: true,
+    URI: 'fruitmix',
+    uuid: peterLib,
+    owner: [ peterUUID ],
+    writelist: [],
+    readlist: [],
+    cache: true
+  },
+  {
+    label: 'Quinn home',
+    fixedOwner: true,
+    URI: 'fruitmix',
+    uuid: quinnHome,
+    owner: [ quinnUUID ],
+    writelist: [],
+    readlist: [],
+    cache: true
+  },
+  {
+    label: 'Quinn library',
+    fixedOwner: true,
+    URI: 'fruitmix',
+    uuid: quinnLib,
+    owner: [ quinnUUID ],
+    writelist: [],
+    readlist: [],
+    cache: true
+  },
+  {
+    label: 'Robbie home',
+    fixedOwner: true,
+    URI: 'fruitmix',
+    uuid: robbieHome,
+    owner: [ robbieUUID ],
+    writelist: [],
+    readlist: [],
+    cache: true
+  },
+  {
+    label: 'Robbie library',
+    fixedOwner: true,
+    URI: 'fruitmix',
+    uuid: robbieLib,
+    owner: [ robbieUUID ],
+    writelist: [],
+    readlist: [],
+    cache: true
+  },
+  {
+    label: 'Sophie home',
+    fixedOwner: true,
+    URI: 'fruitmix',
+    uuid: sophieHome,
+    owner: [ sophieUUID ],
+    writelist: [],
+    readlist: [],
+    cache: true
+  },
+  {
+    label: 'Sophie library',
+    fixedOwner: true,
+    URI: 'fruitmix',
+    uuid: sophieLib,
+    owner: [ sophieUUID ],
+    writelist: [],
+    readlist: [],
+    cache: true
+  },
+  {
+    label: 'Tom home',
+    fixedOwner: true,
+    URI: 'fruitmix',
+    uuid: tomHome,
+    owner: [ tomUUID ],
+    writelist: [],
+    readlist: [],
+    cache: true
+  },
+  {
+    label: 'Tom library',
+    fixedOwner: true,
+    URI: 'fruitmix',
+    uuid: tomLib,
+    owner: [ tomUUID ],
+    writelist: [],
+    readlist: [],
+    cache: true
+  },
+  {
+    label: 'Ulysses home',
+    fixedOwner: true,
+    URI: 'fruitmix',
+    uuid: ulyssesHome,
+    owner: [ ulyssesUUID ],
+    writelist: [],
+    readlist: [],
+    cache: true
+  },
+  {
+    label: 'Ulysses library',
+    fixedOwner: true,
+    URI: 'fruitmix',
+    uuid: ulyssesLib,
+    owner: [ ulyssesUUID ],
+    writelist: [],
+    readlist: [],
+    cache: true
+  },
+  {
+    label: 'Vincent home',
+    fixedOwner: true,
+    URI: 'fruitmix',
+    uuid: vincentHome,
+    owner: [ vincentUUID ],
+    writelist: [],
+    readlist: [],
+    cache: true
+  },
+  {
+    label: 'Vincent library',
+    fixedOwner: true,
+    URI: 'fruitmix',
+    uuid: vincentLib,
+    owner: [ vincentUUID ],
+    writelist: [],
+    readlist: [],
+    cache: true
+  },
+  {
+    label: 'William home',
+    fixedOwner: true,
+    URI: 'fruitmix',
+    uuid: williamHome,
+    owner: [ williamUUID ],
+    writelist: [],
+    readlist: [],
+    cache: true
+  },
+  {
+    label: 'William library',
+    fixedOwner: true,
+    URI: 'fruitmix',
+    uuid: williamLib,
+    owner: [ williamUUID ],
+    writelist: [],
+    readlist: [],
+    cache: true
+  },
+  {
+    label: 'Xena home',
+    fixedOwner: true,
+    URI: 'fruitmix',
+    uuid: xenaHome,
+    owner: [ xenaUUID ],
+    writelist: [],
+    readlist: [],
+    cache: true
+  },
+  {
+    label: 'Xena library',
+    fixedOwner: true,
+    URI: 'fruitmix',
+    uuid: xenaLib,
+    owner: [ xenaUUID ],
+    writelist: [],
+    readlist: [],
+    cache: true
+  },
+  {
+    label: 'Yvonne home',
+    fixedOwner: true,
+    URI: 'fruitmix',
+    uuid: yvonneHome,
+    owner: [ yvonneUUID ],
+    writelist: [],
+    readlist: [],
+    cache: true
+  },
+  {
+    label: 'Yvonne library',
+    fixedOwner: true,
+    URI: 'fruitmix',
+    uuid: yvonneLib,
+    owner: [ yvonneUUID ],
+    writelist: [],
+    readlist: [],
+    cache: true
+  },
+  {
+    label: 'Zoey home',
+    fixedOwner: true,
+    URI: 'fruitmix',
+    uuid: zoeyHome,
+    owner: [ zoeyUUID ],
+    writelist: [],
+    readlist: [],
+    cache: true
+  },
+  {
+    label: 'Zoey library',
+    fixedOwner: true,
+    URI: 'fruitmix',
+    uuid: zoeyLib,
+    owner: [ zoeyUUID ],
+    writelist: [],
+    readlist: [],
+    cache: true
+  },
+
 ]
 
 const genPass = (text, callback) => {
