@@ -32,7 +32,9 @@ const initAsync = async (sysroot) => {
 
   let repo = createRepo(paths, driveModel)
   models.setModel('repo', repo)
-  
+  repo.init(err => err ? console.log(err) : null)  
+
+
   initialized = true
 }
 

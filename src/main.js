@@ -2,13 +2,29 @@ var path = require('path')
 var debug = require('debug')('server')
 var http = require('http')
 var system = require('./lib/system').default
+var family = require('./util/family')
 var app = require('./app')
 
-var familyPath = path.join(process.cwd(), 'family')
-console.log(`familyPath is set to ${familyPath}`)
+var opt = process.argv[2]
+var familyPath
 
-system.init(familyPath, err => 
-  err ? console.log(err) : console.log('fruitmix init'))
+if (opt === '--family') {
+
+  familyPath = path.join(process.cwd(), 'family')
+  family.initFamilyRoot(familyPath).asCallback(err => {
+    if (err) return callback(err)
+    system.init(familyPath, err => {
+      if (err) return callback(err)
+      console.log('fruitmix initialized with family')
+    })
+  })
+}
+else {
+
+  familyPath = opt
+  system.init(familyPath, err => 
+    err ? console.log(err) : console.log('fruitmix init'))
+}
 
 var port = normalizePort(process.env.PORT || '80')
 app.set('port', port)

@@ -5,14 +5,14 @@ import clone from 'clone'
 import bcrypt from 'bcryptjs'
 import jwt from 'jwt-simple'
 
-import paths from 'src/lib/paths'
-import models from 'src/models/models'
-import { createUserModelAsync } from 'src/models/userModel'
-import { createDriveModelAsync } from 'src/models/driveModel'
+import paths from '../lib/paths'
+import models from '../models/models'
+import { createUserModelAsync } from '../models/userModel'
+import { createDriveModelAsync } from '../models/driveModel'
 
-import { mkdirpAsync, rimrafAsync, fs } from 'test/util/async'
+import { mkdirpAsync, rimrafAsync, fs } from './async'
 
-import { secret } from 'src/config/passportJwt'
+import { secret } from '../config/passportJwt'
 
 
 /** UUIDs **/
