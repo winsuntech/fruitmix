@@ -1,6 +1,8 @@
 import EventEmitter from 'events'
 import deepEqual from 'deep-equal'
 
+import magicMeta from './magicMeta' 
+
 // These are tree node operations
 const nodeProperties = {
 
@@ -114,16 +116,13 @@ class IndexedTree extends EventEmitter {
     this.hashMap = new Map()
     // file only, for file without hashmagic
     this.hashless = new Set()
+    // for digestObj with extended meta but not sure if it has been extracted before
+    this.extended = new Set()
     // folder only, for folder with writer/reader other than drive owner
     this.shared = new Set()
 
     this.root = null
   } 
-
-  //
-  verify(node) {
-    
-  }
 
   //
   uuid() {
@@ -154,11 +153,32 @@ class IndexedTree extends EventEmitter {
     node.type = props.type
 
     // set name
+    if (!props.name || typeof props.name !== 'string' || !props.name.length)
+      throw new Error('name must be non-empty string')
     node.name = props.name
 
     // set owner if different from proto
-    if (!deepEqual(props.owner, this.proto.owner)) {
-      node.owner = props.owner
+    if (!props.owner || !Array.isArray(props.owner))
+      throw new Error('owner must be an array')
+    if (parent === null && !props.owner.length)
+      throw new Error('root owner cannot be empty')
+
+    node.owner = props.owner
+
+    if (parent === null) {
+      if (!props.writelist || !Array.isArray(props.writelist))
+        throw new Error('root writelist must be an array')
+      if (!props.readlist || !Array.isArray(props.readlist))
+        throw new Error('root readlist must be an array')
+    }
+    else {
+      if (props.writelist && !Array.isArray(props.writelist))
+        throw new Error('writelist must be an array if defined')
+      if (props.readlist && !Array.isArray(props.readlist))
+        throw new Error('readlist must be an array if defined')
+
+      if (!!props.writelist !== !!props.readlist)
+        throw new Error('writelist and readlist must be either defined or undefined together')
     }
 
     // set writelist and readlist if any
@@ -208,9 +228,10 @@ class IndexedTree extends EventEmitter {
 
     if (!hash) {
       this.hashless.add(node)
-      if (this.hashless.size === 1) {
-        this.emit('hashlessNonEmpty')
-      }
+
+      // TODO
+      // this is probably not the best place to emit since the content update is not finished yet.
+      this.emit('hashlessAdded', node)
       return
     }
     
@@ -220,14 +241,18 @@ class IndexedTree extends EventEmitter {
       return 
     } 
 
-    let meta = magicToMeta(magic)
+    let meta = magicMeta(magic)
     if (meta) {
+      node.hash = hash
       digestObj = {
         meta,
         nodes: [node]
       }
       this.hashMap.set(hash, digestObj)
-      node.hash = hash
+      if (meta.extended) {
+        this.extended.add(digestObj)
+        this.emit('extendedAdded', digestObj)
+      }
     }
   }
 
@@ -237,14 +262,11 @@ class IndexedTree extends EventEmitter {
     if (!node.hash) {
       if (this.hashless.has(node)) {
         this.hashless.delete(node)
-        if (this.hashless.size === 0) {
-          this.emit('hashlessEmpty')
-        }
       }
       return
     }
 
-    let hash = node.hash // TODO
+    // let hash = node.hash // TODO
 
     // retrieve digest object
     let digestObj = this.hashMap.get(node.hash)
@@ -259,12 +281,14 @@ class IndexedTree extends EventEmitter {
     delete node.hash
 
     // destory digest object if this is last one
-    if (digestObj.nodes.length === 0)
-      this.hashMap.delete(hash)
+    if (digestObj.nodes.length === 0) {
+      // try to remove it out of extended (probably already removed)
+      if (digestObj.meta.extended) this.extended.delete(digestObj)
+      this.hashMap.delete(node.hash)
+    }
   }
 
   updateHashMagic(node, hash, magic) {
-
     this.fileHashUninstall(node)
     this.fileHashInstall(node, hash, magic)
   }

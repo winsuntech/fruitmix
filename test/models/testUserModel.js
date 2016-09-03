@@ -1,3 +1,4 @@
+import path from 'path'
 const UserModel=require("../../src/models/userModel.js")
 import { expect } from 'chai'
 const sinon = require ('sinon')
@@ -8,7 +9,7 @@ import fs from 'fs'
 import UUID from 'node-uuid'
 
 
-describe("src/models/userModel.js", function() {
+describe(path.basename(__filename), function() {
   
   let myUserModel;  
   let createData={username:"u1", "password":"1122334", "avatar":"", "email":"aaa@bbb.com", "isAdmin":false, "type":""}

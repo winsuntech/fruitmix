@@ -15,6 +15,8 @@ class HashMagic extends EventEmitter {
 
     this.magicSpawn = null
     this.magic = null
+
+    this.abort = false
   }
 
   start() {
@@ -37,6 +39,8 @@ class HashMagic extends EventEmitter {
         this.emit('finish')
     })
   }
+
+
 }
 
 var hm = new HashMagic('perm.js', 123, 456)

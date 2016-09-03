@@ -1,3 +1,4 @@
+import path from 'path'
 import { assert, expect } from 'chai'
 const sinon= require('sinon')
 const collection=require('../../src/models/collection.js')
@@ -5,7 +6,8 @@ import fs from 'fs'
 import Promise from 'bluebird'
 import mkdirp from 'mkdirp'
 //import { throwBusy, throwOutOfSync, throwInvalid, throwError } from '../utils/throw'
-describe('../../src/models/collection.js', function(){
+
+describe(path.basename(__filename), function(){
   describe('openOrCreateCollectionAsync', function(){
     it('throw an error if read file path error', function(done) {
       (async () => {

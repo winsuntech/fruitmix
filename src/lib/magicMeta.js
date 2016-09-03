@@ -1,4 +1,4 @@
-export const magicMeta = (magic) => {
+export default (magic) => {
 
   let meta = {}
   if (magic.startsWith('JPEG image data')) {
@@ -8,7 +8,7 @@ export const magicMeta = (magic) => {
     let items = magic.replace(/\[.*\]/g, '').split(',').map(item => item.trim())
 
     // find width x height
-    let x = items.find(item => /\d+x\d+/.test(item))
+    let x = items.find(item => /^\d+x\d+$/.test(item))
     if (!x) return null
   
     let y = x.split('x')
