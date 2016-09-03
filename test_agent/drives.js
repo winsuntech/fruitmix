@@ -11,9 +11,9 @@ import { createDriveModelAsync } from 'src/models/driveModel'
 import { createRepo } from 'src/lib/repo'
 
 import request from 'supertest'
-import { mkdirpAsync, rimrafAsync, fs } from 'test/util/async'
+import { mkdirpAsync, rimrafAsync, fs } from 'src/util/async'
 
-import { initFamilyRoot, genUserToken } from './family'
+import { initFamilyRoot, genUserToken } from 'src/util/family'
 
 let userUUID = '9f93db43-02e6-4b26-8fae-7d6f51da12af'
 let drv001UUID = 'ceacf710-a414-4b95-be5e-748d73774fc4'  
