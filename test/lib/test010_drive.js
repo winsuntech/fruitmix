@@ -163,6 +163,8 @@ describe(path.basename(__filename), function() {
         .catch(e => done(e))
     })
 
+/**
+
     // FIXME this test case should be moved to protoMapTree
     it('should emit hashlessNonEmpty event for single (hashless) file in root', function(done) {
     
@@ -210,7 +212,10 @@ describe(path.basename(__filename), function() {
         })
         .catch(e => done(e))
     })
+
+**/
   })
+
 
   describe('test abspath', function() {
 
@@ -402,5 +407,4 @@ describe(path.basename(__filename), function() {
 
   /* end of all groups */
 })
-
 

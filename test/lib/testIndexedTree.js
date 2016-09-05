@@ -293,11 +293,10 @@ describe(path.basename(__filename) + ': indexedTree functions', function() {
       expect(t.root.hasOwnProperty('mtime')).to.be.false
       expect(t.root.hasOwnProperty('hash')).to.be.false
     }) 
-
+/**
     it('root should have correct parent/children set', function() {
       
       t.createNode(null, root)
-      
       expect(t.root.parent).to.be.null
       expect(t.root.getChildren()).to.deep.equal([])
     })
@@ -323,6 +322,8 @@ describe(path.basename(__filename) + ': indexedTree functions', function() {
       
       expect(t.hashMap.size).to.equal(0)
     })
+**/
+
   })  
 })
 

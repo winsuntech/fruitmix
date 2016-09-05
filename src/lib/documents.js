@@ -1,5 +1,0 @@
-import paths from './paths'
-
-
-
-
