@@ -61,4 +61,23 @@ export const mapXstatToObject = (xstat) => {
   return obj
 }
 
+export const writeFileToDisk = (fpath, data, callback) => {
+
+  let error, os = fs.createWriteStream(fpath)
+
+  os.on('error', err => {
+    error = err
+    callback(err)
+  })
+
+  // TODO may be changed to finish ???
+  os.on('close', () => {
+    if (!error) callback(null)
+  })
+
+  os.write(data)
+  os.end()
+}
+
+
 

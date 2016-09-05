@@ -1,9 +1,32 @@
 import crypto from 'crypto'
 
-const canonicalize = (comments, author) => 
-  comments.filter(cmt => cmt.author === author) 
-    .sort((a, b) => a.time - b.time)
-    .map(cmt => ({ text: cmt.text, time: cmt.time }))
+import deepEqual from 'deep-equal'
+
+/** 
+
+  The structure of a mediaTalk object should be
+
+  {
+    data: {
+      owner: <UUID, string>,
+      digest: <SHA256, string>,
+      comments: [ // sorted by time
+        {
+          author: <UUID, string>,
+          time: <Integer, number>,
+          text: <String>
+        },
+        ...
+      ]
+    },
+    authorHash: null or Map(), author => comment hash    
+    docHash: document hash
+  }
+
+  the property inside data should be structurally stable
+  the comments should be sorted by time
+
+**/
 
 const hashObject = (obj) => {
   let hash = crypto.createHash('SHA256')
@@ -11,45 +34,108 @@ const hashObject = (obj) => {
   return hash.digest('hex')
 }
 
+class mediaTalkPrototype {
 
+  // assuming store has the save method, requiring owner, digest as parameters
+  constructor(store) {
+    this.store = store 
+  }
 
-const mediaTalkPrototype = {
+  save(newData, callback) {
+    this.store.save()    
+  }
 
+  addComment(author, text, callback) {
+
+    // prevent racing
+    let data = this.data
+
+    // immutable, order is important, order is irrelevent to timestamp
+    let newData = {
+      owner: data.owner,
+      digest: data.digest,
+      comments: [...data.comments, {
+        author, text, time: newDate().getTime()
+      }]
+    }
+
+    Object.freeze(newData)
+
+    this.save(newData, (err, docHash) => {
+
+      if (err) return callback(err)
+      if (data !== this.data) {
+        let error = new Error('mediaTalk failed to save due to race condition')
+        error.code = 'EBUSY'
+        return callback(error)
+      }
+
+      this.docHash = docHash
+      this.data = newData
+      this.updateAuthorHash()
+
+      callback(null, newData)
+    })
+  }
+
+  deleteComment(author, time, callback) {
+
+    // prevent racing
+    let data = this.data
+
+    // check existence
+    let index = data.comments.find(c => c.author === author && c.time === time)
+    if (index === -1) {
+      return process.nextTick(() => callback(data))
+    }
+
+    let newData = {
+      owner: data.owner,
+      digest: data.digest,
+      comments: [...data.comments.splice(0, index), ...data.comments.splice(index + 1)]
+    }
+
+    Object.freeze(newData)
+
+    this.save(newData, (err, docHash) => {
+      
+      if (err) return callback(err)
+      if (data !== this.data) {
+        let error = new Error('mediaTalk failed to save due to race condition')
+        error.code = 'EBUSY'
+        return callback(error)
+      }
+    
+      this.docHash = docHash
+      this.data = newData
+      this.updateAuthorHash()
+
+      callback(null, newData)
+    })
+  }
+
+  // generate a new Map from scratch
   updateAuthorHash() {
 
-    let this.authorHash = new Map()
+    let authorHash = new Map()
+    let comments = this.data.comments
 
     // create a new set
     let authorSet = new Set()
     // put all authors into set
-    this.comments.forEach(cmt => authorSet.add(cmt.author))
+    comments.forEach(cmt => authorSet.add(cmt.author))
 
-    if (authorSet.size === 0) return
-
-    // construct author array from set
-    let authors = Array.from(authorSet).sort()
-    // for each author, store author => hash in map
-    authors.forEach(author => 
-      authorHashMap.set(author, hashObject(canonicalize(this.comments, author))))
-  }
-
-  addComment(author, message) {
-    this.comments.push({
-      author: author,
-      message: message,
-      time: new Date().getTime()
-    })
-
-    this.updateAuthorHash()
-  }
-
-  removeComment(author, time) {
-    let index = this.comments.find(c => c.author === author && c.time === time)
-    if (index !== -1) {
-      this.comments = this.comments.splice(index, 1)
-      this.updateAuthorHash()
+    if (authorSet.size) {
+      // construct author array from set
+      let authors = Array.from(authorSet).sort()
+      // for each author, store author => hash in map
+      authors.forEach(author => 
+        authorHashMap.set(author, hashObject(comments.filter(cmt => cmt.author === author)))
     }
+
+    let this.authorHash = authorHash
   }
+
 
   authorsDigest(authors) {
 
@@ -86,13 +172,15 @@ const mediaTalkPrototype = {
   }
 }
 
-const createMediaTalk = (owner, digest) => 
-  Object.create(mediaTalkPrototype, {
+// this function create a blank talk, which has not been saved before, then 
+// there is neither document hash nor comments
+const createMediaTalk = (prototype, owner, digest) => 
+  Object.create(prototype, {
     owner, digest, comments: [], authorHash: new Map()
   })
 
-const createMediaTalkFromObject = (obj) => 
-  Object.create(mediaTalkPrototype, obj)
+const createMediaTalkFromObject = (prototype, obj, hash) => 
+  Object.create(prototype, obj)
     .updateAuthorHash()
 
-export { createMediaTalk, createMediaTalkFromObject } 
+export { createMediaTalkPrototype, createMediaTalk, createMediaTalkFromObject } 

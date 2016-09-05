@@ -24,7 +24,9 @@ const setRootAsync = async (rootpath) => {
   await Util.mkdirpAsync(root)
   await Util.mkdirpAsync(join('models'))
   await Util.mkdirpAsync(join('drives'))
-  await Util.mkdirpAsync(join('pools'))
+  await Util.mkdirpAsync(join('documents'))
+  await Util.mkdirpAsync(join('mediashare'))
+  await Util.mkdirpAsync(join('mediatalk'))
   await Util.mkdirpAsync(join('upload'))
   await Util.mkdirpAsync(join('etc'))
   await Util.mkdirpAsync(join('tmp'))
@@ -47,7 +49,9 @@ const getPath = (name) => {
   switch(name) {
   case 'models':
   case 'drives':
-  case 'pools':
+  case 'documents':
+  case 'mediashare':
+  case 'mediatalk':
   case 'upload':
   case 'etc':
   case 'tmp':

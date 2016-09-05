@@ -1,28 +1,5 @@
 import UUID from 'node-uuid'
 
-class MediaTalk {
-
-  constructor(owner, digest) {
-    this.owner = owner
-    this.digest = digest
-    // each comment has three fields: commenter (uuid), message, and time
-    this.comments = []
-  }
-
-  addComment(author, message) {
-    this.comments.push({
-      author: author,
-      message: message,
-      time: new Date().getTime()
-    })
-  }
-
-  removeComment(author, time) {
-    let index = this.comments.find(c => c.author === author && c.time === time)
-    if (index !== -1) this.comments = this.comments.splice(index, 1)
-  }
-}
-
 /**
 
   a share
