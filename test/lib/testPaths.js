@@ -13,7 +13,7 @@ describe("src/lib/paths.js", function() {
     //myDigester=digester.default();
   })
   
-  
+/**  
   describe('setRootAsync(...)', (done) => {
     it('it works!', () => {
 	    sinon.stub(Util, 'mkdirpAsync').returns(1);
@@ -32,6 +32,8 @@ describe("src/lib/paths.js", function() {
       }) 
     })
   })
+**/
+
  /* 
   describe('digest(...)', function() {
     it('it works!', function() {
