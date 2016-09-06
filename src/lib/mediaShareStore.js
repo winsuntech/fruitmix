@@ -1,6 +1,8 @@
 import path from 'path'
 import fs from 'fs'
 
+import validator from 'validator'
+
 import { writeFileToDisk } from './util'
 
 class MediaShareStore {
@@ -31,13 +33,12 @@ class MediaShareStore {
     let srcpath = path.join(this.rootdir, uuid)
     fs.readFile(srcpath, (err, data) => {
       if (err) return callback(err)  
-      try {
-        let obj = JSON.parse(data.toString())
-        callback(null, obj)
-      }
-      catch (e) {
-        callback(e)
-      }
+      let sha1 = data.toString()
+
+      this.docstore.retrieve(sha1, (err, object) => {
+        if (err) return callback(err)
+        callback(null, object)
+      })
     })
   }
 
