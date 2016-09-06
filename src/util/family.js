@@ -390,7 +390,7 @@ let drives = [
     uuid: bobHome,
     owner: [ bobUUID ],
     writelist: [],
-    readlist: [],
+    readlist: [ aliceUUID ],
     cache: true
   },
   {
@@ -410,7 +410,7 @@ let drives = [
     uuid: charlieHome,
     owner: [ charlieUUID ],
     writelist: [],
-    readlist: [],
+    readlist: [ aliceUUID, bobUUID ],
     cache: true
   },
   {
@@ -429,7 +429,7 @@ let drives = [
     URI: 'fruitmix',
     uuid: davidHome,
     owner: [ davidUUID ],
-    writelist: [],
+    writelist: [ bobUUID ],
     readlist: [],
     cache: true
   },
@@ -449,8 +449,8 @@ let drives = [
     URI: 'fruitmix',
     uuid: emilyHome,
     owner: [ emilyUUID ],
-    writelist: [],
-    readlist: [],
+    writelist: [ bobUUID ],
+    readlist: [ aliceUUID ],
     cache: true
   },
   {
@@ -469,8 +469,8 @@ let drives = [
     URI: 'fruitmix',
     uuid: frankHome,
     owner: [ frankUUID ],
-    writelist: [],
-    readlist: [],
+    writelist: [ bobUUID ],
+    readlist: [ aliceUUID, charlieUUID ],
     cache: true
   },
   {
@@ -489,7 +489,7 @@ let drives = [
     URI: 'fruitmix',
     uuid: georgeHome,
     owner: [ georgeUUID ],
-    writelist: [],
+    writelist: [ aliceUUID, bobUUID ],
     readlist: [],
     cache: true
   },
@@ -509,8 +509,8 @@ let drives = [
     URI: 'fruitmix',
     uuid: henryHome,
     owner: [ henryUUID ],
-    writelist: [],
-    readlist: [],
+    writelist: [ aliceUUID, bobUUID ],
+    readlist: [ charlieUUID ],
     cache: true
   },
   {
@@ -529,8 +529,8 @@ let drives = [
     URI: 'fruitmix',
     uuid: ianHome,
     owner: [ ianUUID ],
-    writelist: [],
-    readlist: [],
+    writelist: [ aliceUUID, bobUUID ],
+    readlist: [ charlieUUID, davidUUID ],
     cache: true
   },
   {
@@ -544,7 +544,7 @@ let drives = [
     cache: true
   },
   {
-    label: 'Jane home',
+    label: '',
     fixedOwner: true,
     URI: 'fruitmix',
     uuid: janeHome,
@@ -564,7 +564,7 @@ let drives = [
     cache: true
   },
   {
-    label: 'Kate home',
+    label: '@$%$$34445#$^#23',
     fixedOwner: true,
     URI: 'fruitmix',
     uuid: kateHome,
