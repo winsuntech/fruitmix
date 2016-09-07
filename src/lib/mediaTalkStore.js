@@ -1,24 +1,24 @@
 import path from 'path'
 import fs from 'fs'
 
-import validator from 'validator'
+import UUID from 'node-uuid'
+
 import { writeFileToDisk } from './util'
 
-class MediaShareStore {
+class MediaTalkStore {
 
-  constructor(rootdir, arcdir, tmpdir, docstore) {
+  constructor(rootdir, tmpdir, docstore) {
     this.rootdir = rootdir
-    this.arcdir = arcdir
     this.tmpdir = tmpdir
     this.docstore = docstore
   }
 
   store(doc, callback) {
-    let uuid = doc.uuid
+    let name = doc.owner + '.' + doc.digest
     this.docstore.store(doc, (err, digest) => {
       if (err) return callback(err)
-      let tmppath = path.join(this.tmpdir, uuid) 
-      let dstpath = path.join(this.rootdir, uuid)
+      let tmppath = path.join(this.tmpdir, UUID.v4())
+      let dstpath = path.join(this.rootdir, name)
       writeFileToDisk(tmppath, digest, err => {
         if (err) return callback(err)
         fs.rename(tmppath, dstpath, err => {
@@ -26,30 +26,23 @@ class MediaShareStore {
           callback(null, { digest, doc })
         })
       })
-    }) 
+    }
   }
 
-  archive(uuid, callback) {
-    let srcpath = path.join(this.rootdir, uuid)
-    let dstpath = path.join(this.arcdir, uuid)
-    fs.rename(srcpath, dstpath, err => callback(err))
-  }
-
-  retrieve(uuid, callback) {
-    let srcpath = path.join(this.rootdir, uuid)
+  retrieve(owner, digest, callback) {
+    let srcpath = path.join(this.rootdir, owner + '.' + digest)
     fs.readFile(srcpath, (err, data) => {
-      if (err) return callback(err)  
+      if (err) return callback(err)
       let digest = data.toString()
-
+  
       this.docstore.retrieve(digest, (err, doc) => {
         if (err) return callback(err)
-        callback(null, { digest , doc })
+        callback(null, { digest, doc })
       })
     })
   }
 
   retrieveAll(callback) {
-
     fs.readdir(this.rootdir, (err, entries) => {
       if (err) return callback(err)
 
@@ -67,8 +60,7 @@ class MediaShareStore {
   }
 }
 
-const createMediaShareStore = (rootdir, arcdir, tmpdir, docstore) =>
-  new MediaShareStore(rootdir, arcdir, tmpdir, docstore)
+const createMediaTalkStore = (rootdir, tmpdir, docstore) => 
+  new MediaTalkStore(rootdir, tmpdir, docstore)
 
-export { createMediaShareStore }
-
+export { createMediaTalkStore }

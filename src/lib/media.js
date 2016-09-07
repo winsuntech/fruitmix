@@ -2,28 +2,107 @@ import UUID from 'node-uuid'
 
 /**
 
-  a share
+  a share doc
 
   {
-    uuid: [share uuid],
-    creator: uuid,
-    maintainers: [],
-    viewers: [],
-    isAlbum: true or false,
-    isSticky: true or false,
-    media: [
-      digest: xxxx
+    doctype: 'mediashare',
+    docversion: '1.0'
+
+    uuid: xxxx,
+
+    creator: xxxx,
+*   maintainers: [], // 0..n 
+*   viewers: [], // 0..n
+
+*   album: true or false,
+*   sticky: true or false,
+    
+    ctime: xxxx,
+    mtime: xxxx,
+
+    contents: [
+      {
+*       digest: xxxx
+        creator: xxxx
+        ctime: xxxx
+      }
     ]
-    mtime: time
   }
 
+  a share object 
+  {
+    digest: xxx
+    doc: {
+      ... // a share doc
+    }
+  }
 **/
+
+const isUUID = (uuid) => (typeof uuid === 'string') ? validator.isUUID(uuid) : false
+const isSHA1 = (sha1) => (typeof sha1 === 'string') ? /[a-f0-9]{64}/.test(sha1) : false
+
+// this function generate a mediashare doc
+const createMediaShareDoc = (userUUID, obj) => {
+
+  let { maintainers, viewers, album, sticky, contents } = obj
+
+  // FIXME
+  maintainers = []
+
+  if (!Array.isArray(viewers)) viewers = []
+
+  // validate, sort, dedup, and must not be the user itself
+  viewers = viewers
+    .filter(viewer !== userUUID) 
+    .filter(isUUID)
+    .sort()
+    .filter((item, index, array) => !index || item !== array[index - 1])
+
+  // album must be true or false, defaults to false
+  if (typeof album !== 'boolean') album = false
+
+  // sticky must be true or false, defaults to false
+  if (typeof sticky !== 'boolean') sticky = false
+
+  if (!Array.isArray(contents)) 
+    contents = []
+  else {
+    contents = contents
+      .filter(isSHA1)
+      .filter((item, index, array) => index === array.indexOf(item))
+  }
+
+  if (!contents.length) {
+    let error = new Error('contents invalid')
+    error.code = 'EINVAL'
+    return error
+  }
+
+  let time = new Date().getTime()
+
+  return {
+    doctype: 'mediashare',
+    docversion: '1.0',
+    uuid: UUID.v4(),
+    maintainers,
+    viewers,
+    album,
+    sticky,
+    ctime: time,
+    mtime: time,
+    contents
+  }
+}
 
 class Media {
 
   // shareMap stores uuid (key) => share (value)
   // mediaMap stores media/content digest (key) => (containing) share Set (value), each containing share Set contains share
-  constructor() {
+  constructor(shareStore, talkStore) {
+
+    this.shareStore = shareStore
+    this.talkStore = talkStore
+
     // using an map instead of an array
     this.shareMap = new Map()
     // using an map instead of an array
@@ -35,57 +114,63 @@ class Media {
                                     // each talsk has creator and media digest as its unique identifier
   }
 
-  createShare(shareObj) {
-
-    let uuid = UUID.v4()
-    let timestamp = new Date().getTime()
-
-    shareObj.uuid = uuid
-    shareObj.ctime = timestamp
-    shareObj.mtime = timestamp
-
-    this.shareMap.set(uuid, shareObj)    
-
-    shareObj.media.forEach(digest => {
-      let shareSet  = this.mediaMap.get(digest)
+  // add a share to index maps
+  indexShare(share) {
+    this.shareMap.set(share.doc.uuid, share)
+    share.doc.contents.forEach(item => {
+      let shareSet = this.mediaMap.get(item.digest)
       if (shareSet) {
-        shareSet.add(shareObj)
+        shareSet.add(share)
       }
       else {
         shareSet = new Set()
-        shareSet.add(shareObj)
-        this.mediaMap.set(digest, shareSet)
+        shareSet.add(share)
+        this.mediaMap.set(item.digest, shareSet)
       }
     })
-
-    return shareObj
   }
 
-  updateShare(uuid, props) {
-    let shareObj = this.shareMap.get(uuid)
-    if (!shareObj) return null
-    Objet.assign(shareObj, props)
-    return shareObj
-  }
-
-  deleteShare(uuid) {
-
-    let share = this.shareMap.get(uuid)
-    
-    share.contents.forEach(cont => {
-      let shareSet = this.mediaMap.get(cont.digest)
-      if (!shareSet) throw new Error('structural error')
-      shareSet.delete(share)
-      if (shareSet.size === 0) { // the last entries for this media's shareSet has been removed
-        this.mediaMap.delete(cont.digest)
-      }
+  // remove a share out of index maps
+  unindexShare(share) {
+    this.shareMap.delete(share.doc.uuid)
+    share.doc.contents.forEach(item => {
+      let shareSet = this.mediaMap.get(item.digest)
+      shareSet.delete(share) 
     })
-
-    this.shareMap.delete(uuid) 
   }
 
-  createComment(targetUserUUID, targetDigest, userUUID, comment) {
-    // check permission first   
+  // create a mediashare object from user provided object
+  // FIXME permission check
+  createMediaShare(userUUID, obj, callback) {
+
+    let doc = createMediaShareDoc(userUUID, obj)
+    if (doc instanceof Error) {
+      return process.nextTick(callback, doc)
+    }
+
+    this.shareStore.store(doc, (err, share) => {
+      if (err) return callback(err)
+      indexShare(share)      
+    })
+  }
+
+  // archive a mediashare and unindex
+  deleteMediaShare(uuid, callback) {
+
+    this.shareStore.archive(uuid, err => {
+      if (err) return callback(err)
+      share.contents.forEach(cont => {
+        let shareSet = this.mediaMap.get(cont.digest)
+        if (!shareSet) throw new Error('structural error')
+        shareSet.delete(share)
+        if (shareSet.size === 0) { // the last entries for this media's shareSet has been removed
+          this.mediaMap.delete(cont.digest)
+        }
+      })
+
+      this.shareMap.delete(uuid) 
+      callback(null)
+    })
   }
 
   // my share is the one I myself is the creator
@@ -96,14 +181,13 @@ class Media {
     let shares = []
     this.shareMap.forEach((value, key, map) => {
       let share = value
-      if (share.creator === userUUID || 
-          share.maintainer.find(u => u === userUUID) || 
-          share.viewer.find(u => u === userUUID)) 
+      if (share.doc.creator === userUUID || 
+          share.doc.maintainer.find(u => u === userUUID) || 
+          share.doc.viewer.find(u => u === userUUID)) 
         shares.push(share) 
     })
     return shares
   }
-
   
   // retrieves all media talks I can view
   getMediaTalks(userUUID) {

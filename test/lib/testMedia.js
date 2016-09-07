@@ -77,6 +77,8 @@ describe(path.basename(__filename), function() {
       expect(x.shareMap instanceof Map).to.be.true
       expect(x.shareMap.size).to.equal(0)
     })
+
+    
   })
 
   describe('create share', function() {
@@ -87,9 +89,11 @@ describe(path.basename(__filename), function() {
       creator: '916bcacf-e610-4f55-ad39-106e306d982e',
       maintainer: [],
       viewer: ['f705ae6b-d3aa-4613-a853-64e6e74e32b7'],
-      isAlbum: false,
-      isSticky: false,
-      media: ['19caae6dd58f2cc399789961bed6edee14797d8c7c0d518ac274ed0b0867e067']
+      album: false,
+      sticky: false,
+      contents: [
+        '19caae6dd58f2cc399789961bed6edee14797d8c7c0d518ac274ed0b0867e067'
+      ]
     }
 
     beforeEach(function() {
