@@ -6,7 +6,7 @@
     "start": "node build/app.js",
     "build": "babel src --out-dir build",
     "devel": "PORT=3721 nodemon --exec babel-node src/main.js",
-    "devel-family": "PORT=3721 nodemon --exec babel-node src/main.js --family",
+    "devel-family": "PORT=3721 nodemon --ignore 'family/*' --exec babel-node src/main.js --family",
     "test": "NODE_PATH=. mocha --compilers js:babel-core/register --recursive --sort test",
     "mocha": "NODE_PATH=. NODE_ENV=test mocha --compilers js:babel-core/register --recursive --sort",
     "algo": "NODE_PATH=. NODE_ENV=test mocha --compilers js:babel-core/register --recursive --sort test_algo",
