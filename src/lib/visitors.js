@@ -1,7 +1,9 @@
 import fs from 'fs'
 import path from 'path'
 
-import { fsStatAsync, fsReaddirAsync } from './tools'
+import Promise from 'bluebird'
+
+Promise.promisifyAll(fs)
 
 const visit = (dir, dirContext, func, done) => { 
   fs.readdir(dir, (err, entries) => {
@@ -34,7 +36,7 @@ async function visitAsync(dir, dirContext, funcAsync) {
     if (entryContext) await visitAsync(path.join(dir, entry), entryContext, funcAsync)
   }
 
-  let entries = await fsReaddirAsync(dir)
+  let entries = await fs.readdirAsync(dir)
   if (entries instanceof Error) return
   if (entries.length === 0) return
 
@@ -49,7 +51,7 @@ async function abcAsync(dir, dirContext, entry) {
   console.log(dirContext)
   console.log(entry)
 
-  let stats = await fsStatAsync(path.join(dir, entry))
+  let stats = await fs.statAsync(path.join(dir, entry))
   if (stats instanceof Error) return
   if (stats.isDirectory()) return `context for ${path.join(dir, entry)}`
 }
