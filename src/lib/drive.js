@@ -113,19 +113,44 @@ class Drive extends IndexedTree {
     return path.join(...nodepath)
   }
 
-  // this function tried to create a new folder
-  createFolder(userUUID, targetNode, name, opts, callback) {
+  // v createFolder   targetNode (parent), new name
+  // x createFile     targetNode (parent), new name, file, optional digest?
+  //   renameFolder   targetNode, new name (not conflicting) 
+  //   renameFile     targetNode, new name (not conflicting)
+  //   deleteFolder   targetNode, 
+  //   deleteFile     targetNode,
+  //   listFolder     get node is enough, no operation
+  //   readFile       get a path is enough, no operation
+  // x overwriteFile  overwrite but preserve uuid
+  //   chmod
 
-    if (typeof opts === 'function') {
-      callback = opts
-      opts = {}
+
+  // this function tried to create a new folder
+  // perm: user must have write permission on targetNode
+  createFolder(userUUID, targetNode, name, callback) {
+
+    // if not directory, EINVAL
+    if (!targetNode.isDirectory()) {
+      let error = new Error('createFolder: target should be a folder')
+      error.code = 'EINVAL' 
+      return process.nextTick(callback, error)
     }
 
-    if (targetNode.getChildren().find(c => c.name === name))
-      return callback(new Error('folder exists'))
+    // if not writable, EPERM
+    if (!targetNode.userWritable(userUUID)) {
+      let error = new Error('createFolder: operation not permitted')
+      error.code = 'EPERM'
+      return process.nextTick(callback, error)
+    }
+
+    // if already exists, EEXIST
+    if (targetNode.getChildren().find(c => c.name === name)) {
+      let error = new Error('createFolder: file or folder already exists')
+      error.code = 'EEXIST'
+      return process.nextTick(callback, error)
+    }
 
     let targetpath = path.join(this.abspath(targetNode), name)
-
     fs.mkdir(targetpath, err => {
       if (err) return callback(err)
       readXstat(targetpath, { owner: [userUUID] }, (err, xstat) => {
@@ -133,6 +158,65 @@ class Drive extends IndexedTree {
         let obj = mapXstatToObject(xstat)
         let node = targetNode.tree.createNode(targetNode, obj)
         callback(null, node)
+      })
+    })
+  }
+
+  createFile(userUUID, srcpath, targetNode, filename, callback) {
+    
+    if (!targetNode.isDirectory()) {
+      let error = new Error('createFile: target must be a folder')
+      error.code = 'EINVAL'
+      return process.nextTick(callback, error)
+    }
+
+    if (!targetNode.userWritable(userUUID)) {
+      let error = new Error('createFile: operation not permitted')
+      error.code = 'EPERM'
+      return process.nextTick(callback, error)
+    } 
+
+    if (targetNode.getChildren().find(c => c.name === filename)) {
+      let error = new Error('createFile: file or folder already exists')
+      error.code = 'EEXIST'
+      return process.nextTick(callback, error)
+    }
+
+    fs.rename(srcpath, targetpath, err => {
+      if (err) return callback(err)
+      readXstat(targetpath, { owner: [userUUID] }, (err, xstat) => {
+        if (err) return callback(err)
+        let obj = mapXstatToObject(xstat)
+        let node = this.createNode(targetNode, obj)
+        callback(null, node)
+      })
+    }) 
+  }
+
+  overwriteFile(userUUID, srcpath, targetNode, callback) {
+     
+    if (!targetNode.isFile()) {
+      let error = new Error('overwriteFile: target must be a file')
+      error.code = 'EINVAL'
+      return process.nextTick(callback, error)
+    }
+
+    if (!targetNode.userWritable(userUUID)) {
+      let error = new Error('overwriteFile: operation not permitted')
+      error.code = 'EPERM'
+      return process.nextTick(callback, error)
+    }
+
+    copyXattr(srcpath, targetpath, err => {
+      if (err) return callback(err)
+      fs.rename(srcpath, targetpath, err => {
+        if (err) return callback(err)
+        readXstat(targetpath, (err, xstat) => {
+          if (err) return callback(err)
+          let obj = mapXstatToObject(xstat)
+          this.updateNode(targetNode, obj) // TODO
+          callback(null, targetNode) 
+        })
       })
     })
   }

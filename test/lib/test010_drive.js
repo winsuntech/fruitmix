@@ -15,6 +15,9 @@ import { createDrive } from '../../src/lib/drive'
 
 const uuid1 = 'c0765cd5-acd1-4b53-bb17-7834ebdca6c1' 
 const uuid2 = 'd7114148-e2bd-42f8-88f9-a980a1a4d29c' 
+const uuid3 = 'f4fadbe2-5fc2-4538-abbd-92191f92dfe6' 
+const uuid4 = '997892a5-8166-48dd-ab7c-59a4d1a3523a' 
+const uuid5 = '188b73c0-f14e-4a83-a79f-fc8cc37c8c3d' 
 
 const cwd = process.cwd()
 const FRUITMIX = 'user.fruitmix'
@@ -29,8 +32,8 @@ const fixed01 = {
   label: 'fixed01',
   fixedOwner: true,
   URI: 'fruitmix',
-  uuid: uuids[0],
-  owner: [uuids[1]],
+  uuid: uuid1,
+  owner: [uuid2],
   writelist: [],
   readlist: [],
   cache: true
@@ -162,58 +165,6 @@ describe(path.basename(__filename), function() {
         })
         .catch(e => done(e))
     })
-
-/**
-
-    // FIXME this test case should be moved to protoMapTree
-    it('should emit hashlessNonEmpty event for single (hashless) file in root', function(done) {
-    
-      fs.writeFileAsync('tmptest/testfile', 'hello world!')
-        .then(() => {
-
-          let hashlessEmitted = false
-          let cachedEmitted = false
-
-          let drive = createDrive(fixed01)
-          drive.on('hashlessNonEmpty', () => {
-            hashlessEmitted = true
-            if (cachedEmitted) done()
-          })
-          drive.on('driveCached', () => {
-            cachedEmitted = true
-            if (hashlessEmitted) done()
-          })
-
-          drive.setRootpath(path.join(cwd, 'tmptest'))
-        })
-        .catch(e => done(e))
-    })
-
-    // FIXME this test case should be moved to protoMapTree
-    it('should emit hashlessEmpty event for single (hashless) file in root, after hash update', function(done) {
-
-      let hash = crypto.createHash('sha256')
-      hash.update('hello world!')
-      let digest = hash.digest('hex')
-
-      fs.writeFileAsync('tmptest/testfile', 'hello world!')
-        .then(() => {
-          let drive = createDrive(fixed01)
-          drive.on('hashlessEmpty', () => {
-            expect(drive.hashless.size).to.equal(0)
-            done()
-          })
-          drive.on('driveCached', () => {
-            expect(drive.hashless.size).to.equal(1)
-            drive.updateHashMagic(drive.root.children[0], digest, 'ASCII text, with no line terminators')
-          })
-
-          drive.setRootpath(path.join(cwd, 'tmptest'))
-        })
-        .catch(e => done(e))
-    })
-
-**/
   })
 
 
@@ -248,12 +199,30 @@ describe(path.basename(__filename), function() {
 
     let drive
 
+    const driveUUID = uuid1
+
+    const ownerUUID = uuid2
+    const writerUUID = uuid3
+    const readerUUID = uuid4
+    const strangerUUID = uuid5
+
+    const fixed001 = {
+      label: 'fixed001',
+      fixedOwner: true,
+      URI: 'fruitmix',
+      uuid: driveUUID,
+      owner: [ownerUUID], // 
+      writelist: [writerUUID],
+      readlist: [readerUUID],
+      cache: true
+    }
+
     beforeEach(function(done) {
       rimrafAsync('tmptest')
         .then(() => mkdirpAsync('tmptest/folder1/folder3'))
         .then(() => mkdirpAsync('tmptest/folder2'))
         .then(() => {
-          drive = createDrive(fixed01)
+          drive = createDrive(fixed001)
           drive.on('driveCached', drv => {
             done()
           })
@@ -266,20 +235,29 @@ describe(path.basename(__filename), function() {
       drive = undefined
     })
 
-    it('should create a folder in root folder with given owner', function(done) {
+    it('creating a folder in root by drive owner should return dir node with name, undefined wr list, and drive owner as owner', function(done) {
 
-      drive.createFolder(uuid1, drive.root, 'hello', (err, node) => {
+      drive.createFolder(ownerUUID, drive.root, 'hello', (err, node) => {
+        if (err) return done(err)
 
         expect(node.parent).to.equal(drive.root)
+        expect(node.isDirectory()).to.be.true
         expect(node.name).to.equal('hello')
         expect(node.writelist).to.be.undefined
         expect(node.readlist).to.be.undefined
-        expect(node.owner).to.deep.equal([uuid1])
+        expect(node.owner).to.deep.equal([ownerUUID])
+        done()
+      })
+    }) 
 
-        xattr.get(path.join(cwd, 'tmptest', 'hello'), 'user.fruitmix', (err, attr) => {
+    it('creating a folder in root by drive owner should have xattr w/ the same uuid w/ node, drive owner as owner, w/o wr list', function(done) {
+      drive.createFolder(ownerUUID, drive.root, 'world', (err, node) => {
+        if (err) return done(err)
+
+        xattr.get(path.join(cwd, 'tmptest', 'world'), 'user.fruitmix', (err, attr) => {
           try { 
             let stamp = JSON.parse(attr)
-            expect(stamp.owner).to.deep.equal([uuid1])
+            expect(stamp.owner).to.deep.equal([ownerUUID])
             expect(stamp.uuid).to.equal(node.uuid)
             expect(stamp.hasOwnProperty('writelist')).to.be.false
             expect(stamp.hasOwnProperty('readlist')).to.be.false
@@ -290,25 +268,28 @@ describe(path.basename(__filename), function() {
           }
         })
       })
-    }) 
+    })
 
-    it('should create a folder in subfolder with given owner', function(done) {
-
-      let folder1 = drive.root.children.find(c => c.name === 'folder1')
-      
-      drive.createFolder(uuid1, folder1, 'hello', (err, node) => {
-        
-        expect(node.parent).to.equal(folder1)
+    it('creating a folder in root by writer should return dir node with name, undefined wr list and writer as onwer', function(done) {
+      drive.createFolder(writerUUID, drive.root, 'hello', (err, node) => {
+        if (err) return done(err)
+        expect(node.parent).to.equal(drive.root)
+        expect(node.isDirectory()).to.be.true
         expect(node.name).to.equal('hello')
         expect(node.writelist).to.be.undefined
         expect(node.readlist).to.be.undefined
-        expect(node.owner).to.deep.equal([uuid1])
+        expect(node.owner).to.deep.equal([writerUUID])
+        done()
+      }) 
+    })
 
-        xattr.get(path.join(cwd, 'tmptest', 'folder1', 'hello'), 'user.fruitmix', (err, attr) => {
-          if (err) return done(err)
-          try { // TODO use deep equal !
+    it('creating a folder in root by writer should have xattr w/ the same uuid w/ node, writer as owner, w/o wr list', function(done) {
+      drive.createFolder(writerUUID, drive.root, 'world', (err, node) => {
+        if (err) return done(err)
+        xattr.get(path.join(cwd, 'tmptest', 'world'), 'user.fruitmix', (err, attr) => {
+          try { 
             let stamp = JSON.parse(attr)
-            expect(stamp.owner).to.deep.equal([uuid1])
+            expect(stamp.owner).to.deep.equal([writerUUID])
             expect(stamp.uuid).to.equal(node.uuid)
             expect(stamp.hasOwnProperty('writelist')).to.be.false
             expect(stamp.hasOwnProperty('readlist')).to.be.false
@@ -318,21 +299,47 @@ describe(path.basename(__filename), function() {
             done(e)
           }
         })
-      }) 
+      })
     })
 
-    it('should return error if folder exists (in root)', function(done) {
-      drive.createFolder(uuid1, drive.root, 'folder2', (err, node) => {
-        expect(err).to.be.an('Error')
+    it('creating a folder in root by reader should fail with EPERM', function(done) {
+      drive.createFolder(readerUUID, drive.root, 'hello', (err, node) => {
+        expect(err).to.be.an('error')
+        expect(err.code).to.equal('EPERM')
         done()
       })
     })
 
-    it('should return error if folder exists (in subfolder)', function(done) {
+    it('creating a folder in root by reader should fail w/o creating the folder <<<< TODO', function(done) {
+      done()
+    })
+
+    it('creating a folder in root by stranger should fail with EPERM', function(done) {
+      drive.createFolder(strangerUUID, drive.root, 'world', (err, node) => {
+        expect(err).to.be.an('error')
+        expect(err.code).to.equal('EPERM')
+        done()
+      })
+    })
+
+    it('creating a folder in root by stranger should fail w/o creating the folder <<<< TODO', function(done) {
+      done()
+    })
+
+    it('should return error if folder exists (in root) ??? ', function(done) {
+      drive.createFolder(ownerUUID, drive.root, 'folder2', (err, node) => {
+        expect(err).to.be.an('error')
+        expect(err.code).to.equal('EEXIST')
+        done()
+      })
+    })
+
+    it('should return error if folder exists (in subfolder) ???', function(done) {
 
       let folder1 = drive.root.children.find(c => c.name === 'folder1') 
-      drive.createFolder(uuid1, folder1, 'folder3', (err, node) => {
-        expect(err).to.be.an('Error')
+      drive.createFolder(writerUUID, folder1, 'folder3', (err, node) => {
+        expect(err).to.be.an('error')
+        expect(err.code).to.equal('EEXIST')
         done()
       }) 
     })

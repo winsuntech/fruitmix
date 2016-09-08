@@ -13,6 +13,7 @@ import users from './routes/users'
 import login from './routes/login'
 import files from './routes/files'
 import drives from './routes/drives'
+import libraries from './routes/libraries'
 
 let app = express()
 
@@ -38,6 +39,7 @@ app.use('/token', require('./routes/token'))
 
 app.use('/users', users)
 
+app.use('/libraries', libraries)
 app.use('/drives', drives)
 app.use('/files', files)
 // app.use('/media', require('./routes/media'))

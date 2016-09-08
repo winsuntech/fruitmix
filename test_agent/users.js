@@ -1,3 +1,4 @@
+import path from 'path'
 import rimraf from 'rimraf'
 import request from 'supertest'
 import fs from 'fs'
@@ -8,7 +9,7 @@ const UserModel = require('src/models/userModel')
 import Promise from 'bluebird'
 
 
-describe("src/routes/users.js", function() {
+describe(path.basename(__filename), function() {
   
   let createData={username:"u1", "password":"1122334", "avatar":"", "email":"aaa@bbb.com", "isAdmin":false, "type":""}  
   

@@ -12,6 +12,33 @@ const nodeProperties = {
     return node
   },
 
+  nea() {
+    let node = this  
+    while (!node.writelist) node = node.parent
+    return node
+  },
+
+  isRootOwner(userUUID) {
+    return (
+      this.root().owner.indexOf(userUUID) !== -1
+    )
+  }, 
+
+  userWritable(userUUID) {
+    return (
+      this.root().owner.indexOf(userUUID) !== -1 ||
+      this.nea().writelist.indexOf(userUUID) !== -1
+    )
+  },
+
+  userReadable(userUUID) {
+    return (
+      this.root().owner.indexOf(userUUID) !== -1 ||
+      this.nea().writelist.indexOf(userUUID) !== -1 ||
+      this.nea().readlist.indexOf(userUUID) !== -1
+    )
+  },
+
   setChild(child) {
     this.children ? this.children.push(child) : this.children = [child]
   },

@@ -9,6 +9,7 @@ import { readXstat, readXstatAsync } from './xstat'
 import { nodeUserReadable, nodeUserWritable} from './perm'
 
 import { createDrive } from './drive'
+import createHashMagic from './hashMagic'
 
 class Repo extends EventEmitter {
 
@@ -19,6 +20,7 @@ class Repo extends EventEmitter {
     this.driveModel = driveModel
     this.drives = []
     this.initState = 'IDLE' // 'INITIALIZING', 'INITIALIZED', 'DEINITIALIZING',
+    this.hashMagicWorker = createHashMagic()
   }
 
   // create a fruitmix drive object (not create a drive model!)
@@ -31,8 +33,7 @@ class Repo extends EventEmitter {
       if (err) return callback(err)
       let drive = createDrive(conf)
       drive.on('driveCached', () => this.emit('driveCached', drive))
-      drive.on('hashlessNonEmpty', () => console.log(`drive ${drive.uuid}: emits hashlessNonEmpty`))
-      drive.on('hashlessEmpty', () => console.log(`drive ${drive.uuid}: emits hashlessEmpty`))
+      drive.on('hashlessAdded', () => console.log('hashlessAdded'))
       drive.setRootpath(drvpath)
       callback(null, drive)
     })
