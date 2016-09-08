@@ -37,28 +37,36 @@ export const mapXstatToObject = (xstat) => {
   hash: null,
   abspath: '/home/xenial/Projects/fruitmix/tmptest' } */
 
-  // not very safe TODO
-  // let name = xstat.abspath.split('/').pop()
   let name = path.basename(xstat.abspath)
   
-  let type
-  if (xstat.isDirectory()) type = 'folder'
-  else if (xstat.isFile()) type = 'file'
-  else throw new Error('Only xstat with type of folder or file can be mapped')
+  if (xstat.isDirectory()) {
 
-  let obj = {
-    uuid: xstat.uuid,
-    type: type,
-    owner: xstat.owner,
-    writelist: xstat.writelist,
-    readlist: xstat.readlist,
-    name: name,
+    return {
+      uuid: xstat.uuid,
+      type: 'folder',
+      owner: xstat.owner,
+      writelist: xstat.writelist,
+      readlist: xstat.readlist,
+      name: name
+    }
+  }
+  else if (xstat.isFile()) {
+
+    return {
+      uuid: xstat.uuid,
+      type: 'file',
+      owner: xstat.owner,
+      writelist: xstat.writelist,
+      readlist: xstat.readlist,
+      name: name,
+      mtime: xstat.mtime.getTime(),
+      size: xstat.size,
+      hash: xstat.hash,
+      magic: xstat.magic, 
+    }
   }
 
-  if (xstat.isFile() && xstat.hash) obj.hash = xstat.hash  
-  if (obj.type === 'file') obj.size = xstat.size
-
-  return obj
+  throw new Error('mapXstatToObject: only folder and file supported')
 }
 
 export const writeFileToDisk = (fpath, data, callback) => {

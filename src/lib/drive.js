@@ -6,7 +6,7 @@ import rimraf from 'rimraf'
 
 import { readXstat } from './xstat'
 import { IndexedTree } from './indexedTree'
-import { mapXstatToObject } from './tools'
+import { mapXstatToObject } from './util'
 import { visit } from './visitors'
 
 const driveVisitor = (dir, node, entry, callback) => {
@@ -323,6 +323,11 @@ class Drive extends IndexedTree {
     })
 
     return queue
+  }
+
+  // indexedTree already has a function named 'updateHashMagic'
+  fileUpdateHashMagic(uuid, hash, magic) {
+    
   }
 }
 

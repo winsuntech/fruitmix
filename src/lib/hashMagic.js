@@ -18,11 +18,11 @@ class HashMagic extends EventEmitter {
 
     this.hashSpawn = null
     this.hash = null
-    this.hashExitCode = -1
+    this.hashExitCode = null
 
     this.magicSpawn = null
     this.magic = null
-    this.magicExitCode = -1
+    this.magicExitCode = null
     this.state = 'IDLE' // or BUSY
   }
 

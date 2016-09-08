@@ -21,6 +21,13 @@ class Repo extends EventEmitter {
     this.drives = []
     this.initState = 'IDLE' // 'INITIALIZING', 'INITIALIZED', 'DEINITIALIZING',
     this.hashMagicWorker = createHashMagic()
+    this.hashMagicWorker.on('end', ret => {
+      console.log('===')
+      console.log(ret)
+      console.log('===')
+      console.log(this.hashMagicWorker)
+      console.log('===')
+    })
   }
 
   // create a fruitmix drive object (not create a drive model!)
@@ -32,8 +39,11 @@ class Repo extends EventEmitter {
 
       if (err) return callback(err)
       let drive = createDrive(conf)
-      drive.on('driveCached', () => this.emit('driveCached', drive))
-      drive.on('hashlessAdded', () => console.log('hashlessAdded'))
+      drive.on('driveCached', () => console.log(`driveCached: ${drive.uuid}`))
+      drive.on('hashlessAdded', node => {
+        console.log(`hashlessAdded: ${drive.uuid} ${node.name}`) 
+        this.hashMagicWorker.start(drive.abspath(node), node.uuid)
+      })
       drive.setRootpath(drvpath)
       callback(null, drive)
     })

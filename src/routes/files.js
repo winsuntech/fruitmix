@@ -227,4 +227,32 @@ router.post('/', auth.jwt(), uploader, (req, res) => {
   })
 })
 
+// this may be either file or folder
+// if it's a folder, return childrens
+// if it's a file, download
+router.get('/:folderUUID', auth.jwt(), (req, res) => {
+  res.status(500).end()
+})
+
+// this can only be folders
+// create a subfolder or a file in folder
+router.post('/:folderUUID', auth.jwt(), (req, res) => {
+  res.status(500).end()
+})
+
+// rename file or folder inside a folder
+router.patch('/:folderUUID/:childUUID', auth.jwt(), (req, res) => {
+  res.status(500).end()
+})
+
+// 
+router.put('/:fileUUID', auth.jwt(), (req, res) => {
+  res.status(500).end()
+})
+
+// this may be either file or folder
+router.delete('/:folderUUID/:childUUID', auth.jwt(), (req, res) => {
+  res.status(500).end() 
+})
+
 export default router

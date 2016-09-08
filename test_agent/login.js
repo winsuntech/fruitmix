@@ -1,3 +1,4 @@
+import path from 'path'
 import rimraf from 'rimraf'
 import request from 'supertest'
 import fs from 'fs'
@@ -9,11 +10,9 @@ import Models from 'src/models/models'
 import Promise from 'bluebird'
 
 
-describe("src/routes/login.js", function() {
-
+describe(path.basename(__filename), function() {
   
   let createData={username:"u1", "password":"1122334", "avatar":"", "email":"aaa@bbb.com", "isAdmin":false, "type":""}  
-  
 
   describe('GET /login', () => {
     it('return empty set when no user exists', (done) => {

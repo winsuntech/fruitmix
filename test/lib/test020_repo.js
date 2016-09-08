@@ -32,6 +32,8 @@ let users = [
     email: null,
     isFirstUser: true,
     isAdmin: true,
+    home: drv001UUID,
+    library: drv001UUID,
   }
 ]
 
@@ -58,6 +60,7 @@ let drives = [
   }
 ]
 
+// this function prepare the repo with above simple setting, one user and two drives
 const prepare = async () => {
 
   // make test dir
@@ -87,6 +90,34 @@ const prepare = async () => {
   models.setModel('drive', dmod)
 }
 
+const copyFile = (src, dst, callback) => {
+
+  let error = null
+  let is = fs.createReadStream(src)
+  is.on('error', err => {
+    if (error) return
+    error = err
+    callback(err)
+  })
+
+  let os = fs.createWriteStream(dst)
+  os.on('error', err => {
+    if (error) return
+    error = err
+    callback(err)
+  })
+
+  os.on('close', () => {
+    if (error) return
+    callback(null)
+  })  
+  
+  is.pipe(os)
+}
+
+const copyFileAsync = Promise.promisify(copyFile)
+
+
 describe(path.basename(__filename), function() {
 
   describe('repo constructor', function() {
@@ -106,7 +137,7 @@ describe(path.basename(__filename), function() {
     })
   })
 
-  describe('repo init', function(done) {
+  describe('repo init', function() {
     
     beforeEach(function() {
       return prepare()
@@ -125,6 +156,34 @@ describe(path.basename(__filename), function() {
     })
   })
 
+  describe('copy a file into drive root', function() {
+
+    const jpegFilePath = path.join(process.cwd(), 'tmptest', 'drives', drv001UUID, '20141213.jpg')
+
+    beforeEach(function() {
+      return (async () => {
+        await prepare()
+        await copyFileAsync('fruitfiles/20141213.jpg', jpegFilePath)
+      })()
+    })
+
+    it('if this fails, please git clone http://github.com/wisnu/fruitfiles', function(done) {
+      fs.stat(jpegFilePath, (err, stats) => {
+        expect(stats.isFile()).to.be.true
+        done()
+      }) 
+    })
+
+    it('observe', function(done) {
+      let driveModel = models.getModel('drive')
+      let repo = createRepo(paths, driveModel)
+      repo.init(() => {
+        console.log('repo initialized')
+      })
+    })
+  })
+
+/**
   describe('stateless functions for repo', function() {
 
     describe('test scanSystemDrives (async)', function() {
@@ -137,4 +196,14 @@ describe(path.basename(__filename), function() {
       })     
     })
   })
+**/
+/**
+  describe('test hashmagic worker', function() {
+    
+    beforeEach(
+  })
+**/
+
 })
+
+

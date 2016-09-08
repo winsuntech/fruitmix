@@ -1,10 +1,9 @@
+import path from 'path'
 import { expect } from 'chai'
 
-import { 
-  mapXstatToObject 
-} from '../../src/lib/tools'
+import { mapXstatToObject } from 'src/lib/util'
 
-describe('lib/tool functions', function() {
+describe(path.basename(__filename), function() {
 
   describe('mapXstatToObject', function() {  
 
@@ -28,6 +27,7 @@ describe('lib/tool functions', function() {
       writelist: [ '9e7b40bf-f931-4292-8870-9e62b9d5a12c' ],
       readlist: [ 'b7ed9abc-01d3-41f0-80eb-361498025e56' ],
       hash: 'hashhash',
+      magic: 'ASCII text',
       abspath: '/home/xenial/Projects/fruitmix/tmptest' 
     }
 
@@ -42,17 +42,10 @@ describe('lib/tool functions', function() {
 
       expect(result.uuid).to.equal(xstat.uuid)
       expect(result.type).to.equal('folder')
-
       expect(result.owner).to.deep.equal(xstat.owner)
       xstat.writelist.forEach(w => expect(result.writelist).to.include(w))
       xstat.readlist.forEach(r => expect(result.readlist).to.include(r))
-
-//      expect(result.attribute.name).to.equal('tmptest')
       expect(result.name).to.equal('tmptest')
-//      expect(result.attribute.changetime.getTime()).to.equal(xstat.ctime.getTime())
-//      expect(result.attribute.modifytime.getTime()).to.equal(xstat.mtime.getTime())      
-//      expect(result.attribute.createtime.getTime()).to.equal(xstat.birthtime.getTime())
-//      expect(result.attribute.size).to.equal(xstat.size)
       expect(result.size).to.be.undefined
       expect(result.hash).to.be.undefined
 
@@ -75,15 +68,11 @@ describe('lib/tool functions', function() {
       xstat.writelist.forEach(w => expect(result.writelist).to.include(w))
       xstat.readlist.forEach(r => expect(result.readlist).to.include(r))
 
-//      expect(result.attribute.name).to.equal('tmptest')
       expect(result.name).to.equal('tmptest')
-
-//      expect(result.attribute.changetime.getTime()).to.equal(xstat.ctime.getTime())
-//      expect(result.attribute.modifytime.getTime()).to.equal(xstat.mtime.getTime())      
-//      expect(result.attribute.createtime.getTime()).to.equal(xstat.birthtime.getTime())
-//      expect(result.attribute.size).to.equal(xstat.size)
+      expect(result.mtime).to.equal(xstat.mtime.getTime())
       expect(result.size).to.equal(xstat.size)
       expect(result.hash).to.equal(xstat.hash)
+      expect(result.magic).to.equal(xstat.magic)
    
       done() 
     })
