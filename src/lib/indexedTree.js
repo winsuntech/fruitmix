@@ -1,3 +1,4 @@
+import path from 'path'
 import EventEmitter from 'events'
 import deepEqual from 'deep-equal'
 
@@ -89,6 +90,10 @@ const nodeProperties = {
     this.upEach(node => q.unshift(node))
     return q
   }, 
+
+  namepath() {
+    return path.join(...this.nodepath().map(n => n.name))
+  },
 
   preVisit(func) {
     func(this)

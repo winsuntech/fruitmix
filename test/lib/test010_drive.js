@@ -122,7 +122,7 @@ describe(path.basename(__filename), function() {
         expect(drv.root.owner).to.deep.equal(owner)
         expect(drv.root.writelist).to.deep.equal(writelist)
         expect(drv.root.readlist).to.deep.equal(readlist)
-        expect(drv.root.name).to.deep.equal('tmptest')
+        expect(drv.root.name).to.equal(drv.rootpath)
 
         done()
       })

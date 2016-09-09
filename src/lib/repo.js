@@ -69,7 +69,7 @@ class Repo extends EventEmitter {
       let drive = createDrive(conf)
       drive.on('driveCached', () => console.log(`driveCached: ${drive.uuid}`))
       drive.on('hashlessAdded', node => {
-        console.log(`hashlessAdded: ${drive.uuid} ${node.name}`) 
+        console.log(`hashlessAdded drive: ${drive.uuid}, uuid:${node.uuid} path:${node.namepath()}`) 
         this.hashMagicWorker.start(drive.abspath(node), node.uuid)
       })
       drive.setRootpath(drvpath)
@@ -141,6 +141,10 @@ class Repo extends EventEmitter {
   // FIXME real implementation should maintain a table
   getTmpDirForDrive(drive) {
     return this.paths.get('tmp') 
+  }
+
+  getTmpFolderForNode(node) {
+    return this.paths.get('tmp')
   }
 
   findDriveByUUID(uuid) {
@@ -266,10 +270,28 @@ class Repo extends EventEmitter {
   }
 
 ////////////////////////////////////////////////////////////////////////////////
+
+  getFilePath(userUUID, fileUUID) {
+
+    // FIXME!
+    let drive = this.findDriveByUUID(fileUUID)
+    let node = this.findNodeByUUID(fileUUID)
+    if (!node) {
+      return 'ENOENT'
+    }
+
+    if (!node.isFile()) {
+      return 'EINVAL'
+    }
+
+    if (!node.userReadable(userUUID)) {
+      return 'EACCESS'
+    }
+
+    return drive.abspath(node)
+  }
   
   listFolder(userUUID, folderUUID) {
-
-    console.log('repo list folder')
 
     let node = this.findNodeByUUID(folderUUID)
     if (!node) {

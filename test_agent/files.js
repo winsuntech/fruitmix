@@ -1,4 +1,6 @@
 import path from 'path'
+import crypto from 'crypto'
+
 import Promise from 'bluebird'
 
 import { expect } from 'chai'
@@ -146,12 +148,12 @@ describe(path.basename(__filename) + ': test repo', function() {
         })
     })
 
-    it('POST /files should create a folder', function(done) {
+    it('POST /files/[drv001UUID] should create a folder', function(done) {
       request(app)
-        .post('/files')
+        .post(`/files/${drv001UUID}`)
         .set('Authorization', 'JWT ' + token)
         .set('Accept', 'applicatoin/json')
-        .send({ target: drv001UUID, name: 'hello' }) 
+        .send({ name: 'hello' }) 
         .expect(200)
         .end((err, res) => {
           if (err) return done(err)
@@ -173,21 +175,47 @@ describe(path.basename(__filename) + ': test repo', function() {
         }) 
     })
 
-    it('POST /files (multipart) should create a file', function(done) {
+    it('POST /files/[drv001UUID] with a file should return a file object', function(done) {
+
+      /**
+      {
+        uuid: '836f1f64-c09f-478d-a714-536e80bba482',
+        type: 'file',
+        name: 'tmpbuf.jpg',
+        owner: [ '9f93db43-02e6-4b26-8fae-7d6f51da12af' ],
+        size: 8,
+        mtime: 1473439008996,
+        parent: 'ceacf710-a414-4b95-be5e-748d73774fc4',
+      }
+      **/
+
+      let buf = Buffer.from('0123456789ABCDEF', 'hex')
+      let hash = crypto.createHash('sha256')
+      hash.update(buf)
+      let sha256 = hash.digest().toString('hex')
+
+      fs.writeFileSync('tmptest/tmpbuf.jpg', buf)
       request(app)
-        .post('/files') 
+        .post(`/files/${drv001UUID}`)
         .set('Authorization', 'JWT ' + token)
-        .set('Accept', 'application/json')
-        .field('target', drv001UUID)
-        .attach('file', 'graph.png')
-        .field('size', 7744)
-        .field('digest', '7a44a28d1da4e2b99eda6060aab85168fe9d09fa7f91831f9ef7c137cdca5751')
+        .set('Accept', 'applicatoin/json')
+        .attach('file', 'tmptest/tmpbuf.jpg')
+        .field('sha256', sha256)
         .end((err, res) => {
-          console.log(res.body)
           if (err) return done(err)
+          let obj = res.body
+          expect(obj.uuid).to.be.a('string')
+          expect(validator.isUUID(obj.uuid)).to.be.true
+          expect(obj.type).to.equal('file')
+          expect(obj.name).to.equal('tmpbuf.jpg')
+          expect(obj.owner).to.deep.equal([userUUID])
+          expect(obj.writelist).to.be.undefined
+          expect(obj.readlist).to.be.undefined
+          expect(obj.size).to.equal(8)
+          expect(Number.isInteger(obj.mtime)).to.be.true
+          expect(obj.parent).to.equal(drv001UUID)
           done()
         })
     })
-
   })
 })

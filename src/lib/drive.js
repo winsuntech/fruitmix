@@ -93,7 +93,7 @@ class Drive extends IndexedTree {
       owner: this.owner,
       writelist: this.writelist,
       readlist: this.readlist,
-      name: path.basename(this.rootpath)
+      name: this.rootpath
     })
 
     let drive = this
@@ -107,19 +107,20 @@ class Drive extends IndexedTree {
   abspath(node) {
 
     if (!this.rootpath) throw new Error('rootpath not set')
-    let nodepath = node.nodepath().map(n => n.name)
-    let prepend = path.resolve(this.rootpath, '..')
-    nodepath.unshift(prepend)
-    return path.join(...nodepath)
+  //  let nodepath = node.nodepath().map(n => n.name)
+  //  let prepend = path.resolve(this.rootpath, '..')
+  //  nodepath.unshift(prepend)
+  //  return path.join(...nodepath)
+    return path.join(...node.nodepath().map(n => n.name))
   }
 
   // v createFolder   targetNode (parent), new name
-  // x createFile     targetNode (parent), new name, file, optional digest?
+  // v createFile     targetNode (parent), new name, file, optional digest?
   //   renameFolder   targetNode, new name (not conflicting) 
   //   renameFile     targetNode, new name (not conflicting)
   //   deleteFolder   targetNode, 
   //   deleteFile     targetNode,
-  //   listFolder     get node is enough, no operation
+  // v listFolder     get node is enough, no operation
   //   readFile       get a path is enough, no operation
   // x overwriteFile  overwrite but preserve uuid
   //   chmod
@@ -129,6 +130,7 @@ class Drive extends IndexedTree {
   // perm: user must have write permission on targetNode
   createFolder(userUUID, targetNode, name, callback) {
 
+    console.log('createFolder')
     // if not directory, EINVAL
     if (!targetNode.isDirectory()) {
       let error = new Error('createFolder: target should be a folder')
@@ -150,7 +152,7 @@ class Drive extends IndexedTree {
       return process.nextTick(callback, error)
     }
 
-    let targetpath = path.join(this.abspath(targetNode), name)
+    let targetpath = path.join(targetNode.namepath(), name)
     fs.mkdir(targetpath, err => {
       if (err) return callback(err)
       readXstat(targetpath, { owner: [userUUID] }, (err, xstat) => {
@@ -182,6 +184,7 @@ class Drive extends IndexedTree {
       return process.nextTick(callback, error)
     }
 
+    let targetpath = path.join(targetNode.namepath(), filename)
     fs.rename(srcpath, targetpath, err => {
       if (err) return callback(err)
       readXstat(targetpath, { owner: [userUUID] }, (err, xstat) => {
