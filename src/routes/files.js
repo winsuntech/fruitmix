@@ -232,6 +232,7 @@ router.post('/', auth.jwt(), uploader, (req, res) => {
 // this may be either file or folder
 // if it's a folder, return childrens
 // if it's a file, download
+// /files/xxxxxxx <- must be folder
 router.get('/:folderUUID', auth.jwt(), (req, res) => {
 
   let repo = Models.getModel('repo')
@@ -251,6 +252,8 @@ router.get('/:folderUUID', auth.jwt(), (req, res) => {
   }
 })
 
+// router.get('/:fileUUID'
+
 // this can only be folders
 // create a subfolder or a file in folder
 router.post('/:folderUUID', auth.jwt(), (req, res) => {
@@ -259,6 +262,8 @@ router.post('/:folderUUID', auth.jwt(), (req, res) => {
 
 // rename file or folder inside a folder
 router.patch('/:folderUUID/:childUUID', auth.jwt(), (req, res) => {
+  // { parent: uuid } <- move
+  // { name: 'xxxx' } <- rename
   res.status(500).end()
 })
 

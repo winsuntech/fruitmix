@@ -899,7 +899,7 @@ export const genUserToken = (user) => jwt.encode({ uuid: user.uuid }, secret)
 
 export const initFamilyRoot = async (rootDir) => {
 
-  await rimrafAsync(rootDir)
+//  await rimrafAsync(rootDir)
   await mkdirpAsync(rootDir)
 
   await paths.setRootAsync(rootDir)

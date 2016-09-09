@@ -72,17 +72,16 @@ const createRepoCached = (paths, model, callback) => {
   let count = 0
   let repo = createRepo(paths, model) 
   repo.on('driveCached', drv => {
-    // console.log('repo driveCached')
     count++
-    // console.log('count: ' + count)
-    // console.log('repo drives length: ' + repo.drives.length)
     if (count === repo.drives.length) callback(null)
   })
   repo.init(e => {
-    // console.log('repo initialized')
     if (e) callback(e)
     else callback(null, repo)
   })
+}
+
+const prepare = async () => {
 }
 
 const createRepoCachedAsync = Promise.promisify(createRepoCached)
