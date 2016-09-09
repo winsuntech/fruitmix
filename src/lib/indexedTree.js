@@ -315,40 +315,42 @@ class IndexedTree extends EventEmitter {
     }
   }
 
-  updateHashMagic(node, hash, magic) {
-    this.fileHashUninstall(node)
-    this.fileHashInstall(node, hash, magic)
-  }
+  // actually all operation should update file/folder on disk first,
+  // then readback xstat, so this is the only method to update node
+  updateNode(node, props) {
 
-  updateOwner(node, owner) {
-    node.owner = owner 
-  }
+    if (props.uuid !== node.uuid || props.type !== node.type)
+      return false
 
-  updateShare(node, writelist, readlist) {
+    if (node.isDirectory()) {
+      node.owner = props.owner 
+      node.writelist = props.writelist      
+      node.readlist = props.readlist
+      node.name = props.name
 
-    if (writelist) 
-      node.writelist = writelist
-    else
-      delete node.writelist
+      if (node.writelist)
+        this.shared.add(node)
+      else
+        this.shared.delete(node)
+    }
+    else if (node.isFile()) {
 
-    if (readlist)
-      node.readlist = readlist
-    else
-      delete node.readlist
+      this.fileHashUninstall(node)
+      
+      node.owner = props.owner  
+      node.writelist = props.writelist
+      node.readlist = props.readlist
+      node.name = props.name
+      node.mtime = props.mtime
+      node.size = props.size
+      
+      this.fileHashInstall(node, props.hash, props.magic)
+    }
+    else {
+      // throw an error?
+    }
 
-    if (node.writelist)
-      this.shared.add(node)
-    else
-      this.shared.delete(node)
-  }
-
-  updateName(node, name) {
-    node.name = name
-  }
-
-  updateMtime(node, mtime) {
-    if (!node.isFile()) throw new Error('only file allows mtime update')
-    node.mtime = mtime
+    return true
   }
 
   // this function delete one leaf node

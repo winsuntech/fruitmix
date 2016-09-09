@@ -177,6 +177,13 @@ describe(path.basename(__filename), function() {
     it('observe', function(done) {
       let driveModel = models.getModel('drive')
       let repo = createRepo(paths, driveModel)
+      repo.on('hashMagicWorkerStopped', () => {
+        console.log('hashMagicWorkerStopped yi-gang')
+        repo.drives.forEach(drv => {
+          console.log(drv)
+        })
+        done()
+      })
       repo.init(() => {
         console.log('repo initialized')
       })

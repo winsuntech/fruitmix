@@ -4,7 +4,7 @@ import fs from 'fs'
 import Promise from 'bluebird'
 import rimraf from 'rimraf'
 
-import { readXstat } from './xstat'
+import { readXstat, updateXattrHashMagic} from './xstat'
 import { IndexedTree } from './indexedTree'
 import { mapXstatToObject } from './util'
 import { visit } from './visitors'
@@ -325,9 +325,17 @@ class Drive extends IndexedTree {
     return queue
   }
 
-  // indexedTree already has a function named 'updateHashMagic'
-  fileUpdateHashMagic(uuid, hash, magic) {
-    
+  updateHashMagic(target, uuid, hash, magic, timestamp, callback) {
+    // update file first
+    updateXattrHashMagic(target, uuid, hash, magic, timestamp, (err, xstat) => {
+      if (err) return callback(err)
+
+      let node = this.uuidMap.get(uuid) 
+      if (!node) return callback(new Error('node not found')) // TODO really weird! is this possible?
+
+      this.updateNode(node, mapXstatToObject(xstat))
+      callback(null) 
+    })
   }
 }
 

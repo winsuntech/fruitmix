@@ -22,12 +22,40 @@ class Repo extends EventEmitter {
     this.initState = 'IDLE' // 'INITIALIZING', 'INITIALIZED', 'DEINITIALIZING',
     this.hashMagicWorker = createHashMagic()
     this.hashMagicWorker.on('end', ret => {
-      console.log('===')
-      console.log(ret)
-      console.log('===')
-      console.log(this.hashMagicWorker)
-      console.log('===')
+
+      // find drive containing this uuid
+      let drive = this.findDriveByUUID(ret.uuid) // TODO
+      drive.updateHashMagic(ret.target, ret.uuid, ret.hash, ret.magic, ret.timestamp, err => {
+        
+        let ret = this.findHashless() 
+        if (!ret) {
+          return this.emit('hashMagicWorkerStopped')
+        }
+        
+        let { target, uuid } = ret
+        this.hashMagicWorker.start(target, uuid)
+      })
     })
+    this.hashMagicWorkerState = 'STOPPED'
+  }
+
+  // this function find a hashless node in all drives, randomly
+  findHashless() {
+
+    let i
+    let drives = this.drives.filter(drv => drv.hashless.size > 0) // FIXME filter out non-indexed drive
+    if (!drives.length) return null
+    
+    i = Math.floor(Math.random() * drives.length)
+    let drive = drives[i]
+
+    let hashless = Array.from(drive.hashless)
+    i = Math.floor(Math.random() * hashless.length)
+    
+    return {
+      target: drive.abspath(hashless[i]),
+      uuid: hashless[i].uuid
+    }    
   }
 
   // create a fruitmix drive object (not create a drive model!)
@@ -113,6 +141,13 @@ class Repo extends EventEmitter {
   // FIXME real implementation should maintain a table
   getTmpDirForDrive(drive) {
     return this.paths.get('tmp') 
+  }
+
+  findDriveByUUID(uuid) {
+    return this.drives.find(drv => {
+      if (drv.uuidMap.get(uuid)) return true
+      return false
+    })
   }
   
   findNodeByUUID(uuid) {
@@ -228,6 +263,71 @@ class Repo extends EventEmitter {
     node.tree.deleteFileOrFolder(node,(err,node)=>{
       err ? callback(err) : callback(null, node)
     })
+  }
+
+////////////////////////////////////////////////////////////////////////////////
+  
+  listFolder(userUUID, folderUUID) {
+
+    console.log('repo list folder')
+
+    let node = this.findNodeByUUID(folderUUID)
+    if (!node) {
+      let e = new Error(`listFolder: ${folderUUID} not found`)
+      e.code = 'ENOENT'
+      return e
+    }
+
+    if (!node.isDirectory()) {
+      let e = new Error(`listFolder: ${folderUUID} is not a folder`)
+      e.code = 'ENOTDIR'
+      return e
+    }
+
+    if (!node.userReadable(userUUID)) {
+      let e = new Error(`listFolder: ${folderUUID} not accessible for given user ${userUUID}`)
+      e.code = 'EACCESS'
+      return e
+    }
+
+    return node
+      .getChildren()
+      .map(n => {
+        if (n.isDirectory()) {
+          return {
+            uuid: n.uuid,
+            type: 'folder',
+            owner: n.owner, 
+            writelist: n.writelist,
+            readlist: n.readlist,
+            name: n.name
+          }
+        }
+        else if (n.isFile()) {
+          return {
+            uuid: n.uuid,
+            type: 'file',
+            owner: n.owner,
+            writelist: n.writelist,
+            readlist: n.readlist,
+            name: n.name,
+            mtime: n.mtime,
+            size: n.size
+          }
+        }
+        else
+          return null
+      })
+      .filter(n => !!n)
+  }
+
+  getMediaPath(userUUID, digest) {
+
+    // only indexed drived
+    for (let i = 0; i < this.drives.length; i ++) {
+      let drive = drives[i]
+      // drive.hashMap 
+    }
   }
 }
 

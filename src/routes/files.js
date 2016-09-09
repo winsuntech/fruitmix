@@ -201,9 +201,11 @@ let uploader = (req, res, next) => {
   req.pipe(busboy)
 }
 
+/**
 router.get('/', auth.jwt(), (req, res) => {
   res.status(500).end()
 })
+**/
 
 router.post('/', auth.jwt(), uploader, (req, res) => {
 
@@ -231,7 +233,22 @@ router.post('/', auth.jwt(), uploader, (req, res) => {
 // if it's a folder, return childrens
 // if it's a file, download
 router.get('/:folderUUID', auth.jwt(), (req, res) => {
-  res.status(500).end()
+
+  let repo = Models.getModel('repo')
+  let user = req.user
+  let folderUUID = req.params.folderUUID
+
+  let ret = repo.listFolder(user.uuid, folderUUID)
+
+  if (ret instanceof Error) {
+    res.status(500).json({
+      code: ret.code,
+      message: ret.message
+    })
+  }
+  else {
+    res.status(200).json(ret)
+  }
 })
 
 // this can only be folders

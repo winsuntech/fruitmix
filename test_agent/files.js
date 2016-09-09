@@ -28,6 +28,8 @@ let users = [
     email: null,
     isFirstUser: true,
     isAdmin: true,
+    home: drv001UUID,
+    library: drv002UUID
   }
 ]
 
@@ -129,6 +131,20 @@ describe(path.basename(__filename) + ': test repo', function() {
         token = await requestTokenAsync()
         // console.log(token)
       })()     
+    })
+
+    it('owner GET home should return emtpy array', function(done) {
+    
+      request(app)
+        .get(`/files/${drv001UUID}`)
+        .set('Authorization', 'JWT ' + token)
+        .set('Accept', 'application/json')
+        .expect(200)
+        .end((err, res) => {
+          if (err) return done(err)
+          console.log(res.body)
+          done()
+        })
     })
 
     it('POST /files should create a folder', function(done) {

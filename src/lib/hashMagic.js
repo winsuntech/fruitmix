@@ -95,7 +95,9 @@ class HashMagic extends EventEmitter {
     if (this.magicSpawn)
       this.magicSpawn.kill()
 
-    this.clear()
+    let error = new Error('hash magic job aborted')
+    error.code = 'EABORT'
+    this.end(error)
   }
 
   end(err) {
@@ -103,7 +105,7 @@ class HashMagic extends EventEmitter {
     if (err) 
       ret = { err, uuid: this.uuid, target: this.target }
     else
-      ret = { err: null, uuid: this.uuid, target: this.target, hash: this.hash, magic: this.magic }
+      ret = { err: null, uuid: this.uuid, target: this.target, hash: this.hash, magic: this.magic, timestamp: this.timestamp }
 
     // unwind the stack
     process.nextTick(() => this.emit('end', ret))
