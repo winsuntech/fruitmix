@@ -4,7 +4,7 @@ import fs from 'fs'
 import Promise from 'bluebird'
 import rimraf from 'rimraf'
 
-import { readXstat, updateXattrHashMagic} from './xstat'
+import { readXstat, copyXattr, updateXattrHashMagic} from './xstat'
 import { IndexedTree } from './indexedTree'
 import { mapXstatToObject } from './util'
 import { visit } from './visitors'
@@ -125,12 +125,10 @@ class Drive extends IndexedTree {
   // x overwriteFile  overwrite but preserve uuid
   //   chmod
 
-
   // this function tried to create a new folder
   // perm: user must have write permission on targetNode
   createFolder(userUUID, targetNode, name, callback) {
 
-    console.log('createFolder')
     // if not directory, EINVAL
     if (!targetNode.isDirectory()) {
       let error = new Error('createFolder: target should be a folder')
@@ -210,6 +208,7 @@ class Drive extends IndexedTree {
       return process.nextTick(callback, error)
     }
 
+    let targetpath = targetNode.namepath()
     copyXattr(srcpath, targetpath, err => {
       if (err) return callback(err)
       fs.rename(srcpath, targetpath, err => {

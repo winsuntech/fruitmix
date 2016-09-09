@@ -107,7 +107,8 @@ describe(path.basename(__filename) + ': test repo', function() {
 
         // fake drive dir
         let dir = paths.get('drives')
-        await mkdirpAsync(path.join(dir, drv001UUID))
+        await mkdirpAsync(path.join(dir, drv001UUID, 'world'))
+        await fs.writeFileAsync(path.join(dir, drv001UUID, 'file001.png'), '0123456789ABCDEFGHIJKLMN')
         await mkdirpAsync(path.join(dir, drv002UUID))
         
         // write model files
@@ -134,8 +135,20 @@ describe(path.basename(__filename) + ': test repo', function() {
       })()     
     })
 
-    it('owner GET home should return emtpy array', function(done) {
+    it('GET /files/[drv001UUID] should return one file and one folder object (list folder)', function(done) {
     
+/**
+[ { uuid: '2fdf2bef-7a93-4f16-99d6-982e0a9c8a63',
+    type: 'file',
+    owner: [],
+    name: 'file001.png',
+    mtime: 1473441802008,
+    size: 8 },
+  { uuid: '6158a6dc-8288-4de4-8cc7-7aeb61ca0efb',
+    type: 'folder',
+    owner: [],
+    name: 'world' } ]
+**/
       request(app)
         .get(`/files/${drv001UUID}`)
         .set('Authorization', 'JWT ' + token)
@@ -143,12 +156,63 @@ describe(path.basename(__filename) + ': test repo', function() {
         .expect(200)
         .end((err, res) => {
           if (err) return done(err)
-          console.log(res.body)
+          let file = res.body.find(obj => obj.type === 'file')
+          expect(validator.isUUID(file.uuid)).to.be.true
+          expect(file.owner).to.deep.equal([])
+          expect(file.writelist).to.be.undefined
+          expect(file.readlist).to.be.undefined
+          expect(file.name).to.equal('file001.png')
+          expect(Number.isInteger(file.mtime)).to.be.true
+          expect(file.size).to.equal(24)
+
+          let folder = res.body.find(obj => obj.type === 'folder') 
+          expect(validator.isUUID(folder.uuid)).to.be.true
+          expect(folder.owner).to.deep.equal([])
+          expect(folder.writelist).to.be.undefined
+          expect(folder.readlist).to.be.undefined
+          expect(folder.name).to.equal('world')
           done()
         })
     })
 
-    it('POST /files/[drv001UUID] should create a folder', function(done) {
+    it('GET /files/[file] should return it (download a file)', function(done) {
+
+      const binaryParser = (res, callback) => {
+        res.setEncoding('binary');
+        res.data = '';
+        res.on('data', function (chunk) {
+          res.data += chunk;
+        });
+        res.on('end', function () {
+          callback(null, new Buffer(res.data, 'binary'));
+        });
+      }    
+
+      request(app)      
+        .get(`/files/${drv001UUID}`)
+        .set('Authorization', 'JWT ' + token)
+        .set('Accept', 'application/json')
+        .end((err, res) => {
+          if (err) return done(err)
+
+          let file = res.body.find(obj => obj.type === 'file')
+          
+          let req = request(app)
+            .get(`/files/${file.uuid}`)
+            .set('Authorization', 'JWT ' + token)
+            .set('Accept', 'application/json')
+            .expect(200)
+            .buffer() // manual parser
+            .parse(binaryParser)
+            .end((err, res) => {
+              expect(Buffer.isBuffer(res.body)).to.be.true
+              expect(res.body.toString()).to.equal('0123456789ABCDEFGHIJKLMN')
+              done()
+            })
+        })
+    })
+
+    it('POST /files/[drv001UUID] with name should return a folder object (create folder)', function(done) {
       request(app)
         .post(`/files/${drv001UUID}`)
         .set('Authorization', 'JWT ' + token)
@@ -175,7 +239,7 @@ describe(path.basename(__filename) + ': test repo', function() {
         }) 
     })
 
-    it('POST /files/[drv001UUID] with a file should return a file object', function(done) {
+    it('POST /files/[drv001UUID] with a file should return a file object (create a file)', function(done) {
 
       /**
       {
@@ -215,6 +279,54 @@ describe(path.basename(__filename) + ': test repo', function() {
           expect(Number.isInteger(obj.mtime)).to.be.true
           expect(obj.parent).to.equal(drv001UUID)
           done()
+        })
+    })
+
+    it('POST /files/[fileUUID] should return an updated file object, (overwrite a file)', function(done) {
+
+      let buf = Buffer.from('0123456789ABCDEF', 'hex')
+      let hash = crypto.createHash('sha256')
+      hash.update(buf)
+      let sha256 = hash.digest().toString('hex')
+
+      fs.writeFileSync('tmptest/tmpbuf.jpg', buf)
+      request(app)      
+        .get(`/files/${drv001UUID}`)
+        .set('Authorization', 'JWT ' + token)
+        .set('Accept', 'application/json')
+        .end((err, res) => {
+          if (err) return done(err)
+
+          let file = res.body.find(obj => obj.type === 'file')
+
+/**
+{ uuid: 'a747a188-cde4-428d-8af8-dbc01abe4d5e',
+  type: 'file',
+  name: 'file001.png',
+  owner: [],
+  size: 8,
+  mtime: 1473449696394,
+  parent: 'ceacf710-a414-4b95-be5e-748d73774fc4' } **/
+
+          let req = request(app)
+            .post(`/files/${file.uuid}`)
+            .set('Authorization', 'JWT ' + token)
+            .set('Accept', 'application/json')
+            .attach('file', 'tmptest/tmpbuf.jpg')
+            .field('sha256', sha256)
+            .end((err, res) => {
+              if (err) return done(err)
+
+              let update = res.body              
+              expect(update.uuid).to.equal(file.uuid)
+              expect(update.type).to.equal('file')
+              expect(update.name).to.equal(file.name) 
+              expect(update.owner).to.deep.equal(file.owner)
+              expect(update.size).to.equal(buf.length)
+              expect(update.mtime).to.not.equal(file.mtime)
+              expect(update.parent).to.equal(drv001UUID)
+              done()
+            })
         })
     })
   })

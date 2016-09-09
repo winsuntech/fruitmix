@@ -42,9 +42,12 @@ router.get('/:nodeUUID', auth.jwt(), (req, res) => {
       res.status(200).json(ret)
     }
   }
-  else {
+  else if (node.isFile()) {
     let filepath = repo.getFilePath(user.uuid, node.uuid)
     res.status(200).sendFile(filepath)
+  }
+  else {
+    res.status(404).end() // TODO
   }
 })
 
@@ -71,10 +74,12 @@ router.post('/:nodeUUID', auth.jwt(), (req, res) => {
 
       let form = new formidable.IncomingForm()
       form.hash = 'sha256'
+
       form.on('field', (name, value) => {
         if (name === 'sha256') 
           sha256 = value
       })
+
       form.on('fileBegin', (name, file) => {
         if (sanitize(file.name) !== file.name) {
           abort = true
@@ -88,6 +93,8 @@ router.post('/:nodeUUID', auth.jwt(), (req, res) => {
       })
 
       form.on('file', (name, file) => {
+
+        console.log('form file ' + file.size + ' ' + file.path)
         if (abort) return
         if (sha256 !== file.hash) {
           return fs.unlink(file.path, err => {
@@ -131,10 +138,49 @@ router.post('/:nodeUUID', auth.jwt(), (req, res) => {
   else if (node.isFile()) {     
 
     if (req.is('multipart/form-data')) { // overwriting an existing file
-       
+
+      let sha256, abort = false 
+      let form = new formidable.IncomingForm()
+      form.hash = 'sha256'
+
+      form.on('field', (name, value) => {
+        if (name === 'sha256')
+          sha256 = value
+      })
+
+      form.on('fileBegin', (name, file) => {
+        file.path = path.join(repo.getTmpFolderForNode(node), UUID.v4())
+      })
+
+      form.on('file', (name, file) => {
+        if (abort) return
+        if (sha256 !== file.hash) {
+          return fs.unlink(file.path, err => {
+            res.status(500).json({})  // TODO
+          })
+        }
+
+        node.tree.overwriteFile(user.uuid, file.path, node, (err, newNode) => {
+          if (err) return res.status(500).json({}) // TODO
+          res.status(200).json(Object.assign({}, newNode, {
+            parent: newNode.parent.uuid
+          }))
+        })
+      })
+
+      form.on('error', err => {
+        abort = true
+        return res.status(500).json({
+          code: err.code,
+          message: err.message
+        })
+      })
+
+      form.parse(req)
     }
     else {
-      //       
+      //
+      return res.status(404).end()
     }
   }
 })

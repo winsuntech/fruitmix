@@ -77,6 +77,7 @@ const validateXattr = (attr, type, mtime) => {
     if (attr.hasOwnProperty('hash') || attr.hasOwnProperty('htime')) {
       if (!isHashValid(attr.hash) || attr.htime !== mtime) {
         if (attr.hasOwnProperty('hash')) delete attr.hash
+        if (attr.hasOwnProperty('magic')) delete attr.magic // TODO workaround solution 
         if (attr.hasOwnProperty('htime')) delete attr.htime
       }
     }
@@ -225,8 +226,8 @@ const copyXattr = (dst, src, callback) => {
     // src has not xattr, nothing to copy
     if (err && err.code === 'ENODATA') return callback(null)
     if (err) return callback(err)
-    
-    xattr.set(dst, 'user.fruitmix', err => 
+
+    xattr.set(dst, 'user.fruitmix', attr, err => 
       err ? callback(err) : callback(null))
   })
 }
