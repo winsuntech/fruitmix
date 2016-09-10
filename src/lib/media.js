@@ -53,7 +53,7 @@ const createMediaShareDoc = (userUUID, obj) => {
 
   // validate, sort, dedup, and must not be the user itself
   viewers = viewers
-    .filter(viewer !== userUUID) 
+    .filter(viewer => viewer !== userUUID) 
     .filter(isUUID)
     .sort()
     .filter((item, index, array) => !index || item !== array[index - 1])
@@ -67,9 +67,16 @@ const createMediaShareDoc = (userUUID, obj) => {
   if (!Array.isArray(contents)) 
     contents = []
   else {
+
+    let time = new Date().getTime()
     contents = contents
       .filter(isSHA1)
       .filter((item, index, array) => index === array.indexOf(item))
+      .map(digest => ({
+        author: userUUID,
+        digest,
+        time
+      }))
   }
 
   if (!contents.length) {
@@ -142,7 +149,7 @@ class Media {
   // create a mediashare object from user provided object
   // FIXME permission check
   createMediaShare(userUUID, obj, callback) {
-
+  try{
     let doc = createMediaShareDoc(userUUID, obj)
     if (doc instanceof Error) {
       return process.nextTick(callback, doc)
@@ -150,8 +157,12 @@ class Media {
 
     this.shareStore.store(doc, (err, share) => {
       if (err) return callback(err)
-      indexShare(share)      
+      this.indexShare(share)      
+      callback(null, doc)
     })
+  } catch (e) {
+    console.log(e)
+  }
   }
 
   // archive a mediashare and unindex
@@ -204,4 +215,4 @@ class Media {
   }
 }
 
-export default () => new Media()
+export default (shareStore, talkStore) => new Media(shareStore, talkStore)

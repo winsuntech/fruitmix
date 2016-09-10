@@ -1,10 +1,7 @@
 digraph G {
-  1 -> 2;
-  2 -> 3;
-  4 -> 2;
-  4 -> 3;
-  documentStore -> docRootPath;
-  mediaShareStore -> tmpDir;
+  documentStore -> '/tmp';
+  documentStore -> '/documents';
+  mediaShareStore -> '/tmp';
   mediaShareStore -> mediaSharePath;
   mediaShareStore -> documentStore;
   userModel -> repo;

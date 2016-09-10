@@ -9,7 +9,9 @@ const getModel = (name) => {
   return models[name]
 }
 
+const list = () => Object.assign({}, models)
+
 const clear = () => models = {}
 
-export default { setModel, getModel, clear }
+export default { setModel, getModel, list, clear }
 

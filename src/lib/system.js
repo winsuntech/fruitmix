@@ -6,7 +6,9 @@ import paths from './paths'
 import models from '../models/models'
 import { createUserModelAsync } from '../models/userModel'
 import { createDriveModelAsync } from '../models/driveModel'
-import { createRepo } from '../lib/repo'
+import { createRepo } from './repo'
+import { createDocumentStore } from './documentStore'
+import { createMediaShareStore } from './mediaShareStore'
 
 let initialized = false
 
@@ -32,8 +34,18 @@ const initAsync = async (sysroot) => {
 
   let repo = createRepo(paths, driveModel)
   models.setModel('repo', repo)
-  repo.init(err => err ? console.log(err) : null)  
+  repo.init(err => err ? console.log(err) : null)
 
+  let docPath = paths.get('documents')
+  let docstore = await Promise.promisify(createDocumentStore)(docpath)
+
+  let mediasharePath = paths.get('mediashare')  
+  let mediashareArchivePath = paths.get('mediashareArchive')
+  
+  let msstore = createMediaShareStore(mediasharePath, mediashareArchivePath, tmpPath, docstore) 
+
+  let media = createMedia(msstore)
+  models.setModel('media', media)
 
   initialized = true
 }
