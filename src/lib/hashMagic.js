@@ -30,6 +30,8 @@ class HashMagic extends EventEmitter {
   start(target, uuid) {
 
     if (this.state !== 'IDLE') return
+
+    console.log(`[hashMagicWorker]: ${target} ${uuid}`)
     this.state = 'BUSY'
     this.target = target
     this.uuid = uuid

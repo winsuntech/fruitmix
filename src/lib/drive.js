@@ -121,8 +121,8 @@ class Drive extends IndexedTree {
   //   deleteFolder   targetNode, 
   //   deleteFile     targetNode,
   // v listFolder     get node is enough, no operation
-  //   readFile       get a path is enough, no operation
-  // x overwriteFile  overwrite but preserve uuid
+  // v readFile       get a path is enough, no operation
+  // v overwriteFile  overwrite but preserve uuid
   //   chmod
 
   // this function tried to create a new folder

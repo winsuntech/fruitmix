@@ -22,6 +22,7 @@ const cwd = process.cwd()
 let userUUID = '9f93db43-02e6-4b26-8fae-7d6f51da12af'
 let drv001UUID = 'ceacf710-a414-4b95-be5e-748d73774fc4'  
 let drv002UUID = '6586789e-4a2c-4159-b3da-903ae7f10c2a' 
+let img001Digest = '7803e8fa1b804d40d412bcd28737e3ae027768ecc559b51a284fbcadcd0e21be'
 
 let users = [
   {
@@ -175,13 +176,16 @@ describe(path.basename(__filename), function() {
     })
 
     it('observe', function(done) {
+
+      let img001Meta = { type: 'JPEG', width: 3264, height: 1836, extended: true }
+
       let driveModel = models.getModel('drive')
       let repo = createRepo(paths, driveModel)
       repo.on('hashMagicWorkerStopped', () => {
-        console.log('hashMagicWorkerStopped yi-gang')
-        repo.drives.forEach(drv => {
-          console.log(drv)
-        })
+        let drive = repo.drives.find(drv => drv.uuid === drv001UUID)
+        expect(drive.hashMap.size).to.equal(1)
+        expect(drive.hashMap.has(img001Digest)).to.be.true
+        expect(drive.hashMap.get(img001Digest).meta).to.deep.equal(img001Meta)
         done()
       })
       repo.init(() => {

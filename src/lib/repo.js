@@ -29,6 +29,7 @@ class Repo extends EventEmitter {
         
         let ret = this.findHashless() 
         if (!ret) {
+          console.log(`hashMagicWorkerStopped drive: ${drive.uuid}`)
           return this.emit('hashMagicWorkerStopped')
         }
         
@@ -70,7 +71,7 @@ class Repo extends EventEmitter {
       drive.on('driveCached', () => console.log(`driveCached: ${drive.uuid}`))
       drive.on('hashlessAdded', node => {
         console.log(`hashlessAdded drive: ${drive.uuid}, uuid:${node.uuid} path:${node.namepath()}`) 
-        this.hashMagicWorker.start(drive.abspath(node), node.uuid)
+        this.hashMagicWorker.start(node.namepath(), node.uuid)
       })
       drive.setRootpath(drvpath)
       callback(null, drive)
@@ -350,6 +351,30 @@ class Repo extends EventEmitter {
       let drive = drives[i]
       // drive.hashMap 
     }
+  }
+
+  getMedia(userUUID) {
+  
+    let filtered = this.drives // TODO
+
+    let map = new Map()
+    filtered.forEach(drv => {
+      drv.hashMap.forEach((digestObj, digest) => {
+        if (map.has(digest)) return
+        for (let i = 0; i < digestObj.nodes.length; i++) {
+          if (digestObj.nodes[i].userReadable(userUUID)) {
+            map.set(digest, digestObj.meta)
+            return
+          }
+        }
+      })
+    }) 
+
+    console.log(map)
+
+    return Array.from(map, ([digest, meta]) => {
+      return Object.assign({digest}, meta)
+    })
   }
 }
 

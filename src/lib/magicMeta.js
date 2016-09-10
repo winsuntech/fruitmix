@@ -15,7 +15,7 @@ export default (magic) => {
     meta.width = parseInt(y[0])
     meta.height = parseInt(y[1])
 
-    if (items.find(item => item === 'Exif Standard:')) {
+    if (items.find(item => item === 'Exif standard:' || item === 'Exif Standard:')) {
       meta.extended = true
     }
     else {
