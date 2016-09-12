@@ -170,15 +170,36 @@ describe(path.basename(__filename) + ': test repo', function() {
       })()     
     })
 
-/**
     it('test get mediashares', function(done) {
       request(app)
-        .get('/mediashare')   
-        .set('Authorization', 'JWT ' + token) 
+        .post('/mediashare')
+        .send({
+          maintainers: [],
+          viewers: [],
+          contents: [
+            '7803e8fa1b804d40d412bcd28737e3ae027768ecc559b51a284fbcadcd0e21be' 
+          ],
+        })
+        .set('Authorization', 'JWT ' + token)
         .set('Accept', 'application/json')
-        .expect(200, done)
+        .expect(200)
+        .end(err => {
+          if (err) return done(err)
+
+          console.log('hahahahahah')
+          request(app)
+            .get('/mediashare')   
+            .set('Authorization', 'JWT ' + token) 
+            .set('Accept', 'application/json')
+            .expect(200)
+            .end((err, res) => {
+              if (err) return done(err)
+              console.log(res.body)
+              done()
+            })
+        })
     })
-**/
+
     it('should create a mediashare', function(done) {
 
       request(app)

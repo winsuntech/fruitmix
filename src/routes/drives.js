@@ -33,10 +33,6 @@ router.get('/', auth.jwt(), (req, res) => {
   let repo = Models.getModel('repo')
   let { drives } = repo
 
-  console.log(repo)
-  console.log('hello world!')
-  console.log(drives)
-  
   let objs = drives.map(drv => {
 
     let obj = {

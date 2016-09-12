@@ -264,32 +264,16 @@ class Drive extends IndexedTree {
   }
 
   // rename 
-  renameFileOrFolder(userUUID, targetNode, newName, opts, callback) {
-
-    if (typeof opts === 'function') {
-      callback = opts
-      opts = {}
-    }
-
-    if (!this.uuidMap.has(targetNode.uuid))
-      return process.netTick(callback, new Error('node does not belong to this drive'))
-
-    if (targetNode === this.root)
-      return process.nextTick(callback, new Error('root node cannot be renamed'))
-
-    if (!opts.priviledged) {
-      // do permission check here TODO
-    }
-
-    let targetpath = this.abspath(targetNode)
-    let parentpath = this.abspath(targetNode.parent)
-    let newpath = path.join(parentpath, newName)
-
-    // rename file first
-    fs.rename(targetpath, newpath, err => {
+  rename(userUUID, folder, node, newName, callback) {
+    let newPath = path.join(folder.namepath(), newName) 
+    fs.rename(node.namepath(), newPath, err => {
       if (err) return callback(err)
-      this.updateName(targetNode)
-      callback(null,targetNode)
+      readXstat(newPath, (err, xstat) => {
+        if (err) return callback(err)
+        let obj = mapXstatToObject(xstat)
+        this.updateNode(node, obj)
+        callback(null, node)
+      })
     })
   }
 

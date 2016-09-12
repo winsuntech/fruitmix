@@ -14,7 +14,11 @@ if (opt === '--family') {
   family.initFamilyRoot(familyPath).asCallback(err => {
     if (err) return callback(err)
     system.init(familyPath, err => {
-      if (err) return callback(err)
+      if (err) {
+        console.log(err)
+        console.log('fatal error')
+        return process.exit(1)
+      }
       console.log('fruitmix initialized with family')
     })
   })

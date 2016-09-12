@@ -10,11 +10,11 @@ import UUID from 'node-uuid'
 
     uuid: xxxx,
 
-    creator: xxxx,
+    author: xxxx,
 *   maintainers: [], // 0..n 
 *   viewers: [], // 0..n
 
-*   album: true or false,
+*   album: null or object { title, text }
 *   sticky: true or false,
     
     ctime: xxxx,
@@ -59,7 +59,11 @@ const createMediaShareDoc = (userUUID, obj) => {
     .filter((item, index, array) => !index || item !== array[index - 1])
 
   // album must be true or false, defaults to false
-  if (typeof album !== 'boolean') album = false
+  if (!album) album = null
+  //  {
+  //    title: string
+  //    text: string
+  //  }
 
   // sticky must be true or false, defaults to false
   if (typeof sticky !== 'boolean') sticky = false
@@ -91,6 +95,7 @@ const createMediaShareDoc = (userUUID, obj) => {
     doctype: 'mediashare',
     docversion: '1.0',
     uuid: UUID.v4(),
+    author: userUUID,
     maintainers,
     viewers,
     album,
@@ -192,9 +197,9 @@ class Media {
     let shares = []
     this.shareMap.forEach((value, key, map) => {
       let share = value
-      if (share.doc.creator === userUUID || 
-          share.doc.maintainer.find(u => u === userUUID) || 
-          share.doc.viewer.find(u => u === userUUID)) 
+      if (share.doc.author === userUUID || 
+          share.doc.maintainers.find(u => u === userUUID) || 
+          share.doc.viewers.find(u => u === userUUID)) 
         shares.push(share) 
     })
     return shares

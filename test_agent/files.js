@@ -329,5 +329,29 @@ describe(path.basename(__filename) + ': test repo', function() {
             })
         })
     })
+
+    it('PATCH /files/folderUUID/nodeUUID should return renamed file object', function(done) {
+     
+      let folderUUID = drv001UUID 
+
+      request(app)
+        .get(`/files/${drv001UUID}`)
+        .set('Authorization', 'JWT ' + token)
+        .set('Accept', 'application/json')
+        .end((err, res) => {
+          if (err) return done(err)  
+
+          let file = res.body.find(obj => obj.type === 'file')
+          request(app)
+            .patch(`/files/${folderUUID}/${file.uuid}`)
+            .send({ name : 'newname' })
+            .set('Authorization', 'JWT ' + token)
+            .set('Accept', 'application/json')
+            .end((err, res) => {
+              if (err) return done(err)
+              done()
+            })
+        })
+    })
   })
 })

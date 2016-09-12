@@ -353,6 +353,39 @@ class Repo extends EventEmitter {
     }
   }
 
+  getSharedWithMe(userUUID) {
+
+    let set = new Set()
+    
+    let filtered = this.drives
+    filtered.forEach(drv => {
+
+      if (drv.owners.find(userUUID)) return
+
+      drv.root.preVisit(node => {
+        if (node.writelist) set.add(node)
+      })
+    })
+
+    return Array.from(set)
+  }
+
+  getSharedToOthers(userUUID) {
+
+    let set = new Set()
+    
+    let filtered = this.drives
+    filtered.forEach(drv => {
+      if (!drv.owners.find(userUUID)) return
+
+      drv.root.preVisit(node => {
+        if (node.writelist) set.add(node)
+      })
+    })
+
+    return Array.from(set)
+  }
+
   getMedia(userUUID) {
   
     let filtered = this.drives // TODO
@@ -369,8 +402,6 @@ class Repo extends EventEmitter {
         }
       })
     }) 
-
-    console.log(map)
 
     return Array.from(map, ([digest, meta]) => {
       return Object.assign({digest}, meta)

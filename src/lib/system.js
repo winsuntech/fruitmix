@@ -9,6 +9,7 @@ import { createDriveModelAsync } from '../models/driveModel'
 import { createRepo } from './repo'
 import { createDocumentStore } from './documentStore'
 import { createMediaShareStore } from './mediaShareStore'
+import createMedia from './media'
 
 let initialized = false
 
@@ -37,7 +38,7 @@ const initAsync = async (sysroot) => {
   repo.init(err => err ? console.log(err) : null)
 
   let docPath = paths.get('documents')
-  let docstore = await Promise.promisify(createDocumentStore)(docpath)
+  let docstore = await Promise.promisify(createDocumentStore)(docPath)
 
   let mediasharePath = paths.get('mediashare')  
   let mediashareArchivePath = paths.get('mediashareArchive')

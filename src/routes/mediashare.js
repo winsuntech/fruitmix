@@ -10,14 +10,15 @@ router.get('/', auth.jwt(), (req, res) => {
   let Media = Models.getModel('media')
   let user = req.user
 
+  try {
   let shares = Media.getUserShares(user.uuid)     
-  console.log(shares)
-  
+  res.status(200).json(shares) 
+  }
+  catch (e) { console.log(e) }
 })
 
 router.post('/', auth.jwt(), (req, res) => {
 
-  console.log('mediashare post')
   let Media = Models.getModel('media')
   console.log(Media)
   let user = req.user

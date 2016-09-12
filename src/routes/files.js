@@ -54,7 +54,7 @@ router.get('/:nodeUUID', auth.jwt(), (req, res) => {
 // this can only be folders
 // create a subfolder or a file in folder
 router.post('/:nodeUUID', auth.jwt(), (req, res) => {
-  
+
   let repo = Models.getModel('repo')
   let user = req.user
 
@@ -186,8 +186,110 @@ router.post('/:nodeUUID', auth.jwt(), (req, res) => {
 })
 
 // rename file or folder inside a folder
-router.patch('/:folderUUID/:childUUID', auth.jwt(), (req, res) => {
-  res.status(500).end()
+// 
+router.patch('/:folderUUID/:nodeUUID', auth.jwt(), (req, res) => {
+
+  console.log('====>>>>')
+  console.log(req.body)
+
+  const isUUID = (uuid) => (typeof uuid === 'string' && validator.isUUID(uuid))
+  const isUUIDArray = (arr) => (Array.isArray(arr) && arr.every(isUUID))
+  const bothUUIDArray = (w, r) => isUUIDArray(w) && isUUIDArray(r)
+  const oneUUIDArrayTheOtherUndefined = (w, r) => 
+    (isUUIDArray(w) && r === undefined) || (w === undefined && isUUIDArray(r))
+  const bothNull = (w, r) => w === null && r === null
+ 
+  let repo = Models.getModel('repo')
+  let user = req.user
+
+  let folderUUID = req.params.folderUUID
+  let nodeUUID = req.params.nodeUUID
+
+  if (typeof folderUUID !== 'string'  ||
+      !validator.isUUID(folderUUID)   ||
+      typeof nodeUUID !== 'string'    ||
+      !validator.isUUID(nodeUUID))
+    return res.status(400).json({
+      code: 'EINVAL',
+      message: 'malformed folder uuid or node uuid'
+    })
+
+  let folder = repo.findNodeByUUID(folderUUID) 
+  let node = repo.findNodeByUUID(nodeUUID)
+  if (!folder || !node || node.parent !== folder)
+    return res.stauts(404).json({
+      code: 'ENOENT',
+      message: 'either folder or child not found, or they are not parent-child' 
+    })
+
+  let obj = req.body
+  if (typeof obj !== 'object')
+    return res.status(400).json({
+      code: 'EINVAL',
+      message: 'request body is not an object'
+    })
+
+  if (obj.name) {
+
+  console.log('>>>>>')
+  console.log(obj.name)
+
+    if (typeof obj.name !== 'string' || obj.name !== sanitize(obj.name))
+      return res.status(400).json({
+        code: 'EINVAL',
+        message: 'bad name property'
+      })
+
+    console.log('renaming')
+    node.tree.rename(user.uuid, folder, node, obj.name, (err, newNode) => {
+
+      if (err) return res.status(500).json({
+        code: err.code,
+        message: err.message
+      })
+
+      return res.status(200).json(Object.assign({}, newNode, {
+        parent: undefined,
+        children: undefined
+      }))
+    })
+  }
+  else if (
+    bothUUIDArray(obj.writelist, obj.readlist) ||
+    oneUUIDArrayTheOtherUndefined(obj.writelist, obj.readlist) ||
+    bothNull(obj.writelist, obj.readlist)
+  ) {
+    if (obj.writelist) {
+      if (!obj.readlist)
+        obj.readlist = []  
+    }    
+    else if (obj.readlist) {
+      if (!obj.writelist)
+        obj.writelist = []
+    }
+    else {
+      obj.writelist = undefined
+      obj.readlist = undefined
+    }
+
+    node.tree.updatePermission(user.uuid, obj, (err, newNode) => {
+      if (err) return res.status(500).json({
+        code: err.code,
+        message: err.message
+      })
+
+      return res.status(200).json(Object.assign({}, newNode, {
+        parent: undefined,
+        children: undefined
+      }))
+    })
+  }
+  else {
+    return res.status(400).json({
+      code: 'EINVAL',
+      message: 'no valid name or permission props found'
+    })
+  }
 })
 
 // this may be either file or folder
