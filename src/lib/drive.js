@@ -4,7 +4,7 @@ import fs from 'fs'
 import Promise from 'bluebird'
 import rimraf from 'rimraf'
 
-import { readXstat, copyXattr, updateXattrHashMagic} from './xstat'
+import { readXstat, copyXattr, updateXattrHashMagic, updateXattrPermission} from './xstat'
 import { IndexedTree } from './indexedTree'
 import { mapXstatToObject } from './util'
 import { visit } from './visitors'
@@ -263,7 +263,7 @@ class Drive extends IndexedTree {
     })
   }
 
-  // rename 
+  // rename TODO FIXME
   rename(userUUID, folder, node, newName, callback) {
     let newPath = path.join(folder.namepath(), newName) 
     fs.rename(node.namepath(), newPath, err => {
@@ -277,11 +277,35 @@ class Drive extends IndexedTree {
     })
   }
 
-  deleteFileOrFolder(targetnode, callback){ 
-    rimraf(this.abspath(targetnode),err=>{
+  updatePermission(userUUID, folder, node, obj, callback) {
+    
+    if (!node.isRootOwner(userUUID)) {
+      let error = new Error('permission denied')
+      error.code = 'EACCESS' 
+      return process.nextTick(callback, error)
+    } 
+
+    updateXattrPermission(node.namepath(), node.uuid, obj.writelist, obj.readlist, (err, xstat) => {
+
       if (err) return callback(err)
-      let ntree =this.deleteNode(targetnode)
-      callback(null,ntree)
+      let obj = mapXstatToObject(xstat)
+      this.updateNode(node, obj)
+      callback(null, node)
+    }) 
+  }
+
+  deleteFileOrFolder(userUUID, folder, node, callback) {
+  
+    if (!folder.userWritable(userUUID)) {
+      let error = new Error('permission denied')
+      error.code = 'EACCESS'
+      return process.nextTick(callback, error)
+    }
+
+    rimraf(node.namepath(), err => {
+      if (err) return callback(err)
+      this.deleteSubTree(node)
+      callback(null)
     })
   }
 

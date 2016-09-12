@@ -180,8 +180,8 @@ const updateXattrPermission = (target, uuid, writelist, readlist, callback) => {
   readXstat(target, (err, xstat) => {
     if (err) return callback(err)
     if (xstat.uuid !== uuid) return callback(InstanceMismatch()) 
-    let { owner, hash, htime } = xstat
-    let newAttr = { uuid, owner, writelist, readlist, hash, htime }
+    let { owner, hash, magic, htime } = xstat
+    let newAttr = { uuid, owner, writelist, readlist, hash, magic, htime }
     xattr.set(target, FRUITMIX, JSON.stringify(newAttr), err => 
       err ? callback(err) : callback(null, Object.assign(xstat, { writelist, readlist })))
   })
@@ -212,7 +212,7 @@ const updateXattrHashMagic = (target, uuid, hash, magic, htime, callback) => {
     if (xstat.mtime.getTime() !== htime) return callback(TimestampMismatch())
 
     let { owner, writelist, readlist } = xstat
-    let newXattr = { uuid: xstat.uuid, owner, writelist, readlist, hash, magic, htime: xstat.htime }
+    let newXattr = { uuid: xstat.uuid, owner, writelist, readlist, hash, magic, htime }
     xattr.set(target, FRUITMIX, JSON.stringify(newXattr), err => {
       err ? callback(err) : callback(null, Object.assign(xstat, { hash, magic, htime, abspath:target }))
     })

@@ -2,6 +2,7 @@ import path from 'path'
 import crypto from 'crypto'
 
 import Promise from 'bluebird'
+import xattr from 'fs-xattr'
 
 import { expect } from 'chai'
 
@@ -20,6 +21,8 @@ import validator from 'validator'
 let userUUID = '9f93db43-02e6-4b26-8fae-7d6f51da12af'
 let drv001UUID = 'ceacf710-a414-4b95-be5e-748d73774fc4'  
 let drv002UUID = '6586789e-4a2c-4159-b3da-903ae7f10c2a' 
+const file001UUID = 'a02adf06-660d-4bf7-a3e6-b9539c2ec6d2'
+let file001Timestamp
 
 let users = [
   {
@@ -83,9 +86,6 @@ const createRepoCached = (paths, model, callback) => {
   })
 }
 
-const prepare = async () => {
-}
-
 const createRepoCachedAsync = Promise.promisify(createRepoCached)
 
 describe(path.basename(__filename) + ': test repo', function() {
@@ -94,10 +94,9 @@ describe(path.basename(__filename) + ': test repo', function() {
   
     let token
     let cwd = process.cwd()
-
+    let repo
     beforeEach(function() {
       return (async () => {
-
         // make test dir
         await rimrafAsync('tmptest')
         await mkdirpAsync('tmptest')
@@ -109,6 +108,10 @@ describe(path.basename(__filename) + ': test repo', function() {
         let dir = paths.get('drives')
         await mkdirpAsync(path.join(dir, drv001UUID, 'world'))
         await fs.writeFileAsync(path.join(dir, drv001UUID, 'file001.png'), '0123456789ABCDEFGHIJKLMN')
+        let stat = await fs.statAsync(path.join(dir, drv001UUID, 'file001.png'))
+        file001Timestamp = stat.mtime.getTime()
+        let file001attr = `{"uuid":"${file001UUID}","owner":[],"hash":"141f8b5fb558f3f84949abcba9ca15326b1b6cf335aa845f5ea6f3d21e3061a8","magic":"ASCII text, with no line terminators","htime":${file001Timestamp.toString()}}`
+        await Promise.promisify(xattr.set)(path.join(dir, drv001UUID, 'file001.png'), 'user.fruitmix', file001attr)
         await mkdirpAsync(path.join(dir, drv002UUID))
         
         // write model files
@@ -126,7 +129,7 @@ describe(path.basename(__filename) + ': test repo', function() {
         models.setModel('drive', dmod)
 
         // create repo and wait until drives cached
-        let repo = await createRepoCachedAsync(paths, dmod)
+        repo = await createRepoCachedAsync(paths, dmod)
         models.setModel('repo', repo)
 
         // request a token for later use
@@ -135,20 +138,24 @@ describe(path.basename(__filename) + ': test repo', function() {
       })()     
     })
 
+    afterEach(function() {
+      repo.deinit()
+    })
+
+
     it('GET /files/[drv001UUID] should return one file and one folder object (list folder)', function(done) {
     
-/**
-[ { uuid: '2fdf2bef-7a93-4f16-99d6-982e0a9c8a63',
-    type: 'file',
-    owner: [],
-    name: 'file001.png',
-    mtime: 1473441802008,
-    size: 8 },
-  { uuid: '6158a6dc-8288-4de4-8cc7-7aeb61ca0efb',
-    type: 'folder',
-    owner: [],
-    name: 'world' } ]
-**/
+// [ { uuid: '2fdf2bef-7a93-4f16-99d6-982e0a9c8a63',
+//     type: 'file',
+//     owner: [],
+//     name: 'file001.png',
+//     mtime: 1473441802008,
+//     size: 8 },
+//   { uuid: '6158a6dc-8288-4de4-8cc7-7aeb61ca0efb',
+//     type: 'folder',
+//     owner: [],
+//     name: 'world' } ]
+
       request(app)
         .get(`/files/${drv001UUID}`)
         .set('Authorization', 'JWT ' + token)
@@ -174,6 +181,7 @@ describe(path.basename(__filename) + ': test repo', function() {
           done()
         })
     })
+
 
     it('GET /files/[file] should return it (download a file)', function(done) {
 
@@ -212,6 +220,7 @@ describe(path.basename(__filename) + ': test repo', function() {
         })
     })
 
+
     it('POST /files/[drv001UUID] with name should return a folder object (create folder)', function(done) {
       request(app)
         .post(`/files/${drv001UUID}`)
@@ -239,19 +248,18 @@ describe(path.basename(__filename) + ': test repo', function() {
         }) 
     })
 
+
     it('POST /files/[drv001UUID] with a file should return a file object (create a file)', function(done) {
 
-      /**
-      {
-        uuid: '836f1f64-c09f-478d-a714-536e80bba482',
-        type: 'file',
-        name: 'tmpbuf.jpg',
-        owner: [ '9f93db43-02e6-4b26-8fae-7d6f51da12af' ],
-        size: 8,
-        mtime: 1473439008996,
-        parent: 'ceacf710-a414-4b95-be5e-748d73774fc4',
-      }
-      **/
+// {
+//   uuid: '836f1f64-c09f-478d-a714-536e80bba482',
+//   type: 'file',
+//   name: 'tmpbuf.jpg',
+//   owner: [ '9f93db43-02e6-4b26-8fae-7d6f51da12af' ],
+//   size: 8,
+//   mtime: 1473439008996,
+//   parent: 'ceacf710-a414-4b95-be5e-748d73774fc4',
+// }
 
       let buf = Buffer.from('0123456789ABCDEF', 'hex')
       let hash = crypto.createHash('sha256')
@@ -282,6 +290,7 @@ describe(path.basename(__filename) + ': test repo', function() {
         })
     })
 
+
     it('POST /files/[fileUUID] should return an updated file object, (overwrite a file)', function(done) {
 
       let buf = Buffer.from('0123456789ABCDEF', 'hex')
@@ -299,14 +308,13 @@ describe(path.basename(__filename) + ': test repo', function() {
 
           let file = res.body.find(obj => obj.type === 'file')
 
-/**
-{ uuid: 'a747a188-cde4-428d-8af8-dbc01abe4d5e',
-  type: 'file',
-  name: 'file001.png',
-  owner: [],
-  size: 8,
-  mtime: 1473449696394,
-  parent: 'ceacf710-a414-4b95-be5e-748d73774fc4' } **/
+// { uuid: 'a747a188-cde4-428d-8af8-dbc01abe4d5e',
+//   type: 'file',
+//   name: 'file001.png',
+//   owner: [],
+//   size: 8,
+//   mtime: 1473449696394,
+//   parent: 'ceacf710-a414-4b95-be5e-748d73774fc4' }
 
           let req = request(app)
             .post(`/files/${file.uuid}`)
@@ -331,27 +339,66 @@ describe(path.basename(__filename) + ': test repo', function() {
     })
 
     it('PATCH /files/folderUUID/nodeUUID should return renamed file object', function(done) {
-     
-      let folderUUID = drv001UUID 
+
+      const x = { 
+        uuid: file001UUID,
+        type: 'file',
+        name: 'newname',
+        owner: [],
+        size: 24,
+        mtime: file001Timestamp
+      } 
 
       request(app)
-        .get(`/files/${drv001UUID}`)
+        .patch(`/files/${drv001UUID}/${file001UUID}`)
+        .send({ name : 'newname' })
         .set('Authorization', 'JWT ' + token)
         .set('Accept', 'application/json')
+        .expect(200)
         .end((err, res) => {
-          if (err) return done(err)  
-
-          let file = res.body.find(obj => obj.type === 'file')
-          request(app)
-            .patch(`/files/${folderUUID}/${file.uuid}`)
-            .send({ name : 'newname' })
-            .set('Authorization', 'JWT ' + token)
-            .set('Accept', 'application/json')
-            .end((err, res) => {
-              if (err) return done(err)
-              done()
-            })
+          if (err) return done(err)
+          expect(res.body).to.deep.equal(x)
+          done()
         })
     })
+
+    it('PATCH /files/folderUUID/nodeUUID should return file object with updated permission', function(done) {
+
+      const x = { 
+        uuid: file001UUID,
+        type: 'file',
+        name: 'file001.png',
+        owner: [],
+        size: 24,
+        mtime: file001Timestamp,
+        writelist: [],
+        readlist: [] 
+      }
+ 
+      request(app)
+        .patch(`/files/${drv001UUID}/${file001UUID}`)
+        .send({ writelist: [], readlist: [] })
+        .set('Authorization', 'JWT ' + token)
+        .set('Accept', 'application/json')
+        .expect(200)
+        .end((err, res) => {
+          if (err) return done(err) 
+          expect(res.body).to.deep.equal(x)
+          done()
+        })
+    })
+
+    it('DELETE /files/folderUUID/nodeUUID should success', function(done) {
+     
+      request(app) 
+        .del(`/files/${drv001UUID}/${file001UUID}`)
+        .set('Authorization', 'JWT ' + token) 
+        .set('Accept', 'application/json')
+        .expect(200)
+        .end((err, res) => {
+          if (err) return done(err)
+          done()
+        })
+    }) 
   })
 })

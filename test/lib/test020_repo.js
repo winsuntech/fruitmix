@@ -118,7 +118,6 @@ const copyFile = (src, dst, callback) => {
 
 const copyFileAsync = Promise.promisify(copyFile)
 
-
 describe(path.basename(__filename), function() {
 
   describe('repo constructor', function() {
@@ -193,27 +192,6 @@ describe(path.basename(__filename), function() {
       })
     })
   })
-
-/**
-  describe('stateless functions for repo', function() {
-
-    describe('test scanSystemDrives (async)', function() {
-
-      before(function(){
-        return (async () => {
-          await rimrafAsync('tmptest')
-          await mkdirpAsync('tmptest')
-        })()
-      })     
-    })
-  })
-**/
-/**
-  describe('test hashmagic worker', function() {
-    
-    beforeEach(
-  })
-**/
 
 })
 

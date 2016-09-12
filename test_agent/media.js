@@ -71,8 +71,6 @@ const createRepoHashMagicStopped = (paths, model, callback) => {
   let count = 0
   let repo = createRepo(paths, model) 
   repo.on('hashMagicWorkerStopped', drv => {
-    // count++
-    // if (count === repo.drives.length) callback(null)
     callback(null, repo)
   })
   repo.init(e => {

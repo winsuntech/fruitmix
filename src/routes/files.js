@@ -94,7 +94,6 @@ router.post('/:nodeUUID', auth.jwt(), (req, res) => {
 
       form.on('file', (name, file) => {
 
-        console.log('form file ' + file.size + ' ' + file.path)
         if (abort) return
         if (sha256 !== file.hash) {
           return fs.unlink(file.path, err => {
@@ -189,9 +188,6 @@ router.post('/:nodeUUID', auth.jwt(), (req, res) => {
 // 
 router.patch('/:folderUUID/:nodeUUID', auth.jwt(), (req, res) => {
 
-  console.log('====>>>>')
-  console.log(req.body)
-
   const isUUID = (uuid) => (typeof uuid === 'string' && validator.isUUID(uuid))
   const isUUIDArray = (arr) => (Array.isArray(arr) && arr.every(isUUID))
   const bothUUIDArray = (w, r) => isUUIDArray(w) && isUUIDArray(r)
@@ -231,16 +227,12 @@ router.patch('/:folderUUID/:nodeUUID', auth.jwt(), (req, res) => {
 
   if (obj.name) {
 
-  console.log('>>>>>')
-  console.log(obj.name)
-
     if (typeof obj.name !== 'string' || obj.name !== sanitize(obj.name))
       return res.status(400).json({
         code: 'EINVAL',
         message: 'bad name property'
       })
 
-    console.log('renaming')
     node.tree.rename(user.uuid, folder, node, obj.name, (err, newNode) => {
 
       if (err) return res.status(500).json({
@@ -259,6 +251,7 @@ router.patch('/:folderUUID/:nodeUUID', auth.jwt(), (req, res) => {
     oneUUIDArrayTheOtherUndefined(obj.writelist, obj.readlist) ||
     bothNull(obj.writelist, obj.readlist)
   ) {
+
     if (obj.writelist) {
       if (!obj.readlist)
         obj.readlist = []  
@@ -272,7 +265,8 @@ router.patch('/:folderUUID/:nodeUUID', auth.jwt(), (req, res) => {
       obj.readlist = undefined
     }
 
-    node.tree.updatePermission(user.uuid, obj, (err, newNode) => {
+    node.tree.updatePermission(user.uuid, folder, node, obj, (err, newNode) => {
+
       if (err) return res.status(500).json({
         code: err.code,
         message: err.message
@@ -293,8 +287,21 @@ router.patch('/:folderUUID/:nodeUUID', auth.jwt(), (req, res) => {
 })
 
 // this may be either file or folder
-router.delete('/:folderUUID/:childUUID', auth.jwt(), (req, res) => {
-  res.status(500).end() 
+router.delete('/:folderUUID/:nodeUUID', auth.jwt(), (req, res) => {
+
+  let repo = Models.getModel('repo')
+  let user = req.user
+
+  let folderUUID = req.params.folderUUID
+  let nodeUUID = req.params.nodeUUID
+
+  let folder = repo.findNodeByUUID(folderUUID)
+  let node = repo.findNodeByUUID(nodeUUID)
+
+  node.tree.deleteFileOrFolder(user.uuid, folder, node, err => {
+    if (err) res.status(500).json(null)
+    res.status(200).json(null)
+  })
 })
 
 export default router

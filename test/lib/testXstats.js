@@ -701,6 +701,32 @@ describe('xstat.js', function(){
 
 		describe('updateXattrHashMagic', () => {
 
+      it('should store hash and magic in xattr with correct htime (no htime before)', done => {
+
+        let attr = {
+          uuid: uuidArr[0],
+          owner: []
+        }
+  
+        xattr.set(ffpath, 'user.fruitmix', JSON.stringify(attr), err => {
+          fs.stat(ffpath, (err, stat) => {
+            updateXattrHashMagic(ffpath, uuidArr[0], sha256_2, 'audio', stat.mtime.getTime(), (err, attr) => {
+              if (err) return done(err)
+              xattr.get(ffpath, 'user.fruitmix', (err, data) => {
+                if (err) return done(err)
+                let x = JSON.parse(data)
+                expect(x.uuid).to.equal(uuidArr[0])
+                expect(x.owner).to.deep.equal([])
+                expect(x.hash).to.equal(sha256_2)
+                expect(x.magic).to.equal('audio')
+                expect(x.htime).to.equal(stat.mtime.getTime())
+                done()
+              })
+            })
+          })
+        })
+      })
+
 			it('Need to return the modified hash and magic values', done => {
 				fs.stat(ffpath, (err, stat) => {
 					updateXattrHashMagic(ffpath, uuidArr[0], sha256_2, 'audio', stat.mtime.getTime(), (err, attr) => {

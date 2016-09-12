@@ -6,7 +6,6 @@ import Promise from 'bluebird'
 import { fs, mkdirpAsync, rimrafAsync } from '../util/async'
 
 import { readXstat, readXstatAsync } from './xstat'
-import { nodeUserReadable, nodeUserWritable} from './perm'
 
 import { createDrive } from './drive'
 import createHashMagic from './hashMagic'
@@ -23,8 +22,11 @@ class Repo extends EventEmitter {
     this.hashMagicWorker = createHashMagic()
     this.hashMagicWorker.on('end', ret => {
 
+      if (this.initState === 'IDLE') return
+
       // find drive containing this uuid
       let drive = this.findDriveByUUID(ret.uuid) // TODO
+
       drive.updateHashMagic(ret.target, ret.uuid, ret.hash, ret.magic, ret.timestamp, err => {
         
         let ret = this.findHashless() 
@@ -109,6 +111,12 @@ class Repo extends EventEmitter {
       else if (!--count)
         callback()
     })
+  }
+
+  // TODO
+  deinit() {
+    this.hashMagicWorker.abort()
+    this.initState = 'IDLE'
   }
 
   // SERVICE API: create new fruitmix drive
