@@ -28,7 +28,8 @@ const setRootAsync = async (rootpath) => {
   await Util.mkdirpAsync(join('mediashare'))
   await Util.mkdirpAsync(join('mediashareArchive'))
   await Util.mkdirpAsync(join('mediatalk'))
-  await Util.mkdirpAsync(join('upload'))
+  await Util.mkdirpAsync(join('mediatallArchive'))
+  await Util.mkdirpAsync(join('log'))
   await Util.mkdirpAsync(join('etc'))
   await Util.mkdirpAsync(join('tmp'))
 }
@@ -54,7 +55,8 @@ const getPath = (name) => {
   case 'mediashare':
   case 'mediashareArchive':
   case 'mediatalk':
-  case 'upload':
+  case 'mediatalkArchive':
+  case 'log':
   case 'etc':
   case 'tmp':
     return join(name)

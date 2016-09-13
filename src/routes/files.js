@@ -168,6 +168,7 @@ router.post('/:nodeUUID', auth.jwt(), (req, res) => {
       })
 
       form.on('error', err => {
+        if (abort) return
         abort = true
         return res.status(500).json({
           code: err.code,
