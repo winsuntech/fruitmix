@@ -1,12 +1,7 @@
 import path from 'path'
-import fs from 'fs'
+import { mkdirpAsync, fs } from '../util/async'
 
 import Promise from 'bluebird'
-import mkdirp from 'mkdirp'
-import rimraf from 'rimraf'
-
-const Util = require( './util.js')
-
 
 // holds fruitmix root path, something like /run/wisnuc/[UUID]/wisnuc/fruitmix
 // either absolute path or undefined
@@ -17,21 +12,24 @@ const join = (name) => path.join(root, name)
 
 // set fruitmix root, mkdirp all internal folders
 const setRootAsync = async (rootpath) => {
-  if (!path.isAbsolute(rootpath)) throw new Error('rootpath must be absolute path')     
+
+  if (!path.isAbsolute(rootpath)) 
+    throw new Error('rootpath must be absolute path')     
 
   root = rootpath
-
-  await Util.mkdirpAsync(root)
-  await Util.mkdirpAsync(join('models'))
-  await Util.mkdirpAsync(join('drives'))
-  await Util.mkdirpAsync(join('documents')) // document store
-  await Util.mkdirpAsync(join('mediashare'))
-  await Util.mkdirpAsync(join('mediashareArchive'))
-  await Util.mkdirpAsync(join('mediatalk'))
-  await Util.mkdirpAsync(join('mediatallArchive'))
-  await Util.mkdirpAsync(join('log'))
-  await Util.mkdirpAsync(join('etc'))
-  await Util.mkdirpAsync(join('tmp'))
+  await mkdirpAsync(root)
+  await Promise.all([
+    mkdirpAsync(join('models')),
+    mkdirpAsync(join('drives')),
+    mkdirpAsync(join('documents')),
+    mkdirpAsync(join('mediashare')),
+    mkdirpAsync(join('mediashareArchive')),
+    mkdirpAsync(join('mediatalk')),
+    mkdirpAsync(join('mediatallArchive')),
+    mkdirpAsync(join('log')),
+    mkdirpAsync(join('etc')),
+    mkdirpAsync(join('tmp'))
+  ])
 }
 
 // callback version of setRoot

@@ -43,7 +43,7 @@ const initAsync = async (sysroot) => {
   repo.init(err => err ? console.log(err) : null)
 
   let docPath = paths.get('documents')
-  let docstore = await Promise.promisify(createDocumentStore)(docPath)
+  let docstore = await Promise.promisify(createDocumentStore)(docPath, tmpPath)
 
   let mediasharePath = paths.get('mediashare')  
   let mediashareArchivePath = paths.get('mediashareArchive')

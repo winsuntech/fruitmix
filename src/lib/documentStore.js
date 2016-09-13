@@ -10,9 +10,9 @@ import { writeFileToDisk } from './util'
 class DocumentStore {
 
   // the factory must assure the tmp folder exists !
-  constructor(dir) {
+  constructor(dir, tmpdir) {
     this.rootdir = dir
-    this.tmpdir = path.join(dir, 'tmp')
+    this.tmpdir = tmpdir
   }
 
   store(object, callback) {
@@ -64,7 +64,7 @@ class DocumentStore {
   }
 }
 
-const createDocumentStore = (dir, callback) => {
+const createDocumentStore = (dir, tmpdir, callback) => {
 
   if (!path.isAbsolute(dir)) {
     return process.nextTick(() => callback(new Error('require absolute path')))
@@ -78,7 +78,7 @@ const createDocumentStore = (dir, callback) => {
 
     rimraf(path.join(dir, 'tmp'), err => {
       mkdirp(path.join(dir, 'tmp'), err => {
-        callback(null, new DocumentStore(dir))
+        callback(null, new DocumentStore(dir, tmpdir))
       })
     })
   })

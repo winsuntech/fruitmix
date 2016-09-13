@@ -175,49 +175,7 @@ class Repo extends EventEmitter {
     }
   }
 
-  // operation name, args ..., return true / false
-  permission(nodeuuid,useruuid,action) {
-    let node=null
-    switch(action.type) {
-    case 'DRV_CREATE_FILE_OR_FOLDER':
-      node = findNodeInDriveByUUID(nodeuuid)
-      if (!node) return new Error('uuid not found')
-      return nodeUserWritable(node,useruuid)
-      // requires user have at least write permission in folder, or, this is the drive he/she owns.
-      // requires action.userUUID, action.folderUUID
-    case 'DRV_DELETE_FILE_OR_FOLDER':
-      node = findNodeInDriveByUUID(nodeuuid)
-      if (!node) return new Error('uuid not found')
-      return nodeUserWritable(node,useruuid)
-    case 'LIB_CREATE_FILE':
-      node = findNodeInLibraryByUUID(nodeuuid)
-      if (!node) return new Error('uuid not found')
-      return nodeUserWritable(node,useruuid)
-    case 'LIB_DELETE_FILE':
-      node = findNodeInLibraryByUUID(nodeuuid)
-      if (!node) return new Error('uuid not found')
-      return nodeUserWritable(node,useruuid)
-    case 'DRV_READ_FILE':
-      node = findNodeInDriveByUUID(nodeuuid)
-      if (!node) return new Error('uuid not found')
-      return nodeUserReadable(node,useruuid)
-    case 'LIB_READ_FILE':
-      node = findNodeInLibraryByUUID(nodeuuid)
-      if (!node) return new Error('uuid not found')
-      return nodeUserReadable(node,useruuid)
-    case 'DRV_READ_FILE':
-      node = findNodeInDriveByUUID(nodeuuid)
-      if (!node) return new Error('uuid not found')
-      return nodeUserWritable(node,useruuid)
-    case 'LIB_READ_FILE':
-      node = findNodeInLibraryByUUID(nodeuuid)
-      if (!node) return new Error('uuid not found')
-      return nodeUserWritable(node,useruuid)
-    default:
-      return false
-    }
-  }
-  
+ 
   createFileInDrive(userUUID, srcpath, targetDirUUID, filename, callback) {
 
     let node = this.findNodeInDriveByUUID(targetDirUUID)
@@ -380,7 +338,7 @@ class Repo extends EventEmitter {
     return Array.from(set)
   }
 
-  getSharedToOthers(userUUID) {
+  getSharedWithOthers(userUUID) {
 
     let set = new Set()
     

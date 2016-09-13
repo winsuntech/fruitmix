@@ -1,6 +1,9 @@
 import path from 'path'
+import { rimrafAsync, mkdirpAsync, fs } from 'src/util/async'
 import { expect } from 'chai'
 import validator from 'validator'
+
+import paths from 'src/lib/paths'
 import createMedia from 'src/lib/media' 
 
 /**
@@ -72,19 +75,22 @@ describe(path.basename(__filename), function() {
 
   describe('create media', function() {
 
-    it('media should have an empty sharedMap', function() {
+    it('media should have an empty sharedMap (obsolete)', function() {
       let x = createMedia()
       expect(x.shareMap instanceof Map).to.be.true
       expect(x.shareMap.size).to.equal(0)
     })
-
-    
   })
 
   describe('create share', function() {
 
     let share
     let media
+    
+    const cwd = process.cwd()
+
+    let userUUID = '916bcacf-e610-4f55-ad39-106e306d982e'
+
     const obj001 = {
       creator: '916bcacf-e610-4f55-ad39-106e306d982e',
       maintainer: [],
@@ -96,12 +102,17 @@ describe(path.basename(__filename), function() {
       ]
     }
 
-    beforeEach(function() {
-      media = createMedia() 
-    })
+    beforeEach(() => (async () => {
 
-    it('new share should have a uuid', function() {
-      share = media.createShare(obj001)
+      await rimrafAsync('tmptest')
+      await mkdirpAsync('tmptest')
+      await paths.setRootAsync(path.join(cwd, 'tmptest'))
+
+    })())
+
+    it('new share should have a uuid', function(done) {
+      media.createMediaShare(userUUID, obj001, (err, doc) => {
+      })
       expect(validator.isUUID(share.uuid)).to.be.true
     })
 

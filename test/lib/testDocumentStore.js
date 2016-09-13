@@ -13,6 +13,7 @@ describe(path.basename(__filename), function() {
   describe('create document store', function() {
 
     let testpath = path.join(process.cwd(), 'tmptest')
+    let tmpdir = path.join(process.cwd(), 'tmptest', 'tmp')
 
     beforeEach(function(done) {
       rimraf(testpath, err => {
@@ -25,7 +26,7 @@ describe(path.basename(__filename), function() {
     })
 
     it('should create a document store if path valid and subfolder tmp exists', function(done) {
-      createDocumentStore(testpath, (err, store) => {
+      createDocumentStore(testpath, tmpdir, (err, store) => {
         if (err) return done(err)
         expect(store.rootdir).to.equal(testpath)
         expect(store.tmpdir).to.equal(path.join(testpath, 'tmp'))
@@ -37,6 +38,7 @@ describe(path.basename(__filename), function() {
   describe('store document', function() {
 
     let testpath = path.join(process.cwd(), 'tmptest')
+    let tmpdir = path.join(process.cwd(), 'tmptest', 'tmp')
     let obj001 = { x: 1, y: 2 }
     let obj001Hash = '689a8f1db95402580476e38c264278ce7b1e664320cfb4e9ae8d3a908cf09964' 
     let docstore
@@ -46,7 +48,7 @@ describe(path.basename(__filename), function() {
         if (err) return done(err)
         mkdirp(path.join(testpath, 'tmp'), err => {
           if (err) return done(err)
-          createDocumentStore(testpath, (err, store) => {
+          createDocumentStore(testpath, tmpdir, (err, store) => {
             if (err) return done(err)
             docstore = store
             done()
@@ -89,6 +91,7 @@ describe(path.basename(__filename), function() {
   describe('retrieve document', function() {
     
     let testpath = path.join(process.cwd(), 'tmptest')
+    let tmpdir = path.join(process.cwd(), 'tmptest', 'tmp')
     let obj001 = { x: 1, y: 2 }
     let obj001Hash = '689a8f1db95402580476e38c264278ce7b1e664320cfb4e9ae8d3a908cf09964' 
     let docstore
@@ -98,7 +101,7 @@ describe(path.basename(__filename), function() {
         if (err) return done(err)
         mkdirp(path.join(testpath, 'tmp'), err => {
           if (err) return done(err)
-          createDocumentStore(testpath, (err, store) => {
+          createDocumentStore(testpath, tmpdir, (err, store) => {
             if (err) return done(err)
             docstore = store
             docstore.store(obj001, (err, hash) => {

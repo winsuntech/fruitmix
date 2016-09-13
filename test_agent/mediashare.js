@@ -155,7 +155,7 @@ describe(path.basename(__filename) + ': test repo', function() {
         models.setModel('repo', repo)
 
         let docpath = paths.get('documents')
-        let docstore = await Promise.promisify(createDocumentStore)(docpath)  
+        let docstore = await Promise.promisify(createDocumentStore)(docpath, tmpdir)  
 
         let mediasharePath = paths.get('mediashare')
         let mediashareArchivePath = paths.get('mediashareArchive')

@@ -41,7 +41,7 @@ describe(path.basename(__filename), function() {
       await mkdirpAsync(arcroot)
       await mkdirpAsync(msroot)
       await mkdirpAsync(tmpdir)
-      docstore = await createDocumentStoreAsync(docroot)
+      docstore = await createDocumentStoreAsync(docroot, tmpdir)
     })()
   })
 
