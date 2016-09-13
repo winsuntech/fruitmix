@@ -7,6 +7,7 @@ import models from '../models/models'
 import { createUserModelAsync } from '../models/userModel'
 import { createDriveModelAsync } from '../models/driveModel'
 import { createRepo } from './repo'
+import createUUIDLog from './uuidlog'
 import { createDocumentStore } from './documentStore'
 import { createMediaShareStore } from './mediaShareStore'
 import createMedia from './media'
@@ -32,6 +33,10 @@ const initAsync = async (sysroot) => {
   let driveModelPath = path.join(modelPath, 'drives.json')
   let driveModel = await createDriveModelAsync(driveModelPath, tmpPath)
   models.setModel('drive', driveModel)
+
+  let logpath = paths.get('log')
+  let log = createUUIDLog(logpath)
+  models.setModel('log', log)
 
   let repo = createRepo(paths, driveModel)
   models.setModel('repo', repo)
