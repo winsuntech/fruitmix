@@ -354,6 +354,8 @@ class Repo extends EventEmitter {
 
   getMediaPath(userUUID, digest) {
 
+    let digestMap = new Map()
+
     // only indexed drived
     for (let i = 0; i < this.drives.length; i ++) {
       let drive = drives[i]
