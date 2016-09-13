@@ -258,5 +258,38 @@ describe(path.basename(__filename) + ': test repo', function() {
           })
         })
     })
+
+    it('GET /libraries/:libUUID/log return logs', function(done) {
+
+
+      let data =  '\n{"digest":"7803e8fa1b804d40d412bcd28737e3ae027768ecc559b51a284fbcadcd0e21be","ctime":1473755241603}' +
+                  '\n{"digest":"21cb9c64331d69f6134ed25820f46def3791f4439d2536b270b2f57f726718c7","ctime":1473757645777}'
+
+      let obj = [
+        {
+          digest: '7803e8fa1b804d40d412bcd28737e3ae027768ecc559b51a284fbcadcd0e21be',
+          ctime: 1473755241603
+        },
+        {
+          digest: '21cb9c64331d69f6134ed25820f46def3791f4439d2536b270b2f57f726718c7',
+          ctime: 1473757645777
+        }
+      ]
+
+      let fpath = path.join(cwd, 'tmptest', 'log', libUUID)
+      fs.writeFile(fpath, data, err => {
+        
+        request(app)
+          .get(`/libraries/${libUUID}/log`)
+          .set('Authorization', 'JWT ' + token)
+          .set('Accept', 'application/json')
+          .expect(200)
+          .end((err, res) => {
+            if (err) return done(err)
+            expect(res.body).to.deep.equal(obj)
+            done()
+          })
+      })
+    })
   })
 })

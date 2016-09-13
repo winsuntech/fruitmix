@@ -113,7 +113,33 @@ router.post('/:libUUID', auth.jwt(), (req, res) => {
 
 // this endpoint should return an upload log
 router.get('/:libUUID/log', auth.jwt(), (req, res) => {
-   
+
+  let user = req.user
+  let libUUID = req.params.libUUID 
+ 
+  let log = Models.getModel('log') 
+  let repo = Models.getModel('repo')
+
+  let node = repo.findNodeByUUID(libUUID)
+  
+  if (!node) return res.status(404).json({}) 
+  if (node.parent.uuid !== user.library) return res.status(404).json({}) // FIXME
+
+  log.get(libUUID, (err, lines) => {
+
+    if (err) return res.status(500).json({})
+
+    let arr = []
+    lines.forEach(l => {
+      try {
+        let obj = JSON.parse(l)
+        arr.push(obj)
+      }
+      catch (e) {}
+    })
+
+    res.status(200).json(arr)
+  })
 })
 
 export default router
