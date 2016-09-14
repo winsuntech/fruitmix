@@ -148,61 +148,6 @@ class UserModel {
       .catch(e => callback(e))
   }
 
-  async createUserAsync({
-    type,         // *
-    username,     // *
-    password,     // *
-    smbUsername,  // o 
-    smbpassword,  // o
-    avatar,       // o
-    email,        // o
-    isAdmin,      // o
-    home,         // *
-    library,      // *
-  }) {
-
-    if (type !== 'local' && type !== 'remote') throwInvalid('invalid type')
-    if (typeof username !== 'string' || !validateUnixUserName(username)) throwInvalid('invalid username')
-    if (typeof password !== 'string') throwInvalid('invalid password')
-    if (!password.length) throwInvalid('password can not be empty')
-
-/**
-    if (avatar && !validate(avatar)) throwInvalid('invalid avatar')
-    avatar = avatar || null
-**/
-
-    avatar = null
-
-    if (email && !validator.isEmail(email)) throwInvalid('invalid email')
-    email = email || null
-
-    if (isAdmin && typeof isAdmin !== 'boolean') throwInvalid('invalid isAdmin type')
-    isAdmin = isAdmin || false
-
-    if (!typeof home !== 'string' || !validator.isUUID(home)) throwInvalid('invalid home')
-    if (!typeof library !== 'string' || !validator.isUUID(library)) throwInvalid('invalid library')
-
-    if (smb === undefined || smb === null)
-      smb = null 
-
-    let uuid = UUID.v4()    
-    let salt = await bcrypt.genSaltAsync(10)     
-    let hash = await bcrypt.hashAsync(password, salt)
-
-    if (this.collection.locked) throwBusy()
-
-    let list = this.collection.list
-    let isFirstUser = list.length === 0 ? true : false
-    if (isFirstUser) isAdmin = true
-    
-    let newUser = {
-      uuid, username, password: hash, avatar, email,
-      isFirstUser, isAdmin, type
-    }
-    await this.collection.updateAsync(list, [...list, newUser])
-    return uuid
-  }
-
   // to be refactored
   async deleteUser(uuid) {
     if(typeof uuid !== 'string') throwInvalid('invalid uuid')
@@ -213,13 +158,15 @@ class UserModel {
   }
 
   // 
-  async verifyPassword(useruuid, password) {
+  verifyPassword(useruuid, password, callback) {
     
     let user = this.collection.list.find(u => u.uuid === useruuid)
-    if (!user) return null
+    if (!user) return process.nextTick(() => callback(null, null))
 
-    let match = bcrypt.compareAsync(password, user.password)
-    return match ? user : null
+    bcrypt.compare(password, user.password, (err, match) => {
+      if (err) return callback(err) 
+      match ? callback(null, user) : callback(null, null) 
+    })
   }
 }
 

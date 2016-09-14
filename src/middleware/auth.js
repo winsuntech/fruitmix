@@ -2,16 +2,19 @@ import passport from 'passport'
 import { BasicStrategy } from 'passport-http'
 import { Strategy as JwtStrategy, ExtractJwt } from 'passport-jwt'
 
-import Models from '../models/models'
+import models from '../models/models'
 import { secret } from '../config/passportJwt'
 
-const httpBasicVerify = (username, password, done) => 
-  Models.getModel('user')
-    .verifyPassword(username, password)
-    .then(usr => {
-      usr ? done(null, usr) : done(null, false)
-    })
-    .catch(e => done(e))
+const httpBasicVerify = (username, password, done) => {
+
+  let users = models.getModel('user')
+  users.verifyPassword(username, password, (err, user) => {
+
+    if (err) return done(err)
+    if (user) return done(null, user)
+    done(null, false)
+  })
+}
 
 const jwtOpts = {
   secretOrKey: secret,
@@ -19,7 +22,7 @@ const jwtOpts = {
 }
 
 const jwtVerify = (jwt_payload, done) => {
-  let User = Models.getModel('user')    
+  let User = models.getModel('user')    
   let user = User.collection.list.find(u => u.uuid === jwt_payload.uuid)
   user ? done(null, user) : done(null, false)
 }
