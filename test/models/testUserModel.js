@@ -1,7 +1,7 @@
 import path from 'path'
 
 import { rimrafAsync, mkdirpAsync, fs } from 'src/util/async'
-import { createUserModelAsync } from 'src/models/userModel'
+import { createUserModelAsync, createUserModel } from 'src/models/userModel'
 import filter from 'filter-object'
 
 const UserModel=require("../../src/models/userModel.js")
@@ -11,6 +11,32 @@ import Promise from 'bluebird'
 const child_process=require('child_process')
 const Collection=require('../../src/models/collection.js')
 import UUID from 'node-uuid'
+
+import models from 'src/models/models'
+
+const uuid1 = '1ee2be49-05c4-4ae1-b249-cd6f4cf04376' 
+const userUUID = '9f93db43-02e6-4b26-8fae-7d6f51da12af'
+const drv001UUID = 'ceacf710-a414-4b95-be5e-748d73774fc4'  
+const drv002UUID = '6586789e-4a2c-4159-b3da-903ae7f10c2a' 
+const cwd = process.cwd()
+
+const userFilePath = path.join(cwd, 'tmptest', 'users.json')
+const tmpdir = path.join(cwd, 'tmptest', 'tmp')
+
+const users = [
+  {
+    type: 'local',
+    uuid: userUUID,
+    username: 'hello',
+    password: '$2a$10$0kJAT..tF9IihAc6GZfKleZQYBGBHSovhZp5d/DiStQUjpSMnz8CC',
+    avatar: null,
+    email: null,
+    isFirstUser: true,
+    isAdmin: true,
+    home: drv001UUID,
+    library: drv002UUID
+  }
+]
 
 
 describe(path.basename(__filename), function() {
@@ -143,31 +169,66 @@ describe(path.basename(__filename), function() {
       })
     })
   })
-  
-  describe('verifyPassword(...)', function() {  
-    it('should return user when user-pin pair is correct' , function(done) {
-      (async () => {
-        sinon.stub(UUID, 'v4').returns('11111111-1111-1111-1111-111111111111')
-        await myUserModel.createUser(createData);
-        let user=await myUserModel.verifyPassword('11111111-1111-1111-1111-111111111111', '1122334');
-        expect(user).not.to.be.null;
-        UUID.v4.restore();
-      })().then(()=>done(), (r)=>done(r))
+
+  describe('verifyPassword()', function() {
+
+    const userUUID = '9f93db43-02e6-4b26-8fae-7d6f51da12af'
+    const drv001UUID = 'ceacf710-a414-4b95-be5e-748d73774fc4'  
+    const drv002UUID = '6586789e-4a2c-4159-b3da-903ae7f10c2a' 
+
+    const cwd = process.cwd()
+    const userFilePath = path.join(cwd, 'tmptest', 'users.json')
+    const tmpdir = path.join(cwd, 'tmptest', 'tmp')
+
+    const users = [
+      {
+        type: 'local',
+        uuid: userUUID,
+        username: 'hello',
+        password: '$2a$10$0kJAT..tF9IihAc6GZfKleZQYBGBHSovhZp5d/DiStQUjpSMnz8CC',
+        avatar: null,
+        email: null,
+        isFirstUser: true,
+        isAdmin: true,
+        home: drv001UUID,
+        library: drv002UUID
+      }
+    ]
+
+    beforeEach(() => (async () => {
+      await rimrafAsync('tmptest')          
+      await mkdirpAsync('tmptest/tmp')
+      await fs.writeFileAsync(userFilePath, JSON.stringify(users)) 
+      let userModel = await Promise.promisify(createUserModel)(userFilePath, tmpdir)
+      models.setModel('user', userModel) 
+    })())
+
+    it('should return user if password match', function(done) {
+      let umod = models.getModel('user')
+      umod.verifyPassword(userUUID, 'world', (err, user) => {
+        if (err) return done(err)
+        expect(user).to.equal(umod.collection.list[0])
+        done()
+      })
     })
-    
-   it('should return null when user does NOT exist' , function(done) {
-      (async () => {
-        let user=await myUserModel.verifyPassword('21111111-1111-1111-1111-111111111111', '1122334');
-        expect(user).to.be.null;
-      })().then(()=>done(), (r)=>done(r))
+
+    it('should return null if user does NOT exist', function(done) {
+      let umod = models.getModel('user')
+      umod.verifyPassword(uuid1, 'world', (err, user) => {
+        if (err) return done(err)
+        expect(user).to.be.null 
+        done()
+      })
     })
-   
-  it('should return null when pass is wrong' , function(done) {
-      (async () => {
-        let user=await myUserModel.verifyPassword('11111111-1111-1111-1111-111111111111', '2122334');
-        expect(user).to.be.null;
-      })().then(()=>done(), (r)=>done(r))
-    })
+
+    it('should return null if password mismatch', function(done) {
+      let umod = models.getModel('user')
+      umod.verifyPassword(userUUID, 'foobar', (err, user) => {
+        if (err) return done(err)
+        expect(user).to.be.nul
+        done()
+      })
+   })
   })
 })
 
