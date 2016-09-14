@@ -1,4 +1,5 @@
 import UUID from 'node-uuid'
+import validator from 'validator'
 
 /**
 
@@ -219,5 +220,7 @@ class Media {
     return localTalks + remoteTalks
   }
 }
+
+
 
 export default (shareStore, talkStore) => new Media(shareStore, talkStore)

@@ -1,136 +1,149 @@
 import path from 'path'
+
+import { rimrafAsync, mkdirpAsync, fs } from 'src/util/async'
+import { createUserModelAsync } from 'src/models/userModel'
+import filter from 'filter-object'
+
 const UserModel=require("../../src/models/userModel.js")
 import { expect } from 'chai'
 const sinon = require ('sinon')
 import Promise from 'bluebird'
 const child_process=require('child_process')
 const Collection=require('../../src/models/collection.js')
-import fs from 'fs'
 import UUID from 'node-uuid'
 
 
 describe(path.basename(__filename), function() {
+
+  const cwd = process.cwd()
   
-  let myUserModel;  
-  let createData={username:"u1", "password":"1122334", "avatar":"", "email":"aaa@bbb.com", "isAdmin":false, "type":""}
+  let myUserModel  
+  let createData = {
+    username:"u1", 
+    "password":"1122334", 
+    "avatar":"", 
+    "email":"aaa@bbb.com", 
+    "isAdmin":false, 
+    "type":""
+  }
 
-  beforeEach(function(done) {
-    (async () => {
-      myUserModel=await UserModel.createUserModelAsync("aaa", "bbb"); 
-    })().then(()=>done(), (r)=>done())
-  })
-  
-  afterEach(function(done) {
-    fs.unlink("aaa", (r) => {done()});
-  }) 
-  
-  describe('createUserModelAsync(...)', function() {  
-    it('collections should be of Collection type', function(done) {
-      expect(myUserModel.collection.filepath).to.equal("aaa");
-      expect(myUserModel.collection.tmpfolder).to.equal("bbb");
-      expect(myUserModel.collection.list).to.be.deep.equal([]);
-      expect(myUserModel.collection.locked).to.equal(false);
-      
-      //expect(myUserModel.collection).to.be.an.instanceof(Collection.Collection);
-      done();
-    })
-  })
+  describe('test createUserModel', function(done) {
 
-  describe('createUser(...)', function(done) {  
-    
-    
-    beforeEach(function(done) {
-      (async () => {
-        myUserModel=await UserModel.createUserModelAsync("aaa", "bbb"); 
-      })().then(()=>done(), (r)=>done())
-    })
-  
-    afterEach(function(done) {
-      fs.unlink("aaa", (r) => {done()});
-    }) 
+    beforeEach(() => (async () => {
+      await rimrafAsync('tmptest')          
+      await mkdirpAsync('tmptest/tmp')
+    })())
 
+    it('should create a user model with empty colletion and given paths', function(done) {
 
-    it('should report an error when username is not a string', function(done) {
-      (async () => {
-	let createData2=Object.assign({},createData);
-        createData2.username=1;
-        await myUserModel.createUser(createData2);
-      })().then(()=>done(new Error()), (r)=>done())
-    })
-    
+      let fpath = path.join(cwd, 'tmptest', 'users.json')
+      let tmpdir = path.join(cwd, 'tmptest', 'tmp')
 
-    it('should report an error when password is not a string', function(done) {
-      (async () => {
-	let createData2=Object.assign({},createData);
-        createData2.password=1;
-        await myUserModel.createUser(createData2);
-      })().then(()=>done(new Error()), (r)=>done())
-    })
-    
-    it('should report an error when password is empty', function(done) {
-      (async () => {
-	let createData2=Object.assign({},createData);
-        createData2.password='';
-        await myUserModel.createUser(createData2);
-      })().then(()=>done(new Error()), (r)=>done())
-    })
-    
-    it('should report an error when email is invalid', function(done) {
-      (async () => {
-	let createData2=Object.assign({},createData);
-        createData2.email='aaa333';
-        await myUserModel.createUser(createData2);
-      })().then(()=>done(new Error()), (r)=>done())
-    })
-
-    it('should report an error when isAdmin is not a bool value', function(done) {
-      (async () => {
-	let createData2=Object.assign({},createData);
-        createData2.isAdmin='aa';
-        await myUserModel.createUser(createData2);
-      })().then(()=>done(new Error()), (r)=>done())
-    })
-    
-    it('should report an error when type is a string other than device', function(done) {
-      (async () => {
-	let createData2=Object.assign({},createData);
-        createData2.type='aa';
-        await myUserModel.createUser(createData2);
-      })().then(()=>done(new Error()), (r)=>done())
-    })
-    
-    it('should report an error when collection is busy', function(done) {
-      (async () => {
-        myUserModel.collection.locked=true
-        await myUserModel.createUser(createData);
-      })().then(()=>done(new Error()), (r)=>done())
-    })
-    
-    it('always set the first user as an admin ', function(done) {
-      (async () => {
-        sinon.spy(myUserModel.collection, 'updateAsync');
-        await myUserModel.createUser(createData);
-        let newUser=myUserModel.collection.updateAsync.firstCall.args[1][0];
-        expect(newUser.isFirstUser).to.be(true);
-        expect(newUser.isAdmin).to.be(true);
-        myUserModel.collection.updateAsync.restore();
-      })().then(()=>done(new Error()), (r)=>done())
-    })
-    
-    it('never set the second user as an admin ', function(done) {
-      (async () => {
-        sinon.spy(myUserModel.collection, 'updateAsync');
-        await myUserModel.createUser(createData);
-        await myUserModel.createUser(Object.assign({}, createData, {'username':'second'}));
-        let secondUser=myUserModel.collection.updateAsync.getCall(1).args[1][1];
-        expect(secondUser.isFirstUser).to.be(false);
-        expect(secondUser.isAdmin).to.be(false);
-        myUserModel.collection.updateAsync.restore();
-      })().then(()=>done(new Error()), (r)=>done())
+      createUserModelAsync(fpath, tmpdir)
+        .then(umod => {
+          let col = umod.collection  
+          expect(col.filepath).to.equal(fpath)
+          expect(col.tmpfolder).to.equal(tmpdir)
+          expect(col.list).to.deep.equal([])
+          done()
+        })
+        .catch(e => done(e))
     })
   })
+
+  describe('test creating first user', function(done) {  
+
+    const fakeUUID = '99f5644b-9588-47bc-a0e2-b57be75e25cd' 
+    let umod 
+
+    let inputMinimal = {
+      type: 'local',
+      username: 'hello',
+      password: 'world',
+    }
+
+    let inputSmb = {
+      type: 'local',
+      username: 'foo',
+      password: 'bar',
+    }
+
+    beforeEach(() => (async () => {
+      const fpath = path.join(cwd, 'tmptest', 'users.json')
+      const tmpdir = path.join(cwd, 'tmptest', 'tmp')
+      await rimrafAsync('tmptest')
+      await mkdirpAsync('tmptest/tmp')
+      umod = await createUserModelAsync(fpath, tmpdir) 
+    })())
+
+    it('should keep type, username, (input minimal)', function(done) {
+      umod.createUser(inputMinimal, (err, user) => {
+        if (err) return done(err)
+        const f = ['type', 'username']
+        expect(filter(user, f)).to.deep.equal(filter(inputMinimal, f))
+        done()
+      })
+    })
+
+    it('should have smbUsername, smbPassword, smbLastChangeTime, avatar, email, as null (input minimal)', function(done) {
+      umod.createUser(inputMinimal, (err, user) => {
+        expect(user.smbUsername).to.be.null
+        expect(user.smbPassword).to.be.null
+        expect(user.smbLastChangeTime).to.be.null
+        expect(user.avatar).to.be.null
+        expect(user.email).to.be.null
+        done()
+      })
+    })
+
+    it('should have uuid as faked (input minimal)', function(done) {
+
+      sinon.stub(UUID, 'v4').returns(fakeUUID)
+      umod.createUser(inputMinimal, (err, user) => {
+        if (err) {
+          UUID.v4.restore()
+          return done(err)
+        }
+        expect(user.uuid).to.equal(fakeUUID)
+        UUID.v4.restore()
+        done()
+      })
+    })
+
+    it('should be firstUser and admin (input minimal)', function(done) {
+      umod.createUser(inputMinimal, (err, user) => {
+        if (err) return done(err)
+        expect(user.isFirstUser).to.be.true
+        expect(user.isAdmin).to.be.true
+        done()
+      })
+    })
+
+    it('should return an error if username is not a string', function(done) {
+      let input = Object.assign({}, inputMinimal, { username: 123 }) 
+      umod.createUser(input, (err, user) => {
+        expect(err).to.be.an('error')
+        done()
+      })
+    })
+
+    it('should return an error if password is not a string', function(done) {
+      let input = Object.assign({}, inputMinimal, { password: 123 }) 
+      umod.createUser(input, (err, user) => {
+        expect(err).to.be.an('error')
+        done()
+      })
+    })
+    
+    it('should return an error if password is empty', function(done) {
+      let input = Object.assign({}, inputMinimal, { password: '' }) 
+      umod.createUser(input, (err, user) => {
+        expect(err).to.be.an('error')
+        done()
+      })
+    })
+  })
   
-   
   describe('verifyPassword(...)', function() {  
     it('should return user when user-pin pair is correct' , function(done) {
       (async () => {
@@ -156,6 +169,5 @@ describe(path.basename(__filename), function() {
       })().then(()=>done(), (r)=>done(r))
     })
   })
-  
 })
 

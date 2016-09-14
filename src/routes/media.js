@@ -15,7 +15,7 @@ router.get('/', auth.jwt(), (req, res) => {
   res.status(200).json(media)
 })
 
-router.get('/:digest', auth.jwt(), (req, res) => {
+router.get('/:digest/download', auth.jwt(), (req, res) => {
 
   let repo = Models.getModel('repo')
   let user = req.user

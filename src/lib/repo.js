@@ -10,14 +10,17 @@ import { readXstat, readXstatAsync } from './xstat'
 import { createDrive } from './drive'
 import createHashMagic from './hashMagic'
 
+// repo is responsible for managing all drives
 class Repo extends EventEmitter {
 
   // repo constructor
   constructor(paths, driveModel) {
+
     super()
     this.paths = paths
     this.driveModel = driveModel
     this.drives = []
+
     this.initState = 'IDLE' // 'INITIALIZING', 'INITIALIZED', 'DEINITIALIZING',
     this.hashMagicWorker = createHashMagic()
     this.hashMagicWorker.on('end', ret => {
@@ -314,10 +317,9 @@ class Repo extends EventEmitter {
 
     let digestMap = new Map()
 
-    // only indexed drived
     for (let i = 0; i < this.drives.length; i ++) {
       let drive = drives[i]
-      // drive.hashMap 
+    //  if (drive.hashMap.
     }
   }
 

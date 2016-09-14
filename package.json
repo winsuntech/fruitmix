@@ -43,6 +43,7 @@
     "exif": "^0.6.0",
     "express": "^4.13.4",
     "file-type": "^3.8.0",
+    "filter-object": "^2.1.0",
     "formidable": "^1.0.17",
     "fs-xattr": "^0.1.14",
     "globby": "^4.0.0",
