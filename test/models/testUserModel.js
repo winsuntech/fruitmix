@@ -1,16 +1,11 @@
 import path from 'path'
 
-import { rimrafAsync, mkdirpAsync, fs } from 'src/util/async'
-import { createUserModelAsync, createUserModel } from 'src/models/userModel'
 import filter from 'filter-object'
-
-const UserModel=require("../../src/models/userModel.js")
 import { expect } from 'chai'
-const sinon = require ('sinon')
-import Promise from 'bluebird'
-const child_process=require('child_process')
-const Collection=require('../../src/models/collection.js')
+import sinon from 'sinon'
 import UUID from 'node-uuid'
+import { rimrafAsync, mkdirpAsync, fs } from 'src/util/async'
+import { createUserModel } from 'src/models/userModel'
 
 import models from 'src/models/models'
 
@@ -65,15 +60,13 @@ describe(path.basename(__filename), function() {
       let fpath = path.join(cwd, 'tmptest', 'users.json')
       let tmpdir = path.join(cwd, 'tmptest', 'tmp')
 
-      createUserModelAsync(fpath, tmpdir)
-        .then(umod => {
-          let col = umod.collection  
-          expect(col.filepath).to.equal(fpath)
-          expect(col.tmpfolder).to.equal(tmpdir)
-          expect(col.list).to.deep.equal([])
-          done()
-        })
-        .catch(e => done(e))
+      createUserModel(fpath, tmpdir, (err, umod) => {
+        let col = umod.collection  
+        expect(col.filepath).to.equal(fpath)
+        expect(col.tmpfolder).to.equal(tmpdir)
+        expect(col.list).to.deep.equal([])
+        done()
+      })
     })
   })
 
@@ -99,7 +92,7 @@ describe(path.basename(__filename), function() {
       const tmpdir = path.join(cwd, 'tmptest', 'tmp')
       await rimrafAsync('tmptest')
       await mkdirpAsync('tmptest/tmp')
-      umod = await createUserModelAsync(fpath, tmpdir) 
+      umod = await Promise.promisify(createUserModel)(fpath, tmpdir) 
     })())
 
     it('should keep type, username, (input minimal)', function(done) {
@@ -170,7 +163,7 @@ describe(path.basename(__filename), function() {
     })
   })
 
-  describe('verifyPassword()', function() {
+  describe('verifyPassword', function() {
 
     const userUUID = '9f93db43-02e6-4b26-8fae-7d6f51da12af'
     const drv001UUID = 'ceacf710-a414-4b95-be5e-748d73774fc4'  
@@ -228,7 +221,7 @@ describe(path.basename(__filename), function() {
         expect(user).to.be.nul
         done()
       })
-   })
+    })
   })
 })
 

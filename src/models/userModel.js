@@ -185,6 +185,8 @@ const createUserModelAsync = async (filepath, tmpfolder) => {
   return null
 }
 
+// const createUserModelAsync = Promise.promisify(createUserModel)
+
 export { createUserModelAsync, createUserModel }
 
 
