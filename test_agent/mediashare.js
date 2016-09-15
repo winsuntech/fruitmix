@@ -7,6 +7,7 @@ import models from 'src/models/models'
 import paths from 'src/lib/paths'
 import { createUserModelAsync } from 'src/models/userModel'
 import { createDriveModelAsync } from 'src/models/driveModel'
+import { createDrive } from 'src/lib/drive'
 import { createRepo } from 'src/lib/repo'
 
 import { createDocumentStore } from 'src/lib/documentStore'
@@ -70,15 +71,11 @@ const requestToken = (callback) => {
 
 const requestTokenAsync = Promise.promisify(requestToken)
 
-const createRepoHashMagicStopped = (paths, model, callback) => {
+const createRepoHashMagicStopped = (paths, model, forest, callback) => {
   
   let count = 0
-  let repo = createRepo(paths, model) 
-  repo.on('hashMagicWorkerStopped', drv => {
-    // count++
-    // if (count === repo.drives.length) callback(null)
-    callback(null, repo)
-  })
+  let repo = createRepo(paths, model, forest) 
+  repo.on('hashMagicWorkerStopped', () => callback(null, repo))
   repo.init(e => {
     if (e) callback(e)
   })
@@ -150,8 +147,12 @@ describe(path.basename(__filename) + ': test repo', function() {
         models.setModel('user', umod)
         models.setModel('drive', dmod)
 
+        // forest
+        let forest = createDrive()
+        models.setModel('forest', forest)
+
         // create repo and wait until drives cached
-        let repo = await createRepoAsync(paths, dmod)
+        let repo = await createRepoAsync(paths, dmod, forest)
         models.setModel('repo', repo)
 
         let docpath = paths.get('documents')

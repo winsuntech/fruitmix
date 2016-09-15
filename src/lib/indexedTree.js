@@ -138,9 +138,7 @@ class IndexedTree extends EventEmitter {
   constructor(proto) {
 
     super()    
-
     this.proto = Object.assign(proto, nodeProperties)
-    this.proto.tree = this
 
     // for accessing node by UUID
     this.uuidMap = new Map()
@@ -153,13 +151,8 @@ class IndexedTree extends EventEmitter {
     // folder only, for folder with writer/reader other than drive owner
     this.shared = new Set()
 
-    this.root = null
+    this.roots = []
   } 
-
-  //
-  uuid() {
-    return this.root.uuid
-  }
 
   // parent, children 
   // uuid, type
@@ -227,9 +220,7 @@ class IndexedTree extends EventEmitter {
 
     // set structural relationship
     if (parent === null) {
-      if (this.root) throw new Error('root already set')
       node.parent = null // TODO: should have a test case for this !!! this may crash forEach
-      this.root = node
     }
     else {
       node.attach(parent)
@@ -246,14 +237,8 @@ class IndexedTree extends EventEmitter {
       if (node.writelist) this.shared.add(node)  
     }
 
+    if (parent === null) this.roots.push(node)
     return node
-  }
-
-  createNodeByUUID(parentUUID, content) {
-
-    let parent = this.uuidMap.get(parentUUID)
-    if (!parent) return null
-    return this.createProtoNode(parent, content)
   }
 
   fileHashInstall(node, hash, magic) {
@@ -328,6 +313,7 @@ class IndexedTree extends EventEmitter {
       return false
 
     if (node.isDirectory()) {
+
       node.owner = props.owner 
       node.writelist = props.writelist      
       node.readlist = props.readlist
@@ -387,7 +373,11 @@ class IndexedTree extends EventEmitter {
   }
 
   deleteSubTree(node) {
-    node.postVisit(n => n.tree.deleteNode(n)) 
+    node.postVisit(n => this.deleteNode(n)) 
+  }
+
+  findNodeByUUID(uuid) {
+    return this.uuidMap.get(uuid)
   }
 }
 

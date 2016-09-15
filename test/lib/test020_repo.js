@@ -11,11 +11,12 @@ const { expect } = chai
 import uuids from '../util/uuids'
 import { rimrafAsync, mkdirpAsync, fs, xattr } from '../util/async'
 
-import paths from '../../src/lib/paths'
-import models from '../../src/models/models'
-import { createUserModelAsync } from '../../src/models/userModel'
-import { createDriveModelAsync } from '../../src/models/driveModel'
-import { createRepo } from '../../src/lib/repo'
+import paths from 'src/lib/paths'
+import models from 'src/models/models'
+import { createUserModelAsync } from 'src/models/userModel'
+import { createDriveModelAsync } from 'src/models/driveModel'
+import { createDrive } from 'src/lib/drive'
+import { createRepo } from 'src/lib/repo'
 
 const cwd = process.cwd()
 
@@ -89,6 +90,7 @@ const prepare = async () => {
   // set models
   models.setModel('user', umod)
   models.setModel('drive', dmod)
+
 }
 
 const copyFile = (src, dst, callback) => {
@@ -120,7 +122,7 @@ const copyFileAsync = Promise.promisify(copyFile)
 
 describe(path.basename(__filename), function() {
 
-  describe('repo constructor', function() {
+  describe('create repo', function() {
 
     beforeEach(function() {
       return prepare()
@@ -128,16 +130,17 @@ describe(path.basename(__filename), function() {
   
     it('should create a repo, with paths, driveModel, drive, and state properly set', function() {
       let driveModel = models.getModel('drive')
-      let repo = createRepo(paths, driveModel)
+      let forest = createDrive()
+      let repo = createRepo(paths, driveModel, forest)
+
       expect(repo.paths).to.equal(paths)
       expect(repo.driveModel).to.equal(driveModel)
-      expect(repo.drives).to.be.an('array')
-      expect(repo.drives.length).to.equal(0)
-      expect(repo.initState).to.equal('IDLE')
+      expect(repo.forest).to.equal(forest)
+      expect(repo.state).to.equal('IDLE')
     })
   })
 
-  describe('repo init', function() {
+  describe('init repo', function() {
     
     beforeEach(function() {
       return prepare()
@@ -145,14 +148,17 @@ describe(path.basename(__filename), function() {
 
     it('should transit to INITIALIZING state then INITIALIZED, with two drives with correct uuid', function(done) {
       let driveModel = models.getModel('drive')
-      let repo = createRepo(paths, driveModel)
+      let forest = createDrive()
+      let repo = createRepo(paths, driveModel, forest)
+
       repo.init(() => {
-        expect(repo.initState).to.equal('INITIALIZED')
-        expect(repo.drives.length).to.equal(2)
-        expect(repo.drives.map(drv => drv.uuid).sort()).to.deep.equal([drv002UUID, drv001UUID])
+        expect(repo.state).to.equal('INITIALIZED')
+        expect(repo.forest.roots.length).to.equal(2)
+        expect(repo.forest.roots.map(n => n.uuid).sort()).to.deep.equal([drv002UUID, drv001UUID])
         done()
       })
-      expect(repo.initState).to.equal('INITIALIZING')
+
+      expect(repo.state).to.equal('INITIALIZING')
     })
   })
 
@@ -179,12 +185,13 @@ describe(path.basename(__filename), function() {
       let img001Meta = { type: 'JPEG', width: 3264, height: 1836, extended: true }
 
       let driveModel = models.getModel('drive')
-      let repo = createRepo(paths, driveModel)
+      let forest = createDrive()
+      let repo = createRepo(paths, driveModel, forest)
+
       repo.on('hashMagicWorkerStopped', () => {
-        let drive = repo.drives.find(drv => drv.uuid === drv001UUID)
-        expect(drive.hashMap.size).to.equal(1)
-        expect(drive.hashMap.has(img001Digest)).to.be.true
-        expect(drive.hashMap.get(img001Digest).meta).to.deep.equal(img001Meta)
+        expect(forest.hashMap.size).to.equal(1)
+        expect(forest.hashMap.has(img001Digest)).to.be.true
+        expect(forest.hashMap.get(img001Digest).meta).to.deep.equal(img001Meta)
         done()
       })
       repo.init(() => {

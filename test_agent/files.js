@@ -11,6 +11,7 @@ import paths from 'src/lib/paths'
 import models from 'src/models/models'
 import { createUserModelAsync } from 'src/models/userModel'
 import { createDriveModelAsync } from 'src/models/driveModel'
+import { createDrive } from 'src/lib/drive'
 import { createRepo } from 'src/lib/repo'
 
 import request from 'supertest'
@@ -72,14 +73,10 @@ const requestToken = (callback) => {
 
 const requestTokenAsync = Promise.promisify(requestToken)
 
-const createRepoCached = (paths, model, callback) => {
+const createRepoCached = (paths, model, forest, callback) => {
   
-  let count = 0
-  let repo = createRepo(paths, model) 
-  repo.on('driveCached', drv => {
-    count++
-    if (count === repo.drives.length) callback(null)
-  })
+  let repo = createRepo(paths, model, forest) 
+  repo.on('driveCached', () => callback(null))
   repo.init(e => {
     if (e) callback(e)
     else callback(null, repo)
@@ -129,7 +126,10 @@ describe(path.basename(__filename) + ': test repo', function() {
         models.setModel('drive', dmod)
 
         // create repo and wait until drives cached
-        repo = await createRepoCachedAsync(paths, dmod)
+        let forest = createDrive() 
+        models.setModel('forest', forest)
+
+        repo = await createRepoCachedAsync(paths, dmod, forest)
         models.setModel('repo', repo)
 
         // request a token for later use
@@ -240,10 +240,13 @@ describe(path.basename(__filename) + ': test repo', function() {
 
           // from the view point of blackbox test, the following is not necessary
           // even if such structural info should be verified, using REST api to do it
+/**
           let repo = models.getModel('repo')
+          let forest = models.getModel('forest')
           let drv = repo.drives.find(drv => drv.uuid === drv001UUID)
           let list = drv.print(drv001UUID) 
           expect(list.find(node => node.uuid === uuid && node.parent === drv001UUID)).to.be.an('object')
+**/
           done()
         }) 
     })
@@ -402,3 +405,5 @@ describe(path.basename(__filename) + ': test repo', function() {
     }) 
   })
 })
+
+

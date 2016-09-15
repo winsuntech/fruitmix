@@ -1,4 +1,5 @@
 import path from 'path'
+import crypto from 'crypto'
 import Promise from 'bluebird'
 
 import { expect } from 'chai'
@@ -7,6 +8,7 @@ import models from 'src/models/models'
 import paths from 'src/lib/paths'
 import { createUserModelAsync } from 'src/models/userModel'
 import { createDriveModelAsync } from 'src/models/driveModel'
+import { createDrive } from 'src/lib/drive'
 import { createRepo } from 'src/lib/repo'
 
 import request from 'supertest'
@@ -66,11 +68,10 @@ const requestToken = (callback) => {
 
 const requestTokenAsync = Promise.promisify(requestToken)
 
-const createRepoHashMagicStopped = (paths, model, callback) => {
+const createRepoHashMagicStopped = (paths, model, forest, callback) => {
   
-  let count = 0
-  let repo = createRepo(paths, model) 
-  repo.on('hashMagicWorkerStopped', drv => {
+  let repo = createRepo(paths, model, forest) 
+  repo.on('hashMagicWorkerStopped', () => {
     callback(null, repo)
   })
   repo.init(e => {
@@ -109,7 +110,7 @@ const copyFileAsync = Promise.promisify(copyFile)
 
 describe(path.basename(__filename) + ': test repo', function() {
 
-  describe('test drives api', function() {
+  describe('test media api', function() {
   
     let token
     let cwd = process.cwd()
@@ -144,8 +145,11 @@ describe(path.basename(__filename) + ': test repo', function() {
         models.setModel('user', umod)
         models.setModel('drive', dmod)
 
+        let forest = createDrive()
+        models.setModel('forest', forest)
+
         // create repo and wait until drives cached
-        let repo = await createRepoAsync(paths, dmod)
+        let repo = await createRepoAsync(paths, dmod, forest)
         models.setModel('repo', repo)
 
         // request a token for later use
@@ -154,13 +158,60 @@ describe(path.basename(__filename) + ': test repo', function() {
       })()     
     })
 
-    it('test get media', function(done) {
+    it('should get media meta', function(done) {
+
+      const ret = [
+        { digest: '7803e8fa1b804d40d412bcd28737e3ae027768ecc559b51a284fbcadcd0e21be',
+          type: 'JPEG',
+          width: 3264,
+          height: 1836,
+          datetime: '2014:12:13 15:31:24',
+          extended: true 
+        }
+      ]
+
       request(app)
         .get('/media')   
         .set('Authorization', 'JWT ' + token) 
         .set('Accept', 'application/json')
-        .expect(200, done)
+        .expect(200)
+        .end((err, res) => {
+          expect(res.body).to.deep.equal(ret)
+          done()
+        })
     })
+
+    it('should download media', function(done) {
+
+      const sha256 = '7803e8fa1b804d40d412bcd28737e3ae027768ecc559b51a284fbcadcd0e21be'
+
+      const binaryParser = (res, callback) => {
+        res.setEncoding('binary');
+        res.data = '';
+        res.on('data', function (chunk) {
+          res.data += chunk;
+        });
+        res.on('end', function () {
+          callback(null, new Buffer(res.data, 'binary'));
+        });
+      }    
+
+      request(app)
+        .get('/media/7803e8fa1b804d40d412bcd28737e3ae027768ecc559b51a284fbcadcd0e21be/download')
+        .set('Authorization', 'JWT ' + token)
+        .set('Accept', 'application/json')
+        .expect(200)
+        .buffer()
+        .parse(binaryParser)
+        .end((err, res) => {
+          if (err) return done(err)
+          expect(Buffer.isBuffer(res.body)).to.be.true
+          let hash = crypto.createHash('sha256')        
+          hash.update(res.body)
+          expect(hash.digest('hex')).to.equal(sha256)
+          done()
+        })
+    }) 
   })
 })
 

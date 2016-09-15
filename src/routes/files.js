@@ -20,9 +20,10 @@ const router = Router()
 router.get('/:nodeUUID', auth.jwt(), (req, res) => {
 
   let repo = Models.getModel('repo')
+  let forest = Models.getModel('forest')
   let user = req.user
 
-  let node = repo.findNodeByUUID(req.params.nodeUUID) 
+  let node = forest.findNodeByUUID(req.params.nodeUUID) 
   if (!node) {
     return res.status(500).json({
       code: 'ENOENT',
@@ -31,7 +32,7 @@ router.get('/:nodeUUID', auth.jwt(), (req, res) => {
   }
 
   if (node.isDirectory()) {
-    let ret = repo.listFolder(user.uuid, node.uuid)
+    let ret = forest.listFolder(user.uuid, node.uuid)
     if (ret instanceof Error) {
       res.status(500).json({
         code: ret.code,
@@ -43,7 +44,7 @@ router.get('/:nodeUUID', auth.jwt(), (req, res) => {
     }
   }
   else if (node.isFile()) {
-    let filepath = repo.getFilePath(user.uuid, node.uuid)
+    let filepath = forest.readFile(user.uuid, node.uuid)
     res.status(200).sendFile(filepath)
   }
   else {
@@ -56,9 +57,10 @@ router.get('/:nodeUUID', auth.jwt(), (req, res) => {
 router.post('/:nodeUUID', auth.jwt(), (req, res) => {
 
   let repo = Models.getModel('repo')
+  let forest = Models.getModel('forest')
   let user = req.user
 
-  let node = repo.findNodeByUUID(req.params.nodeUUID)
+  let node = forest.findNodeByUUID(req.params.nodeUUID)
   if (!node) {
     return res.status(500).json({ // TODO
       code: 'ENOENT'
@@ -101,7 +103,7 @@ router.post('/:nodeUUID', auth.jwt(), (req, res) => {
           })
         }
         
-        node.tree.createFile(user.uuid, file.path, node, file.name, (err, newNode) => {
+        forest.createFile(user.uuid, file.path, node, file.name, (err, newNode) => {
           return res.status(200).json(Object.assign({}, newNode, {
             parent: newNode.parent.uuid,
           }))
@@ -126,7 +128,7 @@ router.post('/:nodeUUID', auth.jwt(), (req, res) => {
         return res.status(500).json({}) // TODO
       }
 
-      node.tree.createFolder(user.uuid, node, name, (err, newNode) => {
+      forest.createFolder(user.uuid, node, name, (err, newNode) => {
         if (err) return res.status(500).json({}) // TODO
         res.status(200).json(Object.assign({}, newNode, {
           parent: newNode.parent.uuid
@@ -159,7 +161,7 @@ router.post('/:nodeUUID', auth.jwt(), (req, res) => {
           })
         }
 
-        node.tree.overwriteFile(user.uuid, file.path, node, (err, newNode) => {
+        forest.overwriteFile(user.uuid, file.path, node, (err, newNode) => {
           if (err) return res.status(500).json({}) // TODO
           res.status(200).json(Object.assign({}, newNode, {
             parent: newNode.parent.uuid
@@ -197,6 +199,7 @@ router.patch('/:folderUUID/:nodeUUID', auth.jwt(), (req, res) => {
   const bothNull = (w, r) => w === null && r === null
  
   let repo = Models.getModel('repo')
+  let forest = Models.getModel('forest')
   let user = req.user
 
   let folderUUID = req.params.folderUUID
@@ -211,8 +214,8 @@ router.patch('/:folderUUID/:nodeUUID', auth.jwt(), (req, res) => {
       message: 'malformed folder uuid or node uuid'
     })
 
-  let folder = repo.findNodeByUUID(folderUUID) 
-  let node = repo.findNodeByUUID(nodeUUID)
+  let folder = forest.findNodeByUUID(folderUUID) 
+  let node = forest.findNodeByUUID(nodeUUID)
   if (!folder || !node || node.parent !== folder)
     return res.stauts(404).json({
       code: 'ENOENT',
@@ -234,7 +237,7 @@ router.patch('/:folderUUID/:nodeUUID', auth.jwt(), (req, res) => {
         message: 'bad name property'
       })
 
-    node.tree.rename(user.uuid, folder, node, obj.name, (err, newNode) => {
+    forest.rename(user.uuid, folder, node, obj.name, (err, newNode) => {
 
       if (err) return res.status(500).json({
         code: err.code,
@@ -266,7 +269,7 @@ router.patch('/:folderUUID/:nodeUUID', auth.jwt(), (req, res) => {
       obj.readlist = undefined
     }
 
-    node.tree.updatePermission(user.uuid, folder, node, obj, (err, newNode) => {
+    forest.updatePermission(user.uuid, folder, node, obj, (err, newNode) => {
 
       if (err) return res.status(500).json({
         code: err.code,
@@ -291,15 +294,16 @@ router.patch('/:folderUUID/:nodeUUID', auth.jwt(), (req, res) => {
 router.delete('/:folderUUID/:nodeUUID', auth.jwt(), (req, res) => {
 
   let repo = Models.getModel('repo')
+  let forest = Models.getModel('forest')
   let user = req.user
 
   let folderUUID = req.params.folderUUID
   let nodeUUID = req.params.nodeUUID
 
-  let folder = repo.findNodeByUUID(folderUUID)
-  let node = repo.findNodeByUUID(nodeUUID)
+  let folder = forest.findNodeByUUID(folderUUID)
+  let node = forest.findNodeByUUID(nodeUUID)
 
-  node.tree.deleteFileOrFolder(user.uuid, folder, node, err => {
+  forest.deleteFileOrFolder(user.uuid, folder, node, err => {
     if (err) res.status(500).json(null)
     res.status(200).json(null)
   })

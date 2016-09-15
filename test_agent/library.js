@@ -13,6 +13,7 @@ import { createUserModelAsync } from 'src/models/userModel'
 import { createDriveModelAsync } from 'src/models/driveModel'
 
 import createUUIDLog from 'src/lib/uuidlog'
+import { createDrive } from 'src/lib/drive'
 import { createRepo } from 'src/lib/repo'
 
 import request from 'supertest'
@@ -78,14 +79,11 @@ const requestToken = (callback) => {
 
 const requestTokenAsync = Promise.promisify(requestToken)
 
-const createRepoCached = (paths, model, callback) => {
+const createRepoCached = (paths, model, forest, callback) => {
   
   let count = 0
-  let repo = createRepo(paths, model) 
-  repo.on('driveCached', drv => {
-    count++
-    if (count === repo.drives.length) callback(null)
-  })
+  let repo = createRepo(paths, model, forest) 
+  repo.on('driveCached', () => callback())
   repo.init(e => {
     if (e) callback(e)
     else callback(null, repo)
@@ -140,8 +138,11 @@ describe(path.basename(__filename) + ': test repo', function() {
         let uuidlog = createUUIDLog(logpath)
         models.setModel('log', uuidlog)
 
+        let forest = createDrive()
+        models.setModel('forest', forest)
+
         // create repo and wait until drives cached
-        repo = await createRepoCachedAsync(paths, dmod)
+        repo = await createRepoCachedAsync(paths, dmod, forest)
         models.setModel('repo', repo)
 
         // request a token for later use

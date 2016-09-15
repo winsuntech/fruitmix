@@ -25,61 +25,18 @@ const createDrive = (conf) => {
   return new Drive(conf)
 }  
 
-/****
 
-  cache state: 
-
-            ---------auto---------------------------------- (REMOVING)
-            |                                                  ^
-            |                                                  |
-            |                                               [remove]
-            |                                                  |
-            v                                                  |
-  o-----> (NONE) ----[create]---> (CREATING) -----auto----> (CREATED)
-            ^                        |
-            |                        |
-            |                     [abort]
-            |                        |
-            |                        v
-            ----auto------------- (ABORTING)
-
-
-****/
-
-// a drive tree is a in-memory caching and indexing layer for given virtual drive.
 class Drive extends IndexedTree {
 
   constructor(conf) {
-
-    let proto = { 
-      owner: conf.fixedOwner ? conf.owner : [],
-      writelist: undefined,
-      readlist: undefined
-    }
-
+    const proto = {}
     super(proto)
-
-    // this may not be a good idea to put all configuration information
-    // in this object TODO
-    this.label = conf.label
-    this.fixedOwner = conf.fixedOwner
-    this.URI = conf.URI
-    this.uuid = conf.uuid
-    this.owner = conf.owner
-    this.writelist = conf.writelist
-    this.readlist = conf.readlist
-    this.cache = conf.cache
-
-    this.cacheState = 'NONE'
-    this.rootpath = null
   }
 
-  setRootpath(rootpath) {
-
-    if (this.cacheState !== 'NONE') throw new Error('rootpath can only be set when cacheState is NONE')
-
-    this.rootpath = rootpath
-    if (this.cache) this.buildCache() 
+  // uuid, type, name, owner, readlist, writelist
+  // rootpath
+  attachDrive(props, rootpath) {
+    let node = this.createNode(null, props)
   }
 
   buildCache() {
@@ -103,15 +60,22 @@ class Drive extends IndexedTree {
     })
   }
 
-  // get absolute path of node
-  abspath(node) {
+  scan(node, callback) {
 
-    if (!this.rootpath) throw new Error('rootpath not set')
-  //  let nodepath = node.nodepath().map(n => n.name)
-  //  let prepend = path.resolve(this.rootpath, '..')
-  //  nodepath.unshift(prepend)
-  //  return path.join(...nodepath)
-    return path.join(...node.nodepath().map(n => n.name))
+    let X = this
+
+    const visitor = (dir, node, entry, callback) => {
+      let entrypath = path.join(dir, entry)
+      readXstat(entrypath, (err, xstat) => {
+        if (err) return callback()
+        let object = mapXstatToObject(xstat)
+        let entryNode = X.createNode(node, object) 
+        if (!xstat.isDirectory()) return callback()  
+        callback(entryNode)
+      })
+    }
+
+    visit(node.namepath(), node, visitor, () => callback(null))
   }
 
   // v createFolder   targetNode (parent), new name
@@ -125,8 +89,77 @@ class Drive extends IndexedTree {
   // v overwriteFile  overwrite but preserve uuid
   //   chmod
 
-  // this function tried to create a new folder
-  // perm: user must have write permission on targetNode
+  listFolder(userUUID, folderUUID) {
+
+    let node = this.findNodeByUUID(folderUUID)
+    if (!node) {
+      let e = new Error(`listFolder: ${folderUUID} not found`)
+      e.code = 'ENOENT'
+      return e
+    }
+
+    if (!node.isDirectory()) {
+      let e = new Error(`listFolder: ${folderUUID} is not a folder`)
+      e.code = 'ENOTDIR'
+      return e
+    }
+
+    if (!node.userReadable(userUUID)) {
+      let e = new Error(`listFolder: ${folderUUID} not accessible for given user ${userUUID}`)
+      e.code = 'EACCESS'
+      return e
+    }
+
+    return node
+      .getChildren()
+      .map(n => {
+        if (n.isDirectory()) {
+          return {
+            uuid: n.uuid,
+            type: 'folder',
+            owner: n.owner, 
+            writelist: n.writelist,
+            readlist: n.readlist,
+            name: n.name
+          }
+        }
+        else if (n.isFile()) {
+          return {
+            uuid: n.uuid,
+            type: 'file',
+            owner: n.owner,
+            writelist: n.writelist,
+            readlist: n.readlist,
+            name: n.name,
+            mtime: n.mtime,
+            size: n.size
+          }
+        }
+        else
+          return null
+      })
+      .filter(n => !!n)
+  }
+
+  readFile(userUUID, fileUUID) {
+
+    let node = this.findNodeByUUID(fileUUID)
+    if (!node) {
+      return 'ENOENT'
+    }
+
+    if (!node.isFile()) {
+      return 'EINVAL'
+    }
+
+    if (!node.userReadable(userUUID)) {
+      return 'EACCESS'
+    }
+
+    return node.namepath()
+  }
+
+  // create a folder in targetNode with given name
   createFolder(userUUID, targetNode, name, callback) {
 
     // if not directory, EINVAL
@@ -136,10 +169,10 @@ class Drive extends IndexedTree {
       return process.nextTick(callback, error)
     }
 
-    // if not writable, EPERM
+    // if not writable, EACCESS
     if (!targetNode.userWritable(userUUID)) {
       let error = new Error('createFolder: operation not permitted')
-      error.code = 'EPERM'
+      error.code = 'EACCESS'
       return process.nextTick(callback, error)
     }
 
@@ -156,7 +189,7 @@ class Drive extends IndexedTree {
       readXstat(targetpath, { owner: [userUUID] }, (err, xstat) => {
         if (err) return callback(err)
         let obj = mapXstatToObject(xstat)
-        let node = targetNode.tree.createNode(targetNode, obj)
+        let node = this.createNode(targetNode, obj)
         callback(null, node)
       })
     })
@@ -336,16 +369,99 @@ class Drive extends IndexedTree {
   }
 
   updateHashMagic(target, uuid, hash, magic, timestamp, callback) {
+
     // update file first
     updateXattrHashMagic(target, uuid, hash, magic, timestamp, (err, xstat) => {
       if (err) return callback(err)
-
       let node = this.uuidMap.get(uuid) 
       if (!node) return callback(new Error('node not found')) // TODO really weird! is this possible?
-
       this.updateNode(node, mapXstatToObject(xstat))
       callback(null) 
     })
+  }
+
+  //////////////////////////////////////////////////////////////////////////////
+  //
+  // for share api
+  //
+
+  getSharedWithMe(userUUID) {
+
+    let arr = []
+
+    this.shared.forEach(node => {
+      if (node.root().owner.find(userUUID)) return
+      if (node.writelist.find(userUUID) || node.readlist.find(userUUID)) {
+
+        let props = Object.assign({}, node, {
+          parent: undefined,
+          children: undefined,
+        })
+
+        if (node.parent === null) {
+          props.isRoot = true
+          props.name = ''
+        }
+        else {
+          props.isRoot = false
+          props.root = node.root().uuid
+        }
+      }
+    })
+
+    return arr
+  }
+
+  getSharedWithOthers(userUUID) {
+
+    let arr = []
+    
+    this.shared.forEach(node => {
+      if (node.root().owner.find(userUUID)) {
+
+        let props = Object.assign({}, node, {
+          parent: undefined,
+          children: undefined
+        })
+
+        if (node.parent === null) {
+          props.name = ''
+        }
+
+        arr.push(props)
+      }
+    })    
+    
+    return arr
+  }
+
+  //////////////////////////////////////////////////////////////////////////////
+  
+  getMedia(userUUID) {
+
+    let arr = []
+  
+    this.hashMap.forEach((digestObj, digest) => {
+      for (let i = 0; i < digestObj.nodes.length; i++) {
+        if (digestObj.nodes[i].userReadable(userUUID)) {
+          arr.push(Object.assign({ digest }, digestObj.meta))
+        }
+      }
+    })
+
+    return arr
+  }
+
+  readMedia(userUUID, digest) {
+
+    let digestObj = this.hashMap.get(digest)
+    if (!digestObj) return
+
+    for (let i = 0; i < digestObj.nodes.length; i++) {
+      let node = digestObj.nodes[i]
+      if (node.userReadable(userUUID))
+        return node.namepath()
+    }
   }
 }
 

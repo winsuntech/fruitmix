@@ -198,11 +198,11 @@ describe(path.basename(__filename) + ': indexedTree functions', function() {
       expect(t.proto.y).to.equal(proto.y)
       expect(t.proto.z).to.deep.equal(proto.z)
     })
-
+/**
     it('should set itself to proto.tree', function() {
       expect(t.proto.tree).to.equal(t) 
     })
-
+**/
     it('should have an empty uuid Map', function() {
       expect(t.uuidMap instanceof Map).to.be.true
       expect(t.uuidMap.size).to.equal(0)
@@ -228,8 +228,8 @@ describe(path.basename(__filename) + ': indexedTree functions', function() {
       expect(t.extended.size).to.equal(0)
     })
 
-    it('should have null root', function() {
-      expect(t.root).to.be.null
+    it('should have empty roots array', function() {
+      expect(t.roots).to.deep.equal([])
     })
   })
 
@@ -282,16 +282,17 @@ describe(path.basename(__filename) + ': indexedTree functions', function() {
         mtime: 123456,
         hash: 234567
       }
-      t.createNode(null, root)
 
-      expect(t.root.uuid).to.equal(root.uuid)
-      expect(t.root.type).to.equal(root.type)
-      expect(t.root.owner).to.deep.equal(root.owner)
-      expect(t.root.writelist).to.deep.equal(root.writelist)
-      expect(t.root.readlist).to.deep.equal(root.readlist)
-      expect(t.root.name).to.equal(root.name)
-      expect(t.root.hasOwnProperty('mtime')).to.be.false
-      expect(t.root.hasOwnProperty('hash')).to.be.false
+      let node = t.createNode(null, root)
+
+      expect(node.uuid).to.equal(root.uuid)
+      expect(node.type).to.equal(root.type)
+      expect(node.owner).to.deep.equal(root.owner)
+      expect(node.writelist).to.deep.equal(root.writelist)
+      expect(node.readlist).to.deep.equal(root.readlist)
+      expect(node.name).to.equal(root.name)
+      expect(node.hasOwnProperty('mtime')).to.be.false
+      expect(node.hasOwnProperty('hash')).to.be.false
     }) 
 /**
     it('root should have correct parent/children set', function() {
@@ -347,20 +348,26 @@ describe(path.basename(__filename) + ': indexedTree, createNode() for root node'
 
   it('created root node should preserve uuid, name, owner, writelist, readlist, without mtime, size, and hash', function() {
 
-    t.createNode(null, rfp)
-    expect(t.root.uuid).to.equal(rfp.uuid)
-    expect(t.root.name).to.equal(rfp.name)
-    expect(t.root.owner).to.deep.equal(rfp.owner)
-    expect(t.root.writelist).to.deep.equal(rfp.writelist)
-    expect(t.root.readlist).to.deep.equal(rfp.readlist)
-    expect(t.root.size).to.be.undefined
-    expect(t.root.mtime).to.be.undefined
-    expect(t.root.hash).to.be.undefined
+    let node = t.createNode(null, rfp)
+    expect(node.uuid).to.equal(rfp.uuid)
+    expect(node.name).to.equal(rfp.name)
+    expect(node.owner).to.deep.equal(rfp.owner)
+    expect(node.writelist).to.deep.equal(rfp.writelist)
+    expect(node.readlist).to.deep.equal(rfp.readlist)
+    expect(node.size).to.be.undefined
+    expect(node.mtime).to.be.undefined
+    expect(node.hash).to.be.undefined
+  })
+
+  it('created root node should be put into roots array', function() {
+
+    let node = t.createNode(null, rfp)
+    expect(t.roots).to.include(node)
   })
 
   it('created root node should be folder', function() {
-    t.createNode(null, rfp)
-    expect(t.root.isDirectory()).to.be.true
+    let node = t.createNode(null, rfp)
+    expect(node.isDirectory()).to.be.true
   })
 
   it('should throw if props has no uuid when creating root node', function() {
@@ -503,10 +510,17 @@ describe(path.basename(__filename) + ': indexedTree, createNode() for non-root f
     t.createNode(null, rfp)
   })
 
+  it('created nonroot folder node should attach to root[0]', function() {
+
+    let n = t.createNode(t.roots[0], nrfp)
+    expect(n.parent).to.equal(t.roots[0])
+    expect(t.roots[0].getChildren()).to.include(n)
+ })
+
   it('created nonroot folder node should preserve uuid, name, owner, writelist, readlist, without mtime, size, and hash', function() {
 
-    t.createNode(t.root, nrfp)
-    let n = t.root.children[0]
+    let n = t.createNode(t.roots[0], nrfp)
+
     expect(n.uuid).to.equal(nrfp.uuid)
     expect(n.name).to.equal(nrfp.name)
     expect(n.owner).to.deep.equal(nrfp.owner)
@@ -518,69 +532,69 @@ describe(path.basename(__filename) + ': indexedTree, createNode() for non-root f
   })
 
   it('created nonroot node should be folder', function() {
-    t.createNode(t.root, nrfp)
-    expect(t.root.isDirectory()).to.be.true
+    let n = t.createNode(t.roots[0], nrfp)
+    expect(n.isDirectory()).to.be.true
   })
 
   it('should throw if props has no uuid when creating nonroot node', function() {
     delete nrfp.uuid
-    expect(() => t.createNode(t.root, nrfp)).to.throw(Error)
+    expect(() => t.createNode(t.roots[0], nrfp)).to.throw(Error)
   })
 
   it('should throw if props has no type when creating nonroot node', function() {
     delete nrfp.type
-    expect(() => t.createNode(t.root, nrfp)).to.throw(Error)
+    expect(() => t.createNode(t.roots[0], nrfp)).to.throw(Error)
   })
 
   it('should throw if props has no name when creating nonroot node', function() {
     delete nrfp.name
-    expect(() => t.createNode(t.root, nrfp)).to.throw(Error)
+    expect(() => t.createNode(t.roots[0], nrfp)).to.throw(Error)
   })
 
   it('should throw if props name is not a string when creating nonroot node', function() {
     nrfp.name = 2
-    expect(() => t.createNode(t.root, nrfp)).to.throw(Error)
+    expect(() => t.createNode(t.roots[0], nrfp)).to.throw(Error)
   })
 
   it('should throw if props name is an empty string when creating nonroot node', function() {
     nrfp.name = ''
-    expect(() => t.createNode(t.root, nrfp)).to.throw(Error)
+    expect(() => t.createNode(t.roots[0], nrfp)).to.throw(Error)
   })
 
   it('should throw if props has no owner when creating nonroot node', function() {
     delete nrfp.owner
-    expect(() => t.createNode(t.root, nrfp)).to.throw(Error)
+    expect(() => t.createNode(t.roots[0], nrfp)).to.throw(Error)
   })
 
   it('should throw if owner is not an array when createing nonroot folder node', function() {
     nrfp.owner = 'hello'
-    expect(() => t.createNode(t.root, nrfp)).to.throw(Error)
+    expect(() => t.createNode(t.roots[0], nrfp)).to.throw(Error)
   })
 
   it('should NOT throw if owner is an empty array when creating nonroot folder node', function() {
     nrfp.owner = []
-    expect(() => t.createNode(t.root, nrfp)).to.not.throw(Error)
+    expect(() => t.createNode(t.roots[0], nrfp)).to.not.throw(Error)
   })
 
   it('should throw if writelist is not an array when creating nonroot folder node', function() {
     nrfp.writelist = 'hello'
-    expect(() => t.createNode(t.root, nrfp)).to.throw(Error)
+    expect(() => t.createNode(t.roots[0], nrfp)).to.throw(Error)
   })
 
   it('should NOT throw if both writelist and readlist are undefined when creating nonroot folder node', function() {
     delete nrfp.writelist
     delete nrfp.readlist
-    expect(() => t.createNode(t.root, nrfp)).to.not.throw(Error)
+    expect(() => t.createNode(t.roots[0], nrfp)).to.not.throw(Error)
   })
 
   it('should throw if writelist defined but readlist not when creating nonroot folder node', function() {
     delete nrfp.readlist
-    expect(() => t.createNode(t.root, nrfp)).to.throw(Error)
+    expect(() => t.createNode(t.roots[0], nrfp)).to.throw(Error)
   }) 
 
   it('should throw if readlist defined but writelist not when creating nonroot folder node', function() {
     delete nrfp.writelist
-    expect(() => t.createNode(t.root, nrfp)).to.throw(Error)
+    expect(() => t.createNode(t.roots[0], nrfp)).to.throw(Error)
   })
 })
 
@@ -618,10 +632,17 @@ describe(path.basename(__filename) + ': indexedTree, createNode() for (non-root)
     t.createNode(null, rfp)
   })
 
+  it('created file node should attach to roots[0]', function() {
+
+    let n = t.createNode(t.roots[0], nrfp)
+    expect(n.parent).to.equal(t.roots[0])
+    expect(t.roots[0].getChildren()).to.include(n)
+  })
+
   it('created file node from props w/o hash/magic should preserve uuid, name, owner, writelist, readlist, size, mtime, w/o magic or hash', function() {
 
-    t.createNode(t.root, nrfp)
-    let n = t.root.children[0]
+    let n = t.createNode(t.roots[0], nrfp)
+
     expect(n.uuid).to.equal(nrfp.uuid)
     expect(n.name).to.equal(nrfp.name)
     expect(n.owner).to.deep.equal(nrfp.owner)
@@ -634,14 +655,12 @@ describe(path.basename(__filename) + ': indexedTree, createNode() for (non-root)
   })
 
   it('created file node from props w/o hash/magic should be a file', function() {
-    t.createNode(t.root, nrfp)
-    let n = t.root.children[0]
+    let n = t.createNode(t.roots[0], nrfp)
     expect(n.isFile()).to.be.true
   }) 
 
   it('created file node from props w/o hash/magic should be put into hashless Set', function() {
-    t.createNode(t.root, nrfp)
-    let n = t.root.children[0]
+    let n = t.createNode(t.roots[0], nrfp)
     expect(t.hashless.has(n)).to.be.true
   })
 
@@ -650,7 +669,7 @@ describe(path.basename(__filename) + ': indexedTree, createNode() for (non-root)
     t.on('hashlessAdded', node => {
       emitted = node
     })
-    expect(t.createNode(t.root, nrfp)).to.equal(emitted)
+    expect(t.createNode(t.roots[0], nrfp)).to.equal(emitted)
   })
 
   it('created file node from props w/ uninterested magic should preserve uuid, name, owner, writelist, readlist, size, mtime, w/o magic or hash', function() {
@@ -661,8 +680,7 @@ describe(path.basename(__filename) + ': indexedTree, createNode() for (non-root)
     nrfp.hash = hash
     nrfp.magic = magic
 
-    t.createNode(t.root, nrfp)
-    let n = t.root.children[0]
+    let n = t.createNode(t.roots[0], nrfp)
     expect(n.uuid).to.equal(nrfp.uuid)
     expect(n.name).to.equal(nrfp.name)
     expect(n.owner).to.deep.equal(nrfp.owner)
@@ -682,8 +700,7 @@ describe(path.basename(__filename) + ': indexedTree, createNode() for (non-root)
     nrfp.hash = hash
     nrfp.magic = magic
 
-    t.createNode(t.root, nrfp)
-    let n = t.root.children[0]
+    let n = t.createNode(t.roots[0], nrfp)
 
     expect(t.hashless.has(n)).to.be.false  
     expect(t.hashMap.has(hash)).to.be.false
@@ -694,8 +711,8 @@ describe(path.basename(__filename) + ': indexedTree, createNode() for (non-root)
     nrfp.hash = '7a44a28d1da4e2b99eda6060aab85168fe9d09fa7f91831f9ef7c137cdca5751'
     nrfp.magic = jpegMagic001
 
-    t.createNode(t.root, nrfp)
-    let n = t.root.children[0]
+    let n = t.createNode(t.roots[0], nrfp)
+  
     expect(n.uuid).to.equal(nrfp.uuid)
     expect(n.name).to.equal(nrfp.name)
     expect(n.owner).to.deep.equal(nrfp.owner)
@@ -712,8 +729,7 @@ describe(path.basename(__filename) + ': indexedTree, createNode() for (non-root)
     nrfp.hash = '7a44a28d1da4e2b99eda6060aab85168fe9d09fa7f91831f9ef7c137cdca5751'
     nrfp.magic = jpegMagic001
 
-    t.createNode(t.root, nrfp)
-    let n = t.root.children[0]
+    let n = t.createNode(t.roots[0], nrfp)
     expect(t.hashless.has(n)).to.be.false
     expect(t.hashMap.has(nrfp.hash)).to.be.true
     expect(t.hashMap.get(nrfp.hash).nodes).to.include(n)
@@ -724,7 +740,7 @@ describe(path.basename(__filename) + ': indexedTree, createNode() for (non-root)
     nrfp.hash = '7a44a28d1da4e2b99eda6060aab85168fe9d09fa7f91831f9ef7c137cdca5751'
     nrfp.magic = jpegMagic001
     
-    let n = t.createNode(t.root, nrfp)
+    let n = t.createNode(t.roots[0], nrfp)
     let digestObj = t.hashMap.get(nrfp.hash)
     expect(t.extended.has(digestObj)).to.be.true 
   })
@@ -735,7 +751,7 @@ describe(path.basename(__filename) + ': indexedTree, createNode() for (non-root)
     nrfp.hash = hash001
     nrfp.magic = jpegMagic001
     t.on('extendedAdded', node => emitted = node)
-    t.createNode(t.root, nrfp)
+    t.createNode(t.roots[0], nrfp)
     let d = t.hashMap.get(hash001)
     expect(emitted).to.equal(d)
   })
@@ -744,7 +760,7 @@ describe(path.basename(__filename) + ': indexedTree, createNode() for (non-root)
         
     nrfp.hash = hash001
     nrfp.magic = jpegMagic002
-    t.createNode(t.root, nrfp)
+    t.createNode(t.roots[0], nrfp)
     let digestObj = t.hashMap.get(nrfp.hash)
     expect(digestObj.meta.extended).to.be.false 
     expect(t.extended.has(digestObj)).to.be.false
@@ -756,7 +772,7 @@ describe(path.basename(__filename) + ': indexedTree, createNode() for (non-root)
     nrfp.hash = hash001
     nrfp.magic = jpegMagic002
     t.on('extendedAdded', node => emitted = node)
-    t.createNode(t.root, nrfp)
+    t.createNode(t.roots[0], nrfp)
     expect(emitted).to.be.undefined
   }) 
 })

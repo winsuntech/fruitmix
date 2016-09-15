@@ -14,140 +14,103 @@ import createHashMagic from './hashMagic'
 class Repo extends EventEmitter {
 
   // repo constructor
-  constructor(paths, driveModel) {
+  constructor(paths, driveModel, forest) {
 
     super()
+
     this.paths = paths
     this.driveModel = driveModel
-    this.drives = []
+    this.forest = forest
 
-    this.initState = 'IDLE' // 'INITIALIZING', 'INITIALIZED', 'DEINITIALIZING',
+    this.forest.on('driveCached', () => console.log(`driveCached: ${drive.uuid}`))
+    this.forest.on('hashlessAdded', node => {
+      console.log(`hashlessAdded drive: uuid:${node.uuid} path:${node.namepath()}`) 
+      this.hashMagicWorker.start(node.namepath(), node.uuid)
+    })
+
+    this.state = 'IDLE' // 'INITIALIZING', 'INITIALIZED', 'DEINITIALIZING',
+
+    this.scanners = []
+
     this.hashMagicWorker = createHashMagic()
     this.hashMagicWorker.on('end', ret => {
 
-      if (this.initState === 'IDLE') return
+      if (this.state === 'IDLE') return
 
       // find drive containing this uuid
-      let drive = this.findDriveByUUID(ret.uuid) // TODO
+      this.forest.updateHashMagic(ret.target, ret.uuid, ret.hash, ret.magic, ret.timestamp, err => {
 
-      drive.updateHashMagic(ret.target, ret.uuid, ret.hash, ret.magic, ret.timestamp, err => {
-        
-        let ret = this.findHashless() 
-        if (!ret) {
-          console.log(`hashMagicWorkerStopped drive: ${drive.uuid}`)
+        if (this.forest.hashless.size === 0) {
+          console.log(`hashMagicWorkerStopped`)
           return this.emit('hashMagicWorkerStopped')
         }
         
-        let { target, uuid } = ret
-        this.hashMagicWorker.start(target, uuid)
-      })
-    })
-    this.hashMagicWorkerState = 'STOPPED'
-  }
-
-  // this function find a hashless node in all drives, randomly
-  findHashless() {
-
-    let i
-    let drives = this.drives.filter(drv => drv.hashless.size > 0) // FIXME filter out non-indexed drive
-    if (!drives.length) return null
-    
-    i = Math.floor(Math.random() * drives.length)
-    let drive = drives[i]
-
-    let hashless = Array.from(drive.hashless)
-    i = Math.floor(Math.random() * hashless.length)
-    
-    return {
-      target: drive.abspath(hashless[i]),
-      uuid: hashless[i].uuid
-    }    
-  }
-
-  // create a fruitmix drive object (not create a drive model!)
-  createFruitmixDrive(conf, callback) {
-
-    let dir = this.paths.get('drives')
-    let drvpath = path.join(dir, conf.uuid)
-    fs.stat(drvpath, (err, stat) => {
-
-      if (err) return callback(err)
-      let drive = createDrive(conf)
-      drive.on('driveCached', () => console.log(`driveCached: ${drive.uuid}`))
-      drive.on('hashlessAdded', node => {
-        console.log(`hashlessAdded drive: ${drive.uuid}, uuid:${node.uuid} path:${node.namepath()}`) 
+        let node = this.forest.hashless.values().next().value 
         this.hashMagicWorker.start(node.namepath(), node.uuid)
       })
-      drive.setRootpath(drvpath)
-      callback(null, drive)
     })
+
   }
 
-  // retrieve all drives from configuration
-  // TODO there may be a small risk that a user is deleted but drive not
-  init(callback) {
+  async initAsync() {
 
-    if (this.initState !== 'IDLE') return new Error('invalid state')
+    if (this.state !== 'IDLE') throw new Error('invalid state')
 
-    this.initState = 'INITIALIZING'
-
-    // retrieve drive directory 
+    this.state = 'INITIALIZING'
+    
     let dir = this.paths.get('drives')
     let list = this.driveModel.collection.list
-    let count = list.length
+    let props = []
 
-    if (!count) {
-      this.initState = 'INITIALIZED'
-      return callback()
-    }
+    // TODO this is the easy version
+    for (let i = 0; i < list.length; i++) {
 
-    list.forEach(conf => {
-      if (conf.URI === 'fruitmix') {
-        this.createFruitmixDrive(conf, (err, drive) => {
-          if (!err) this.drives.push(drive)
-          if (!--count) {
-            this.initState = 'INITIALIZED'
-            callback()
-          }
-        })
+      let conf = list[i]
+      if (conf.URI !== 'fruitmix') 
+        continue
+
+      try {
+        let stat = await fs.statAsync(path.join(dir, conf.uuid))
+        if (stat.isDirectory()) {
+          props.push({
+            uuid: conf.uuid,
+            type: 'folder',
+            owner: conf.owner,
+            writelist: conf.writelist,
+            readlist: conf.readlist,
+            name: path.join(dir, conf.uuid)
+          })
+        }
       }
-      else if (!--count)
-        callback()
-    })
+      catch (e) {
+        continue
+      }
+    } // loop end
+
+    let roots = props.map(prop => 
+      this.forest.createNode(null, prop))     
+
+    let promises = roots.map(root => 
+      new Promise(resolve => this.forest.scan(root, () => resolve())))
+
+    Promise.all(promises)
+      .then(() => this.emit('driveCached'))
+      .catch(e => {})
+
+    this.state = 'INITIALIZED'
+  }
+
+  // TODO there may be a small risk that a user is deleted but drive not
+  init(callback) {
+    this.initAsync()
+      .then(() => callback())
+      .catch(e => callback(e))
   }
 
   // TODO
   deinit() {
     this.hashMagicWorker.abort()
-    this.initState = 'IDLE'
-  }
-
-  // SERVICE API: create new fruitmix drive
-  // label must be string, can be empty
-  // fixedOwner, true or false
-  // owner, uuid array, must be exactly one if fixedOwner true
-  // writelist, uuid array
-  // readlist, uuid array
-  // memCache, true or false
-  // return uuid 
-  async apiCreateFruitmixDrive({label, fixedOwner, owner, writelist, readlist, memCache}) {
-
-    let uuid = UUID.v4()          
-    let dir = this.paths.get('drives')
-
-    // create foldre in drive dir
-    await mkdirpAsync(path.join(dir, uuid))
-
-    // save to driveModel
-    await this.driveModel.createDrive({
-      label, fixedOwner, URI: 'fruitmix', uuid, owner, writelist, readlist, memCache
-    })
-   
-    // create drive and load it 
-    let drv = createFruitmixDrive(dir)(conf)
-    this.drives.push(drv)
-
-    return uuid
+    this.state = 'IDLE'
   }
 
   // FIXME real implementation should maintain a table
@@ -159,227 +122,11 @@ class Repo extends EventEmitter {
     return this.paths.get('tmp')
   }
 
-  findDriveByUUID(uuid) {
-    return this.drives.find(drv => {
-      if (drv.uuidMap.get(uuid)) return true
-      return false
-    })
-  }
-  
-  findNodeByUUID(uuid) {
-    return this.findNodeInDriveByUUID(uuid)
-  }
-
-  findNodeInDriveByUUID(uuid) {
-    for (let i = 0; i < this.drives.length; i++) {
-      if (this.drives[i].cacheState !== 'CREATED') continue
-      let x = this.drives[i].uuidMap.get(uuid)
-      if (x) return x
-    }
-  }
-
- 
-  createFileInDrive(userUUID, srcpath, targetDirUUID, filename, callback) {
-
-    let node = this.findNodeInDriveByUUID(targetDirUUID)
-    if (!node) return callback(new Error('uuid not found')) 
-
-    node.tree.importFile(userUUID, srcpath, node, filename, (err, node) => {
-      err ? callback(err) : callback(null, node)
-    })
-  }
-
-  // tested briefly
-  createFolder(userUUID, folderName, targetDirUUID, callback) {
-    
-    let node = this.findNodeInDriveByUUID(targetDirUUID)
-    if (!node) return callback(new Error('uuid not found'))
-
-    node.tree.createFolder(userUUID, node, folderName, (err, node) => 
-      err ? callback(err) : callback(null, node))
-  }
-
-  /** read **/  
-  readDriveFileorFolderInfo(uuid){
-    let node = this.findNodeInDriveByUUID(uuid)
-    if (!node) return new Error('uuid not found')
-
-    return node
-  }
-
-  /** update **/
-  renameDriveFileOrFolder(uuid, newName,callback) {
-
-    let node = this.findNodeInDriveByUUID(uuid)
-    if (!node) return callback(new Error('uuid not found'))
-
-    node.tree.renameFileOrFolder(node,newName, (err,node)=>{
-      err ? callback(err) : callback(null, node)
-    })
-    // TODO
-  } 
-
-  // overwrite
-  updateDriveFile(targetDirUUID, xattr,callback) {
-    let node = this.findNodeInDriveByUUID(targetDirUUID)
-    if (!node) return callback(new Error('uuid not found'))
-
-    node.tree.updateDriveFile(node,xattr,(err,node)=>{
-      err ? callback(err) : callback(null, node)
-    })
-  }
-
-  /** delete **/
-  deleteDriveFolder(folderUUID,callback) {
-    let node = this.findNodeInDriveByUUID(folderUUID)
-    if (!node) return callback(new Error('uuid not found'))
-
-    node.tree.deleteFileOrFolder(node,(err,node)=>{
-      err ? callback(err) : callback(null, node)
-    })
-  }
-
 ////////////////////////////////////////////////////////////////////////////////
 
-  getFilePath(userUUID, fileUUID) {
-
-    // FIXME!
-    let drive = this.findDriveByUUID(fileUUID)
-    let node = this.findNodeByUUID(fileUUID)
-    if (!node) {
-      return 'ENOENT'
-    }
-
-    if (!node.isFile()) {
-      return 'EINVAL'
-    }
-
-    if (!node.userReadable(userUUID)) {
-      return 'EACCESS'
-    }
-
-    return drive.abspath(node)
-  }
-  
-  listFolder(userUUID, folderUUID) {
-
-    let node = this.findNodeByUUID(folderUUID)
-    if (!node) {
-      let e = new Error(`listFolder: ${folderUUID} not found`)
-      e.code = 'ENOENT'
-      return e
-    }
-
-    if (!node.isDirectory()) {
-      let e = new Error(`listFolder: ${folderUUID} is not a folder`)
-      e.code = 'ENOTDIR'
-      return e
-    }
-
-    if (!node.userReadable(userUUID)) {
-      let e = new Error(`listFolder: ${folderUUID} not accessible for given user ${userUUID}`)
-      e.code = 'EACCESS'
-      return e
-    }
-
-    return node
-      .getChildren()
-      .map(n => {
-        if (n.isDirectory()) {
-          return {
-            uuid: n.uuid,
-            type: 'folder',
-            owner: n.owner, 
-            writelist: n.writelist,
-            readlist: n.readlist,
-            name: n.name
-          }
-        }
-        else if (n.isFile()) {
-          return {
-            uuid: n.uuid,
-            type: 'file',
-            owner: n.owner,
-            writelist: n.writelist,
-            readlist: n.readlist,
-            name: n.name,
-            mtime: n.mtime,
-            size: n.size
-          }
-        }
-        else
-          return null
-      })
-      .filter(n => !!n)
-  }
-
-  getMediaPath(userUUID, digest) {
-
-    let digestMap = new Map()
-
-    for (let i = 0; i < this.drives.length; i ++) {
-      let drive = drives[i]
-    //  if (drive.hashMap.
-    }
-  }
-
-  getSharedWithMe(userUUID) {
-
-    let set = new Set()
-    
-    let filtered = this.drives
-    filtered.forEach(drv => {
-
-      if (drv.owners.find(userUUID)) return
-
-      drv.root.preVisit(node => {
-        if (node.writelist) set.add(node)
-      })
-    })
-
-    return Array.from(set)
-  }
-
-  getSharedWithOthers(userUUID) {
-
-    let set = new Set()
-    
-    let filtered = this.drives
-    filtered.forEach(drv => {
-      if (!drv.owners.find(userUUID)) return
-
-      drv.root.preVisit(node => {
-        if (node.writelist) set.add(node)
-      })
-    })
-
-    return Array.from(set)
-  }
-
-  getMedia(userUUID) {
-  
-    let filtered = this.drives // TODO
-
-    let map = new Map()
-    filtered.forEach(drv => {
-      drv.hashMap.forEach((digestObj, digest) => {
-        if (map.has(digest)) return
-        for (let i = 0; i < digestObj.nodes.length; i++) {
-          if (digestObj.nodes[i].userReadable(userUUID)) {
-            map.set(digest, digestObj.meta)
-            return
-          }
-        }
-      })
-    }) 
-
-    return Array.from(map, ([digest, meta]) => {
-      return Object.assign({digest}, meta)
-    })
-  }
 }
 
-const createRepo = (paths, driveModel) => new Repo(paths, driveModel)
+const createRepo = (paths, driveModel, forest) => new Repo(paths, driveModel, forest)
 
 const testing = {
 }
