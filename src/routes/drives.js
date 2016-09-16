@@ -31,37 +31,7 @@ Drive {
 router.get('/', auth.jwt(), (req, res) => {
   
   let repo = Models.getModel('repo')
-  let { drives } = repo
-
-  let objs = drives.map(drv => {
-
-    let obj = {
-      // configuration
-      label: drv.label,
-      fixedOwner: drv.fixedOwner,
-      URI: drv.URI,
-      uuid: drv.uuid,
-      owner: drv.owner,
-      writelist: drv.writelist,
-      readlist: drv.readlist,
-      cache: drv.cache,
-    }
-
-    obj.rootpath = drv.rootpath // storage online/offline
-    if (obj.rootpath) {
-      obj.cacheState = drv.cacheState
-      if (obj.cacheState === 'CREATED') {
-        obj.uuidMapSize = drv.uuidMap.size 
-        obj.hashMapSize = drv.hashMap.size
-        obj.hashlessSize = drv.hashless.size
-        obj.sharedSize = drv.shared.size
-      }
-    }
-
-    return obj
-  })
-
-  return res.status(200).json(objs)
+  return res.status(200).json(repo.getDrives())
 }) 
 
 export default router

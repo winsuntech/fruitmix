@@ -6,6 +6,7 @@ import paths from './paths'
 import models from '../models/models'
 import { createUserModelAsync } from '../models/userModel'
 import { createDriveModelAsync } from '../models/driveModel'
+import { createDrive } from './drive'
 import { createRepo } from './repo'
 import createUUIDLog from './uuidlog'
 import { createDocumentStore } from './documentStore'
@@ -38,7 +39,10 @@ const initAsync = async (sysroot) => {
   let log = createUUIDLog(logpath)
   models.setModel('log', log)
 
-  let repo = createRepo(paths, driveModel)
+  let forest = createDrive()
+  models.setModel('forest', forest)
+
+  let repo = createRepo(paths, driveModel, forest)
   models.setModel('repo', repo)
   repo.init(err => err ? console.log(err) : null)
 

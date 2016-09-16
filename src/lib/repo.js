@@ -122,6 +122,10 @@ class Repo extends EventEmitter {
     return this.paths.get('tmp')
   }
 
+  getDrives(userUUID) {
+    return this.driveModel.collection.list
+  }
+
 ////////////////////////////////////////////////////////////////////////////////
 
 }

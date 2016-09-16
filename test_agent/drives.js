@@ -8,6 +8,7 @@ import paths from 'src/lib/paths'
 import models from 'src/models/models'
 import { createUserModelAsync } from 'src/models/userModel'
 import { createDriveModelAsync } from 'src/models/driveModel'
+import { createDrive } from 'src/lib/drive'
 import { createRepo } from 'src/lib/repo'
 
 import request from 'supertest'
@@ -65,14 +66,11 @@ const requestToken = (callback) => {
 
 const requestTokenAsync = Promise.promisify(requestToken)
 
-const createRepoCached = (paths, model, callback) => {
+const createRepoCached = (paths, model, forest, callback) => {
   
   let count = 0
-  let repo = createRepo(paths, model) 
-  repo.on('driveCached', drv => {
-    count++
-    if (count === repo.drives.length) callback(null)
-  })
+  let repo = createRepo(paths, model, forest) 
+  repo.on('driveCached', () => callback(null))
   repo.init(e => {
     if (e) callback(e)
     else callback(null, repo)
@@ -117,8 +115,12 @@ describe(path.basename(__filename) + ': test repo', function() {
         models.setModel('user', umod)
         models.setModel('drive', dmod)
 
+        //
+        let forest = createDrive()
+        models.setModel('forest', forest)    
+
         // create repo and wait until drives cached
-        let repo = await createRepoCachedAsync(paths, dmod)
+        let repo = await createRepoCachedAsync(paths, dmod, forest)
         models.setModel('repo', repo)
 
         // request a token for later use
@@ -134,51 +136,9 @@ describe(path.basename(__filename) + ': test repo', function() {
         .set('Accept', 'application/json')
         .expect(200)
         .end(function(err, res) {
-
           if (err) return done(err)          
-
-          let arr = res.body
-          // sort by label
-          arr.sort(function(a, b) {
-            return a.label.localeCompare(b.label)
-          })
-
-          let dir = paths.get('drives')
-          let expected = [ 
-            { 
-              label: 'drv001',
-              fixedOwner: true,
-              URI: 'fruitmix',
-              uuid: drv001UUID,
-              owner: [ userUUID ],
-              writelist: [],
-              readlist: [],
-              cache: true,
-              rootpath: path.join(dir, drv001UUID),
-              cacheState: 'CREATED',
-              uuidMapSize: 1,
-              hashMapSize: 0,
-              hashlessSize: 0,
-              sharedSize: 1 // root folder
-            },
-            { 
-              label: 'drv002',
-              fixedOwner: true,
-              URI: 'fruitmix',
-              uuid: drv002UUID,
-              owner: [ userUUID ],
-              writelist: [],
-              readlist: [],
-              cache: true,
-              rootpath: path.join(dir, drv002UUID),
-              cacheState: 'CREATED',
-              uuidMapSize: 1,
-              hashMapSize: 0,
-              hashlessSize: 0,
-              sharedSize: 1 // root folder
-            } 
-          ]
-          expect(arr).to.deep.equal(expected) 
+          let arr = res.body.sort((a, b) => a.label.localeCompare(b.label))
+          expect(arr).to.deep.equal(drives) 
           done()
         })
     })
@@ -190,7 +150,10 @@ describe(path.basename(__filename) + ': family version', function() {
   beforeEach(function() {
     return (async () => {
       await initFamilyRoot(path.join(process.cwd(), 'family'))
-      await Promise.promisify(createRepoCached)(paths, models.getModel('drive'))
+
+      let forest = createDrive()
+      models.setModel('forest', forest)
+      await Promise.promisify(createRepoCached)(paths, models.getModel('drive'), forest)
     })()
   })
   
