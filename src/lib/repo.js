@@ -3,6 +3,7 @@ import EventEmitter from 'events'
 
 import Promise from 'bluebird'
 
+import mkdirp from 'mkdirp'
 import { fs, mkdirpAsync, rimrafAsync } from '../util/async'
 
 import { readXstat, readXstatAsync } from './xstat'
@@ -124,6 +125,75 @@ class Repo extends EventEmitter {
 
   getDrives(userUUID) {
     return this.driveModel.collection.list
+  }
+
+  //  label
+  //  fixedOwner: true
+  //  URI: fruitmix
+  //  uuid 
+  //  owner
+  //  writelist
+  //  readlist
+  //  cache
+  createFruitmixDrive(conf, callback) {
+
+    let dir = this.paths.get('drives')
+    let dpath = path.join(dir, conf.uuid)
+
+    mkdirp(dpath, err => {
+      if (err) return callback(err)
+      this.driveModel.createDrive(conf, err => {
+        if (err) return callback(err)
+
+        let root = this.forest.createNode(null, {
+          uuid: conf.uuid,
+          type: 'folder',
+          owner: conf.owner,
+          writelist: conf.writelist,
+          readlist: conf.readlist,
+          name: dpath  
+        })
+
+        this.forest.scan(root, () => 
+          console.log(`scan root finished: ${root.uuid}`))
+        
+        callback(conf)
+      })
+    })
+  }
+
+  createUserDrives(user, callback) {
+
+    let home = {
+      label: 'home',
+      fixedOwner: true,
+      URI: 'fruitmix',
+      uuid: user.home,
+      owner: [user.uuid],
+      writelist: [],
+      readlist: [],
+      cache: true 
+    } 
+
+    let lib = {
+      label: 'library',
+      fixedOwner: 'true',
+      URI: 'fruitmix',
+      uuid: user.library,
+      owner: [user.uuid],
+      writelist: [],
+      readlist: [],
+      cache: true 
+    } 
+
+    let count = 2
+    const end = (err) => {
+      if (!--count) 
+        callback() 
+    }
+
+    this.createFruitmixDrive(home, end)
+    this.createFruitmixDrive(lib, end)
   }
 
 ////////////////////////////////////////////////////////////////////////////////

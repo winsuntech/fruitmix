@@ -22,13 +22,22 @@ let drv002UUID = '6586789e-4a2c-4159-b3da-903ae7f10c2a'
 
 let users = [
   {
+    type: 'local',
     uuid: userUUID,
     username: 'hello',
     password: '$2a$10$0kJAT..tF9IihAc6GZfKleZQYBGBHSovhZp5d/DiStQUjpSMnz8CC',
+    smbUsername: null,
+    smbPassword: null,
+    smbLastChangeTime: null,
+
     avatar: null,
     email: null,
+
     isFirstUser: true,
     isAdmin: true,
+
+    home: drv001UUID,
+    library: drv002UUID
   }
 ]
 
@@ -61,7 +70,8 @@ const requestToken = (callback) => {
     .get('/token')
     .auth(userUUID, 'world')
     .set('Accept', 'application/json')
-    .end((err, res) => err ? callback(err) : callback(null, res.body.token))
+    .end((err, res) => 
+      err ? callback(err) : callback(null, res.body.token))
 }
 
 const requestTokenAsync = Promise.promisify(requestToken)

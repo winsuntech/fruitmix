@@ -1,5 +1,4 @@
 import Models from '../models/models'
-//var User = require('mongoose').model('User')
 var router = require('express').Router()
 const auth = require('../middleware/auth').default
 const uuid = require('node-uuid')
@@ -7,30 +6,89 @@ var url = require('url')
 var spawnSync = require('child_process').spawnSync
 var xattr = require('fs-xattr')
 
+router.get('/', auth.jwt(), (req, res) => {
 
-router.get('/',auth.jwt(), (req, res) => {
-  let User = Models.getModel('user')
-  let docs=User.collection.list.filter(v=>v.type=='user')
-/*   
-ype: 'user' }, 'uuid username avatar email isAdmin isFirstUser type', (err, docs) => {
-    if (err) { console.log('dfddd')
-      console.log(err)
-      return res.status(500).json(null)
-    }*/
-  
-    let data =docs.map(doc => ({
-      username: doc.username, 
-      uuid: doc.uuid, 
-      avatar: doc.avatar||'',
-      email: doc.email,
-      isAdmin: doc.isAdmin,
-      isFirstUser: doc.isFirstUser,
-      type: doc.type
-    }))
-    return res.status(200).json(data)
-  
+  const user = req.user
+  const userList = Models.getModel('user').collection.list
+
+  if (user.isAdmin) {
+    let list = Models.getModel('user').collection.list
+    return res.status(200).json(list.map(u => Object.assign({}, u, {
+      password: undefined,
+      smbPassword: undefined,
+      smbLastChangeTime: undefined
+    })))
+  }
+  else {
+    return res.status(200).json([Object.assign({}, user, {
+      password: undefined,
+      smbPassword: undefined,
+      smbLastChangeTime: undefined
+    })])
+  }
 })
 
+router.post('/', auth.jwt(), (req, res) => {
+
+  const user = req.user 
+  const userModel = Models.getModel('user')
+
+  if (!user.isAdmin) {
+    return res.status(401).json({})
+  }
+
+  let props = Object.assign({}, req.body, {
+    type: 'local'
+  })
+
+  // create user
+  userModel.createUser(props, (err, newUser) => {
+
+    if (err) return res.status(500).json({
+      code: err.code,
+      message: err.message
+    })
+
+    const repo = Models.getModel('repo')    
+    repo.createUserDrives(newUser, () => {
+      res.status(200).json(Object.assign({}, newUser, {
+        password: undefined,
+        smbPassword: undefined, 
+        smbLastChangeTime: undefined
+      }))
+    })
+  })
+
+})
+
+router.patch('/:userUUID', auth.jwt(), (req, res) => {
+
+  const user = req.user
+  const userModel = Models.getModel('user')
+  const userUUID = req.params.userUUID
+
+  if (!user.isAdmin && userUUID !== user.uuid) {
+    return res.status(401).json({})
+  }
+
+  let props = Object.assign({}, req.body)
+
+  userModel.updateUser(userUUID, props, (err, user) => {
+
+    if (err) return res.status(500).json({
+      code: err.code,
+      message: err.message
+    })
+
+    return res.status(200).json(Object.assign({}, user, {
+      password: undefined,
+      smbPassword: undefined,
+      smbLastChangeTime: undefined
+    }))
+  })
+})
+
+/**
 router.post('/',auth.jwt(), (req, res) => {
   if (req.user.isAdmin === true ) {
     var tmpuuid=uuid.v4()
@@ -59,6 +117,7 @@ router.post('/',auth.jwt(), (req, res) => {
     return res.status(403).json('403 Permission denied')
   }
 })
+**/
 
 router.delete('/',auth.jwt(), (req, res) => {
   if (req.user.isAdmin === true ) {

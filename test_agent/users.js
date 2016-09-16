@@ -1,41 +1,149 @@
 import path from 'path'
-import rimraf from 'rimraf'
-import request from 'supertest'
-import fs from 'fs'
-import app from 'src/app'
-import models from 'src/models/models'
+import { mkdirpAsync, rimrafAsync, fs } from 'src/util/async'
 import { expect } from 'chai'
-const UserModel = require('src/models/userModel')
-import Promise from 'bluebird'
+import request from 'supertest'
 
+import app from 'src/app'
+import paths from 'src/lib/paths'
+import models from 'src/models/models'
+import { createUserModelAsync } from 'src/models/userModel'
+import { createDriveModelAsync } from 'src/models/driveModel'
+import { createDrive } from 'src/lib/drive'
+import { createRepo } from 'src/lib/repo'
 
-describe(path.basename(__filename), function() {
+let userUUID = '9f93db43-02e6-4b26-8fae-7d6f51da12af'
+let drv001UUID = 'ceacf710-a414-4b95-be5e-748d73774fc4'  
+let drv002UUID = '6586789e-4a2c-4159-b3da-903ae7f10c2a' 
+
+let users = [
+  {
+    type: 'local',
+    uuid: userUUID,
+    username: 'hello',
+    password: '$2a$10$0kJAT..tF9IihAc6GZfKleZQYBGBHSovhZp5d/DiStQUjpSMnz8CC',
+    smbUsername: null,
+    smbPassword: null,
+    smbLastChangeTime: null,
+
+    avatar: null,
+    email: null,
+
+    isFirstUser: true,
+    isAdmin: true,
+
+    home: drv001UUID,
+    library: drv002UUID
+  }
+]
+
+let drives = [
+  {
+    label: 'drv001',
+    fixedOwner: true,
+    URI: 'fruitmix',
+    uuid: drv001UUID,
+    owner: [ userUUID ],
+    writelist: [],
+    readlist: [],
+    cache: true
+  },
+  {
+    label: 'drv002',
+    fixedOwner: true,
+    URI: 'fruitmix',
+    uuid: drv002UUID,
+    owner: [ userUUID ],
+    writelist: [],
+    readlist: [],
+    cache: true
+  }
+]
+
+const requestToken = (callback) => {
+
+  request(app)
+    .get('/token')
+    .auth(userUUID, 'world')
+    .set('Accept', 'application/json')
+    .end((err, res) => 
+      err ? callback(err) : callback(null, res.body.token))
+}
+
+const requestTokenAsync = Promise.promisify(requestToken)
+
+const createRepoCached = (paths, model, forest, callback) => {
   
-  let createData={username:"u1", "password":"1122334", "avatar":"", "email":"aaa@bbb.com", "isAdmin":false, "type":""}  
-  
-  let token  
-
-    let User
-  const requestToken = (callback) => {
-    User = models.getModel('user') 
-    request(app)
-      .get('/token')
-      .auth(User.collection.list[0].uuid, '11223341')
-      .set('Accept', 'application/json')
-      .end((err, res) => callback(res.body.token))
-  } 
-
-  beforeEach((done) => {
-    requestToken((token1) => {
-    token=token1
-    done()
-    }) 
+  let count = 0
+  let repo = createRepo(paths, model, forest) 
+  repo.on('driveCached', () => callback(null))
+  repo.init(e => {
+    if (e) callback(e)
+    else callback(null, repo)
   })
+}
 
+const prepare = (callback) => {
+
+
+  (async () => {
+
+    // make test dir
+    await rimrafAsync('tmptest')
+    await mkdirpAsync('tmptest')
+
+    // set path root
+    await paths.setRootAsync(path.join(process.cwd(), 'tmptest'))
+
+    // fake drive dir
+    let dir = paths.get('drives')
+    await mkdirpAsync(path.join(dir, drv001UUID))
+    await mkdirpAsync(path.join(dir, drv002UUID))
+    
+    // write model files
+    dir = paths.get('models')
+    let tmpdir = paths.get('tmp')
+    await fs.writeFileAsync(path.join(dir, 'users.json'), JSON.stringify(users, null, '  '))
+    await fs.writeFileAsync(path.join(dir, 'drives.json'), JSON.stringify(drives, null, '  '))
+
+    // create models
+    let umod = await createUserModelAsync(path.join(dir, 'users.json'), tmpdir)
+    let dmod = await createDriveModelAsync(path.join(dir, 'drives.json'), tmpdir)
+
+    // set models
+    models.setModel('user', umod)
+    models.setModel('drive', dmod)
+
+    //
+    let forest = createDrive()
+    models.setModel('forest', forest)    
+
+    // create repo and wait until drives cached
+    let repo = await createRepoCachedAsync(paths, dmod, forest)
+    models.setModel('repo', repo)
+
+    // request a token for later use
+    return await requestTokenAsync()
+
+  })().asCallback(callback)
+}
+
+const createRepoCachedAsync = Promise.promisify(createRepoCached)
+
+describe(path.basename(__filename) + ': test repo', function() {
 
   describe('GET /users', () => {
-    /*
-    it('return unauthorized when token is not provided', (done) => {
+
+    let token
+
+    beforeEach(function(done) {
+      prepare((err, tok) => {
+        if (err) return done(err)
+        token = tok
+        done()
+      })      
+    })
+
+    it('should return 401 unauthorized if no token', (done) => {
       request(app)
         .get('/users')
         .set('Accept', 'application/json')
@@ -44,8 +152,9 @@ describe(path.basename(__filename), function() {
            if(err) return done(err);
            done();
          })
-    })*/
-   /* 
+    })
+
+    /* 
     it('return empty set when no user exists', (done) => {
       request(app)
         .get('/users')
@@ -59,19 +168,107 @@ describe(path.basename(__filename), function() {
          })
     })
     */
+
     it('return full set when user exists', (done) => {
-        request(app)
-          .get('/users')
-          .set('Authorization', 'JWT ' + token)
-          .set('Accept', 'application/json')
-          .expect(200)
-          .end((err, res) => { 
-             if(err) return done(err);
-             expect(res.body).to.deep.equal([{'avatar':'', 'email':'aaa@bbb.com', 'username':'u1', 'uuid':User.collection.list[0].uuid, 'isAdmin':true, 'isFirstUser':true, 'type':'user'} ]);
-             done();
-           })
+
+      request(app)
+        .get('/users')
+        .set('Authorization', 'JWT ' + token)
+        .set('Accept', 'application/json')
+        .expect(200)
+        .end((err, res) => { 
+          if (err) return done(err);
+          console.log(res.body)
+          done();
+        })
     })
   })
+
+  describe('POST /users', () => {
+
+    let token
+    beforeEach(function(done) {
+      prepare((err, tok) => {
+        if (err) return done(err)
+        token = tok
+        done()
+      })      
+    })
+
+    it('should add Jason', function(done) {
+
+      request(app)
+        .post('/users/')
+        .set('Authorization', 'JWT ' + token) 
+        .set('Accept', 'application/json')
+        .send({
+          username: 'Jason', 
+          password: 'Bourne'
+        })
+        .expect(200)
+        .end(function(err, res) {
+          let user = res.body  
+          expect(user.username).to.equal('Jason')
+          done()
+        })
+    })
+  })
+
+  describe('PATCH /users', () => {
+
+    let token
+    let userUUID
+
+    beforeEach(function(done) {
+
+      prepare((err, tok) => {
+        if (err) return done(err)
+        token = tok
+
+        request(app)
+          .post('/users/')
+          .set('Authorization', 'JWT ' + token)
+          .set('Accept', 'application/json')
+          .send({
+            username: 'Jason',
+            password: 'Bourne'
+          })
+          .expect(200)
+          .end((err, res) => {
+            if (err) return done(err)
+            userUUID = res.body.uuid
+            done()
+          })
+      })
+    })
+
+    it('should change Jason to Jupiter', function(done) {
+      
+      request(app)
+        .patch(`/users/${userUUID}`)
+        .set('Authorization', 'JWT ' + token)
+        .set('Accept', 'application/json')
+        .send({
+          username: 'Jupiter'
+        })
+        .expect(200, done)
+    })
+  })
+
+  describe('DELETE /users/:userUUID', () => {
+
+    let token
+
+    beforeEach(done => 
+      prepare((err, tok) => {
+        if (err) return done(err)
+        token = tok
+        done()
+      }))
+
+    // it('should 
+  })
+  
   
   /*
   describe('POST /users', () => {

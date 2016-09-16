@@ -37,7 +37,7 @@ class DriveModel {
 
   // this function requires the uuid to be passed in
   // because the folder should be created before update model database
-  async createDrive({ 
+  createDrive({ 
     label, 
     fixedOwner, 
     URI, 
@@ -46,10 +46,14 @@ class DriveModel {
     writelist, 
     readlist, 
     cache 
-  }) {
-    // TODO check
+  }, callback) {
+
     let conf = {label, fixedOwner, URI, uuid, owner, writelist, readlist, cache}
-    await this.collection.updateAsync(list, [...list, conf])   
+
+    let list = this.collection.list
+
+    // this function returns err or undefined
+    this.collection.updateAsync(list, [...list, conf]).asCallback(callback)
   }
 }
 

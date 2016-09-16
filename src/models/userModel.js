@@ -31,8 +31,8 @@ const epochTimeInSeconds = () =>
 x   password: { type: String, required: true },
 
 *   smbUsername: 
-x   smbpassword:
-x   smblct:
+x   smbPassword:
+x   smbLastChangeTime:
 
 o   avatar: { type: String, required: true },
 o   email: { type: String, unique: true },
@@ -49,6 +49,34 @@ o1  neglected for first user
 
 **/
 
+/** Schema Patch
+{
+
+x   type: // string, 'local' or 'remote'
+
+x   uuid: { type: String, unique: true, required: true },
+    username: { type: String, unique: true, required: true },
+    password: { type: String, required: true },
+
+    smbUsername: 
+    smbPassword:
+x   smbLastChangeTime:
+
+    avatar: { type: String, required: true },
+    email: { type: String, unique: true },
+
+o1  isAdmin: { type: Boolean },
+    isFirstUser: { type: Boolean },
+
+x   home: // home drive uuid (auto generated when creating)
+x   library: // library drive uuid (auto generated when creating)
+}
+
+Note: 
+o1  can only be changed by first user
+
+**/
+
 Promise.promisifyAll(bcrypt)
 
 // TODO
@@ -62,15 +90,18 @@ class UserModel {
 
   createUser(props, callback) {
 
-    const einval = (text) => callback(Object.assign(new Error(text), { code: 'EINVAL' }))
-    const ebusy = (text) => callback(Object.assign(new Error(text), { code: 'EBUSY' }))
+    const einval = (text) => 
+      process.nextTick(callback, Object.assign(new Error(text), { code: 'EINVAL' }))
+    const ebusy = (text) => 
+      process.nextTick(callback, Object.assign(new Error(text), { code: 'EBUSY' })) 
 
+    let list = this.collection.list
     let {
       type,         // *
       username,     // *
       password,     // *
       smbUsername,  // o 
-      smbpassword,  // o
+      smbPassword,  // o
       avatar,       // o
       email,        // o
       isAdmin,      // o
@@ -83,15 +114,19 @@ class UserModel {
     if (typeof password !== 'string' || !password.length)
       return einval('invalid password')
 
-    if (smbUsername && (typeof smbUsername !== 'string' || !validateUnixUserName(smbUsername)))
-      return einval('invalid smbUsername')
-    if (smbpassword && (typeof smbpassword !== 'string' || !smbpassword))
-      return einval('invalid smbpassword')
-    if (!!smbUsername !== !!smbpassword)
-      return einval('smbUsername and smbpassword must be provided together')
+    if (smbUsername) {
+      if (typeof smbUsername !== 'string' || !validateUnixUserName(smbUsername))
+        return einval('invalid smbUsername')
+      if (list.find(u => u.smbUsername === smbUsername))
+        return einval('invalid smbUseranme')
+    }
+    if (smbPassword && (typeof smbPassword !== 'string' || !smbPassword.length))
+      return einval('invalid smbPassword')
+    if (!!smbUsername !== !!smbPassword)
+      return einval('smbUsername and smbPassword must be provided together')
 
     smbUsername = smbUsername || null
-    smbpassword = smbpassword || null
+    smbPassword = smbPassword || null
 
     if (avatar && (typeof avatar !== 'string' || avatar.length === 0))
       return einval('invalid avatar')
@@ -112,18 +147,17 @@ class UserModel {
     let salt = bcrypt.genSaltSync(10) 
     let passwordEncrypted = bcrypt.hashSync(password, salt)
 
-    let smbpasswordEncrypted = null
+    let smbPasswordEncrypted = null
     let smbLastChangeTime = null
 
-    if (smbpassword) {
-      smbpasswordEncrypted = smbEncryptPassword(smbpassword)
+    if (smbPassword) {
+      smbPasswordEncrypted = smbEncryptPassword(smbPassword)
       smbLastChangeTime = epochTimeInSeconds()
     }    
 
     if (this.collection.locked) 
       return ebusy('locked')
 
-    let list = this.collection.list
     let isFirstUser = list.length === 0 ? true : false  
     if (isFirstUser) isAdmin = true
 
@@ -133,7 +167,7 @@ class UserModel {
       username, 
       password: passwordEncrypted, 
       smbUsername,
-      smbPassword: smbpasswordEncrypted,
+      smbPassword: smbPasswordEncrypted,
       smbLastChangeTime,
       avatar,
       email,
@@ -143,9 +177,106 @@ class UserModel {
       library: UUID.v4()
     }
 
-    this.collection.updateAsync(list, [...list, newUser]) 
-      .then(() => callback(null, newUser))
-      .catch(e => callback(e))
+    this.collection
+      .updateAsync(list, [...list, newUser]) 
+      .asCallback(err => 
+        err ? callback(err) : callback(null, newUser)) 
+  }
+
+  updateUser(userUUID, props, callback) {
+
+    const einval = (text) => 
+      process.nextTick(callback, Object.assign(new Error(text), { code: 'EINVAL' }))
+    const enoent = (text) => 
+      process.nextTick(callback, Object.assign(new Error(text), { code: 'ENOENT' })) 
+
+    let list = this.collection.list
+    let user = list.find(u => u.uuid === userUUID) 
+    if (!user) 
+      return enoent('user not found')
+
+    // only following field are allowed 
+    // username
+    // password
+    // smbUsername
+    // smbPassword
+    // avatar
+    // email
+
+    let { username, password, smbUsername, smbPassword, avatar, email } = props
+    
+    let change = {}
+
+    // username
+    if (username) {
+      if (typeof username !== 'string' || !username.length) 
+        return einval('invalid username')
+      change.username = username   
+    }
+
+    // password
+    if (password) {
+      if (password !== 'string' || !password.length) 
+        return einval('invalid password')
+      change.password = bcrypt.hashSync(password, bcrypt.genSaltSync(10))
+    }
+
+    // smbUsername
+    if (smbUsername === undefined) {}
+    else if (smbUsername === null) 
+      change.smbUsername = null
+    else if (typeof smbUsername === 'string' && validateUnixName(smbUsername)) {
+
+      if (list.filter(u => u.uuid !== userUUID).find(u => u.smbUsername === smbUsername))
+        return einval('invalid smbUsername')
+
+      change.smbUsername = smbUsername
+    }
+    else
+      return einval('invalid smbUsername')
+
+    // smbPassword & lct
+    if (smbPassword === undefined) {}
+    else if (smbPassword === null)
+      change.smbPassword = null
+    else if (typeof smbPassword === 'string' && !smbPassword.length) {
+      change.smbPassword = smbEncryptPassword(smbPassword)
+      change.smbLastChangeTiem = epochTimeInSeconds()
+    }
+    else 
+      return einval('invalid smbPassword')
+
+    // avatar
+    if (avatar === undefined) {}
+    else if (avatar === null)
+      change.avatar = null
+    else if (typeof avatar === 'string' && !avatar.length)
+      change.avatar = avatar
+    else
+      return einval('invalid avatar')
+
+    // email 
+    if (email === undefined) {}
+    else if (email === null) 
+      change.email = null
+    else if (typeof email === 'string' && !email.length)
+      change.email = email
+    else 
+      return einval('invalid email')
+
+    // merge
+    let update = Object.assign({}, user, change)
+
+    // smb check
+    if (update.smbUsername === null && update.smbPassword === null && update.smbLastChangeTime === null) {}
+    else if (!!update.smbUsername && !!update.smbPassword && update.smbLastChangeTime) {}
+    else 
+      return einval('invalid combination of smb username, password, lct')
+
+    let index = list.findIndex(u => u.uuid === userUUID)
+   
+    this.collection.updateAsync(list, [...list.slice(0, index),  update, ...list.slice(index + 1)])
+      .asCallback(err => err ? callback(err) : callback(null, update))
   }
 
   // to be refactored
@@ -161,7 +292,8 @@ class UserModel {
   verifyPassword(useruuid, password, callback) {
     
     let user = this.collection.list.find(u => u.uuid === useruuid)
-    if (!user) return process.nextTick(() => callback(null, null))
+    if (!user) 
+      return process.nextTick(() => callback(null, null))
 
     bcrypt.compare(password, user.password, (err, match) => {
       if (err) return callback(err) 
