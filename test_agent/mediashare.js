@@ -1,7 +1,16 @@
 import path from 'path'
 import Promise from 'bluebird'
 
-import { expect } from 'chai'
+import chai from 'chai'
+import chaiAsPromised from 'chai-as-promised'
+
+chai.use(chaiAsPromised)
+
+const expect = chai.expect
+const should = chai.should()
+
+import validator from 'validator'
+
 import app from 'src/app'
 import models from 'src/models/models'
 import paths from 'src/lib/paths'
@@ -73,12 +82,10 @@ const requestTokenAsync = Promise.promisify(requestToken)
 
 const createRepoHashMagicStopped = (paths, model, forest, callback) => {
   
-  let count = 0
+  let err
   let repo = createRepo(paths, model, forest) 
-  repo.on('hashMagicWorkerStopped', () => callback(null, repo))
-  repo.init(e => {
-    if (e) callback(e)
-  })
+  repo.on('hashMagicWorkerStopped', () => !err && callback(null, repo))
+  repo.init(e => e && callback(err = e))
 }
 
 const createRepoAsync = Promise.promisify(createRepoHashMagicStopped)
@@ -110,9 +117,9 @@ const copyFile = (src, dst, callback) => {
 
 const copyFileAsync = Promise.promisify(copyFile)
 
-describe(path.basename(__filename) + ': test repo', function() {
+describe(path.basename(__filename), function() {
 
-  describe('test drives api', function() {
+  describe('test mediashare', function() {
   
     let token
     let cwd = process.cwd()
@@ -171,6 +178,94 @@ describe(path.basename(__filename) + ': test repo', function() {
       })()     
     })
 
+    const postMediaShare = (post, callback) => {
+
+      request(app)
+        .post('/mediashare')
+        .send(post)
+        .set('Authorization', 'JWT ' + token)
+        .set('Accept', 'application/json')
+        .expect(200)
+        .end((err, res) => {
+          if (err) return callback(err)
+          callback(null, res.body)
+        })
+   
+    }
+
+    const postMediaShareAsync = Promise.promisify(postMediaShare)
+
+    const single = {
+      maintainers: [],
+      viewers: [],
+      contents: [
+        '7803e8fa1b804d40d412bcd28737e3ae027768ecc559b51a284fbcadcd0e21be' 
+      ],
+    }
+
+
+    it('doc/single should have doctype as mediashare', () => 
+      postMediaShareAsync(single).should.eventually.have.property('doctype', 'mediashare'))
+
+    it('doc/single should have docversion as 1.o', () => 
+      postMediaShareAsync(single).should.eventually.have.property('docversion', '1.0'))
+
+    it('doc/single should have uuid', () => 
+      postMediaShareAsync(single).should.eventually.have.property('uuid')
+        .to.satisfy(uuid => typeof uuid === 'string' && validator.isUUID(uuid)))
+
+    it('doc/single should have userUUID as author', () => 
+      postMediaShareAsync(single).should.eventually.have.property('author').to.equal(userUUID))
+
+    it('doc/single should have empty maintainers', () =>
+      postMediaShareAsync(single).should.eventually.have.property('maintainers').to.deep.equal([]))
+
+    it('doc/single should have empty viewers', () =>
+      postMediaShareAsync(single).should.eventually.have.property('viewers').to.deep.equal([]))
+  
+    it('doc/single should have null album', () =>
+      postMediaShareAsync(single).should.eventually.have.property('album').to.be.null)
+    
+    it('doc/single should have false sticky', () =>
+      postMediaShareAsync(single).should.eventually.have.property('sticky').to.be.false)
+
+    it('doc/single should have ctime', () => 
+      postMediaShareAsync(single).should.eventually.have.property('ctime').to.be.a('number'))
+
+    it('doc/single should have mtime', () =>
+      postMediaShareAsync(single).should.eventually.have.property('mtime').to.be.a('number'))
+
+    it('doc/single should have 1 item in contents', () => 
+      postMediaShareAsync(single).should.eventually.have.deep.property('contents.length').to.equal(1))
+
+    it('doc/single contents[0] should have author as userUUID', () =>
+      postMediaShareAsync(single).should.eventually.have.deep.property('contents[0].author', userUUID))
+
+    it('doc/single contents[0] should have the same digest as given', () =>
+      postMediaShareAsync(single).should.eventually.have.deep.property('contents[0].digest', single.contents[0]))
+
+    it('doc/single contnets[0] should have time', () => 
+      postMediaShareAsync(single).should.eventually.have.deep.property('contents[0].time').to.be.a('number'))
+
+/**
+
+{ doctype: 'mediashare',
+  docversion: '1.0',
+  uuid: '6b142490-c9bf-40b9-9599-4ee675929780',
+  author: '9f93db43-02e6-4b26-8fae-7d6f51da12af',
+  maintainers: [],
+  viewers: [],
+  album: null,
+  sticky: false,
+  ctime: 1474098479233,
+  mtime: 1474098479233,
+  contents: 
+   [ { author: '9f93db43-02e6-4b26-8fae-7d6f51da12af',
+       digest: '7803e8fa1b804d40d412bcd28737e3ae027768ecc559b51a284fbcadcd0e21be',
+       time: 1474098479233 } ] }
+
+**/
+
     it('test get mediashares', function(done) {
       request(app)
         .post('/mediashare')
@@ -187,7 +282,6 @@ describe(path.basename(__filename) + ': test repo', function() {
         .end(err => {
           if (err) return done(err)
 
-          console.log('hahahahahah')
           request(app)
             .get('/mediashare')   
             .set('Authorization', 'JWT ' + token) 
@@ -201,20 +295,5 @@ describe(path.basename(__filename) + ': test repo', function() {
         })
     })
 
-    it('should create a mediashare', function(done) {
-
-      request(app)
-        .post('/mediashare')
-        .send({
-          maintainers: [],
-          viewers: [],
-          contents: [
-            '7803e8fa1b804d40d412bcd28737e3ae027768ecc559b51a284fbcadcd0e21be' 
-          ],
-        })
-        .set('Authorization', 'JWT ' + token)
-        .set('Accept', 'application/json')
-        .expect(200, done)
-    })
   })
 })
