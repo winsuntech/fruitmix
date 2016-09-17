@@ -32,7 +32,6 @@ router.post('/', (req, res) => {
         smbPassword: undefined,
         smbLastChangeTime: undefined
       }))
-
     })
   })
 })
