@@ -88,17 +88,18 @@ class Repo extends EventEmitter {
       }
     } // loop end
 
-    let roots = props.map(prop => 
-      this.forest.createNode(null, prop))     
-
-    let promises = roots.map(root => 
-      new Promise(resolve => this.forest.scan(root, () => resolve())))
+    let roots = props.map(prop => this.forest.createNode(null, prop))     
+    let promises = roots.map(root => new Promise(resolve => this.forest.scan(root, () => resolve())))
 
     Promise.all(promises)
-      .then(() => this.emit('driveCached'))
+      .then(() => {
+        console.log(`${roots.length} drives cached`)
+        this.emit('driveCached')
+      })
       .catch(e => {})
 
     this.state = 'INITIALIZED'
+    console.log('repo init')
   }
 
   // TODO there may be a small risk that a user is deleted but drive not
@@ -157,7 +158,7 @@ class Repo extends EventEmitter {
         this.forest.scan(root, () => 
           console.log(`scan root finished: ${root.uuid}`))
         
-        callback(conf)
+        callback(null, conf)
       })
     })
   }
@@ -186,14 +187,14 @@ class Repo extends EventEmitter {
       cache: true 
     } 
 
-    let count = 2
-    const end = (err) => {
-      if (!--count) 
-        callback() 
-    }
-
-    this.createFruitmixDrive(home, end)
-    this.createFruitmixDrive(lib, end)
+    // these cannot be done concurrently , RACE !!!
+    this.createFruitmixDrive(home, err => {
+      if (err) return callback(err)
+      this.createFruitmixDrive(lib, err => {
+        if (err) return callback(err)
+        callback()
+      })
+    })
   }
 
 ////////////////////////////////////////////////////////////////////////////////

@@ -5,23 +5,35 @@ const router = Router()
 
 router.post('/', (req, res) => {
 
-  let User = Models.getModel('user')
+  let repo = Models.getModel('repo') 
+  let userModel = Models.getModel('user')
 
   // if user exists
-  if (User.collection.list.length) return res.status(404).end()
+  if (userModel.collection.list.length) return res.status(404).end()
 
   // let Repo = Models.getModel('repo')
 
   let props = req.body
   props.type = 'local'
 
-  User.createUser(props, (err, user) => {
+  userModel.createUser(props, (err, user) => {
+
     if (err) return res.status(err.code === 'EINVAL' ? 400 : 500).json({
       code: err.code,
       message: err.message
     })
 
-    res.status(200).end()
+    repo.createUserDrives(user, err => {
+
+      if (err) return callback(err)
+
+      res.status(200).json(Object.assign({}, user, {
+        password: undefined,
+        smbPassword: undefined,
+        smbLastChangeTime: undefined
+      }))
+
+    })
   })
 })
 
