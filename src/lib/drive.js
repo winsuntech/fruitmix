@@ -390,22 +390,20 @@ class Drive extends IndexedTree {
     let arr = []
 
     this.shared.forEach(node => {
-      if (node.root().owner.find(userUUID)) return
-      if (node.writelist.find(userUUID) || node.readlist.find(userUUID)) {
+
+      if (node.root().owner.find(uuid => uuid === userUUID)) return
+      if (node.writelist.find(uuid => uuid === userUUID) || 
+          node.readlist.find(uuid => uuid === userUUID)) {
 
         let props = Object.assign({}, node, {
+          name: undefined,
           parent: undefined,
           children: undefined,
         })
 
-        if (node.parent === null) {
-          props.isRoot = true
-          props.name = ''
-        }
-        else {
-          props.isRoot = false
-          props.root = node.root().uuid
-        }
+        props.root = node.root().uuid
+        
+        arr.push(props)
       }
     })
 
@@ -417,20 +415,20 @@ class Drive extends IndexedTree {
     let arr = []
     
     this.shared.forEach(node => {
-      if (node.root().owner.find(userUUID)) {
+
+      if (node.root().owner.find(uuid => uuid === userUUID)) {
 
         let props = Object.assign({}, node, {
+          name: undefined,
           parent: undefined,
           children: undefined
         })
 
-        if (node.parent === null) {
-          props.name = ''
-        }
+        props.root = node.root().uuid 
 
         arr.push(props)
       }
-    })    
+    }) 
     
     return arr
   }
