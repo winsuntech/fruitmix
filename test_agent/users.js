@@ -73,13 +73,13 @@ const requestTokenAsync = Promise.promisify(requestToken)
 
 const createRepoCached = (paths, model, forest, callback) => {
   
-  let count = 0
+  let err
   let repo = createRepo(paths, model, forest) 
-  repo.on('driveCached', () => callback(null))
-  repo.init(e => {
-    if (e) callback(e)
-    else callback(null, repo)
-  })
+  
+  // if no err, return repo after driveCached
+  repo.on('driveCached', () => !err && callback(null, repo))
+  // init & if err return err
+  repo.init(e => e && callback(err = e))
 }
 
 const prepare = (callback) => {
@@ -169,8 +169,19 @@ describe(path.basename(__filename) + ': test repo', function() {
     })
     */
 
-    it('return full set when user exists', (done) => {
-
+    it('return given [user]', (done) => {
+/**
+[ { type: 'local',
+    uuid: '9f93db43-02e6-4b26-8fae-7d6f51da12af',
+    username: 'hello',
+    smbUsername: null,
+    avatar: null,
+    email: null,
+    isFirstUser: true,
+    isAdmin: true,
+    home: 'ceacf710-a414-4b95-be5e-748d73774fc4',
+    library: '6586789e-4a2c-4159-b3da-903ae7f10c2a' } ]
+**/
       request(app)
         .get('/users')
         .set('Authorization', 'JWT ' + token)
@@ -178,7 +189,21 @@ describe(path.basename(__filename) + ': test repo', function() {
         .expect(200)
         .end((err, res) => { 
           if (err) return done(err);
-          console.log(res.body)
+          let userList = res.body
+          expect(userList.length === 1)
+          let user = userList[0]
+
+          expect(user.type).to.equal('local')
+          expect(user.uuid).to.equal(userUUID)
+          expect(user.username).to.equal('hello')
+          expect(user.smbUsername).to.be.null 
+          expect(user.avatar).to.be.null
+          expect(user.email).to.be.null
+          expect(user.isAdmin).to.be.true
+          expect(user.isFirstUser).to.be.true
+          expect(user.home).to.equal(drv001UUID)
+          expect(user.library).to.equal(drv002UUID)
+
           done();
         })
     })

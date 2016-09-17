@@ -89,17 +89,21 @@ class Repo extends EventEmitter {
     } // loop end
 
     let roots = props.map(prop => this.forest.createNode(null, prop))     
-    let promises = roots.map(root => new Promise(resolve => this.forest.scan(root, () => resolve())))
+    let promises = roots.map(root => 
+      new Promise(resolve => this.forest.scan(root, () => {
+        console.log(`[repo] init: scan root finished: ${root.uuid}`)
+        resolve()
+      })))
 
     Promise.all(promises)
       .then(() => {
-        console.log(`${roots.length} drives cached`)
+        console.log(`[repo] init: ${roots.length} drives cached`)
         this.emit('driveCached')
       })
       .catch(e => {})
 
     this.state = 'INITIALIZED'
-    console.log('repo init')
+    console.log('[repo] init: initialized')
   }
 
   // TODO there may be a small risk that a user is deleted but drive not
@@ -156,7 +160,7 @@ class Repo extends EventEmitter {
         })
 
         this.forest.scan(root, () => 
-          console.log(`scan root finished: ${root.uuid}`))
+          console.log(`[repo] createFruitmidxDrive: scan (newly created) root finished: ${root.uuid}`))
         
         callback(null, conf)
       })

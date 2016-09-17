@@ -75,12 +75,13 @@ const requestTokenAsync = Promise.promisify(requestToken)
 
 const createRepoCached = (paths, model, forest, callback) => {
   
+  let err
   let repo = createRepo(paths, model, forest) 
-  repo.on('driveCached', () => callback(null))
-  repo.init(e => {
-    if (e) callback(e)
-    else callback(null, repo)
-  })
+  
+  // if no err, return repo after driveCached
+  repo.on('driveCached', () => !err && callback(null, repo))
+  // init & if err return err
+  repo.init(e => e && callback(err = e))
 }
 
 const createRepoCachedAsync = Promise.promisify(createRepoCached)
