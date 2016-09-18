@@ -26,7 +26,7 @@ class MediaTalkStore {
           callback(null, { digest, doc })
         })
       })
-    }
+    })
   }
 
   retrieve(owner, digest, callback) {

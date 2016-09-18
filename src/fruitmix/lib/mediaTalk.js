@@ -130,10 +130,10 @@ class mediaTalkPrototype {
       let authors = Array.from(authorSet).sort()
       // for each author, store author => hash in map
       authors.forEach(author => 
-        authorHashMap.set(author, hashObject(comments.filter(cmt => cmt.author === author)))
+        authorHashMap.set(author, hashObject(comments.filter(cmt => cmt.author === author))))
     }
 
-    let this.authorHash = authorHash
+    this.authorHash = authorHash
   }
 
 
