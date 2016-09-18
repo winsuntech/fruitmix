@@ -7,10 +7,10 @@
     "build": "babel src --out-dir build",
     "devel": "PORT=3721 nodemon --exec babel-node src/main.js",
     "devel-family": "PORT=3721 nodemon --ignore 'family/*' --exec babel-node src/main.js --family",
-    "test": "NODE_PATH=. mocha --compilers js:babel-core/register --recursive --sort test",
+    "fruit-unit": "NODE_PATH=. mocha --compilers js:babel-core/register --recursive --sort test/fruitmix/unit",
+    "fruit-algo": "NODE_PATH=. NODE_ENV=test mocha --compilers js:babel-core/register --recursive --sort test/fruitmix/algo",
+    "fruit-agent": "NODE_PATH=. NODE_ENV=test mocha --compilers js:babel-core/register --recursive --sort test/fruitmix/agent",
     "mocha": "NODE_PATH=. NODE_ENV=test mocha --compilers js:babel-core/register --recursive --sort",
-    "algo": "NODE_PATH=. NODE_ENV=test mocha --compilers js:babel-core/register --recursive --sort test_algo",
-    "agent": "NODE_PATH=. NODE_ENV=test mocha --compilers js:babel-core/register --recursive --sort test_agent",
     "lint": "node node_modules/eslint/bin/eslint.js src",
     "linttest": "node node_modules/eslint/bin/eslint.js test",
     "lintagent": "node node_modules/eslint/bin/eslint.js test_agent"
